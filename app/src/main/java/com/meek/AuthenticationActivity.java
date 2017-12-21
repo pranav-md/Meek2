@@ -393,7 +393,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                                         SharedPreferences.Editor uidpref=pref.edit();
                                         uidpref.putLong("uid",uid);
-                                        uidpref.commit();
+                                        uidpref.commit();;
                                     }
                                     else
                                     {
