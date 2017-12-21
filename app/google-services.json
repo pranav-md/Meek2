@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1074002721565",
+    "firebase_url": "https://meek-466b3.firebaseio.com",
+    "project_id": "meek-466b3",
+    "storage_bucket": "meek-466b3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074002721565:android:5de29f893abbca5f",
+        "android_client_info": {
+          "package_name": "com.meek"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1074002721565-9an8m3funls1uk6v7024fgtp06res11s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.meek",
+            "certificate_hash": "107a01c1c9072e2a7eb6617b7d8abd05906adeaa"
+          }
+        },
+        {
+          "client_id": "1074002721565-tn5u2loo610il5gjdkc64ej7gm9fbc2c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC67DEkR2LFSRt3JBZC14hruYBrz5KUyJw"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1074002721565-tn5u2loo610il5gjdkc64ej7gm9fbc2c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
