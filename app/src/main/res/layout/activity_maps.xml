@@ -1,3 +1,11 @@
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,3 +14,83 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.meek.MapsActivity" />
+
+    <LinearLayout
+        android:id="@+id/rlayout"
+        android:layout_width="match_parent"
+        android:layout_height="338dp">
+
+        <LinearLayout
+            android:id="@+id/frag_layout"
+            android:layout_width="317dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"></LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/buttonview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:orientation="vertical"
+            android:visibility="invisible">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fabb1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_alignStart="@+id/fabb2"
+                android:layout_gravity="bottom|end"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="60dp"
+                android:background="@drawable/people"
+                android:foreground="@drawable/people"
+                app:backgroundTint="@android:color/white"
+                app:elevation="6dp"
+                app:pressedTranslationZ="12dp" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fabb2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/fabb3"
+                android:layout_alignParentEnd="true"
+                android:layout_gravity="bottom|end"
+                android:layout_marginRight="12dp"
+                android:layout_marginTop="40dp"
+                android:background="@drawable/the_user"
+                android:foreground="@drawable/the_user"
+                app:backgroundTint="@android:color/white"
+                app:elevation="6dp"
+                app:pressedTranslationZ="12dp" />
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignStart="@+id/fabb2"
+                android:layout_below="@+id/fabb2"
+                android:text="Change"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textStyle="bold" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fabb3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:layout_alignParentBottom="true"
+                android:layout_alignStart="@+id/fabb1"
+                android:layout_marginLeft="15dp"
+                android:layout_marginTop="40dp"
+                android:background="@drawable/tick"
+                android:foreground="@drawable/tick"
+                app:backgroundTint="?android:attr/colorForeground"
+                app:elevation="6dp"
+                app:pressedTranslationZ="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

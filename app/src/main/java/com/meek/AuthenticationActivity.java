@@ -2,6 +2,7 @@ package com.meek;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -35,6 +36,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.concurrent.TimeUnit;
@@ -344,24 +346,6 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
         authview.setText("Code waiting...");
         startPhoneNumberVerification(phnum.getText().toString());
         pnum=phnum.getText();
-        pd = ProgressDialog.show(AuthenticationActivity.this, "", "Please Wait...",
-                true, false);
-        pd.show();
-        new CountDownTimer(60000, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                //this will be done every 1000 milliseconds ( 1 seconds )
-                long progress = (60000 - millisUntilFinished) / 1000;
-                pd.setProgress((int)progress);
-            }
-
-            @Override
-            public void onFinish() {
-                //the progressBar will be invisible after 60 000 miliseconds ( 1 minute)
-                pd.dismiss();
-            }
-
-        }.start();
 
     }
     private void verifyPhoneNumberWithCode(String verificationId, String code)
@@ -370,6 +354,8 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
         signInWithPhoneAuthCredential(credential);
     }
     private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
+        final boolean[] userfound = {false};
+
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -379,10 +365,86 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                             Toast.makeText(AuthenticationActivity.this,"signInWithCredential:success",Toast.LENGTH_LONG).show();
                             authview.setText("Authenciation success");
                             FirebaseUser user = task.getResult().getUser();
-
+                            ////////
+                            ////////
 
                             FirebaseDatabase database = FirebaseDatabase.getInstance();
-                            final DatabaseReference userRef = database.getReference("Users");
+                            //////////
+                            final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+                            Query userPhonenum=rootRef.child("Users").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
+                            userPhonenum.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                        if(dataSnapshot.exists()) {
+                                            userfound[0] =true;
+                                            String uid= dataSnapshot.child("User_no").getValue(String.class);
+                                            SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                            SharedPreferences.Editor uidpref=pref.edit();
+                                            uidpref.putString("uid", uid);
+                                            uidpref.commit();
+                                            Toast.makeText(AuthenticationActivity.this,"already exist",Toast.LENGTH_LONG).show();
+                                        }
+                                        else
+                                        {
+                                            Toast.makeText(AuthenticationActivity.this,"new dude",Toast.LENGTH_LONG).show();
+                                            final long[] num = new long[1];
+                                            FirebaseDatabase database = FirebaseDatabase.getInstance();
+                                            final DatabaseReference userRef = database.getReference("Users");
+                                            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                                    num[0] =dataSnapshot.getChildrenCount()+1;
+                                                    userRef.child(num[0] +"").child("User_no").setValue(num[0]);
+                                                    userRef.child(num[0] +"").child("Phone_no").setValue(pnum.toString());
+                                                    SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                                    SharedPreferences.Editor uidpref=pref.edit();
+                                                    uidpref.putLong("uid", num[0]);
+                                                    uidpref.commit();
+                                                }
+
+                                                @Override
+                                                public void onCancelled(DatabaseError databaseError) {
+
+                                                }
+                                            });
+
+                                        }
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                            ///////////
+
+                         //   final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+                       /*     final DatabaseReference userphnoRef = rootRef.child("Users").child("Phone_no");
+                            ValueEventListener eventListener=new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    for(DataSnapshot ds: dataSnapshot.getChildren()){
+                                        String phno=ds.child("Phone_no").getValue(String.class);
+                                        if(phno.equals(pnum))
+                                        {
+                                            userfound[0] =true;
+                                            String uid= ds.child("User_no").getValue(String.class);
+                                            SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                            SharedPreferences.Editor uidpref=pref.edit();
+                                            uidpref.putString("uid", uid);
+                                            uidpref.commit();
+                                            Toast.makeText(AuthenticationActivity.this,"already exist",Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            };
+                            userphnoRef.addListenerForSingleValueEvent(eventListener);
+                            /*
                             userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -424,8 +486,10 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                 public void onCancelled(DatabaseError databaseError) {
 
                                 }
-                            });
+                            });*/
                             // [START_EXCLUDE]
+                            startActivity(new Intent(AuthenticationActivity.this,MapsActivity.class));
+                            finish();
                         } else {
                             // Sign in failed, display a message and update the UI
                             authview.setText("Failed to authenciate");
@@ -436,7 +500,9 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                         }
                     }
                 });
+
     }
+
     private void startPhoneNumberVerification(String phoneNumber) {
         // [START start_phone_auth]
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
