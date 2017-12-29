@@ -371,18 +371,37 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                             FirebaseDatabase database = FirebaseDatabase.getInstance();
                             //////////
                             final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+                            final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference();
+
                             Query userPhonenum=rootRef.child("Users").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
                             userPhonenum.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
                                         if(dataSnapshot.exists()) {
-                                            userfound[0] =true;
-                                            String uid= dataSnapshot.child("User_no").getValue(String.class);
-                                            SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-                                            SharedPreferences.Editor uidpref=pref.edit();
-                                            uidpref.putString("uid", uid);
-                                            uidpref.commit();
-                                            Toast.makeText(AuthenticationActivity.this,"already exist",Toast.LENGTH_LONG).show();
+                                            //dataSnapshot=dataSnapshot.child("Users");
+                                            //String uid= dataSnapshot.getKey();
+                                            for(DataSnapshot ds : dataSnapshot.getChildren()) {
+                                                final String uid = ds.getKey();
+                                                Toast.makeText(AuthenticationActivity.this,"key:"+uid,Toast.LENGTH_LONG).show();
+                                                Query query = usersRef.child("Users").child(uid).child("Phone_no").equalTo(String.valueOf(pnum));
+                                                query.addListenerForSingleValueEvent(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                                        SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                                        SharedPreferences.Editor uidpref=pref.edit();
+                                                        uidpref.putString("uid", uid);
+                                                        uidpref.commit();
+                                                        Toast.makeText(AuthenticationActivity.this,"already exist  "+uid,Toast.LENGTH_LONG).show();
+                                                    }
+
+                                                    @Override
+                                                    public void onCancelled(DatabaseError databaseError) {
+
+                                                    }
+                                                });
+                                            }
+                                                    //child("User_no").getValue(String.class);
+
                                         }
                                         else
                                         {
@@ -398,7 +417,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                                     userRef.child(num[0] +"").child("Phone_no").setValue(pnum.toString());
                                                     SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                                                     SharedPreferences.Editor uidpref=pref.edit();
-                                                    uidpref.putLong("uid", num[0]);
+                                                    uidpref.putString("uid", num[0]+"");
                                                     uidpref.commit();
                                                 }
 

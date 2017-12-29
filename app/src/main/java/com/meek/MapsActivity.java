@@ -1,16 +1,33 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
-import android.app.FragmentTransaction;
+import android.app.NotificationManager;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentTransaction;
 import android.content.Intent;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.content.SharedPreferences;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -20,33 +37,60 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.soundcloud.android.crop.Crop;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
+import java.util.Random;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 import static android.widget.Toast.LENGTH_LONG;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,AdapterView.OnItemSelectedListener, AdapterView.OnItemLongClickListener {
 
     private GoogleMap mMap;
     MapStyleOptions style;
     String date,time,uid;
+    ProfileSet profileSet;
+    FragmentManager fragmentManager;
     boolean visible=false;
+    boolean prob_vis=true;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-      //  uid=pref.getString("uid", "");
+        SharedPreferences pref =
+                getSharedPreferences("UserDetails", MODE_PRIVATE);
+        uid=pref.getString("uid", "");
+        Toast.makeText(MapsActivity.this,"uid is: "+uid,Toast.LENGTH_LONG).show();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -59,6 +103,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Toast.makeText(MapsActivity.this, "something wrong", LENGTH_LONG);
             e.printStackTrace();
         }
+        groupSpinnerSetter();
     }
     private void dataUpdater()
     {
@@ -66,7 +111,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference ref = database.getReference();
-        ref=ref.child("Users").child(uid).child("recieved_requests");
+        ref=ref.child("Users").child(uid).child("received_requests");
         ref.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s)
@@ -150,6 +195,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         --num_meek;
+        int num_non_meek=0;
         for(int i=0;i<num_all_meek;++i)
         {
             con_all_meek=con_all_meek.substring(1);
@@ -158,10 +204,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             con_all_meek=con_all_meek.substring(pos);
             if(!meekusers[0].contains(m_all_uid))
             {
-                non_meek.putString("Non_meeked_users",userpref.getString("Non_meeked_users","")+":");
+                num_non_meek++;
+                non_meek.putString("Non_meeked_users",userpref.getString("Non_meeked_users",":")+m_all_uid+":");
                 non_meek.commit();
             }
-
+            non_meek.putInt("Num_non_meek",num_non_meek);
+            non_meek.commit();
         }
     }
     void meekUpdater(DataSnapshot ds)
@@ -169,16 +217,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String meek_uid= (String) ds.getValue();
         SharedPreferences meeked = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         SharedPreferences.Editor meekpref=meeked.edit();
-        meekpref.putString("Requests", meek_uid);
-        meekpref.commit();
-        int numRequest = 0;
+        int numMeek = 0;
         for( int i=0; i<meek_uid.length(); i++ ) {
             if( meek_uid.charAt(i) == ':' ) {
-                numRequest++;
+                numMeek++;
             }
         }
-        numRequest--;
-        for (int i=0;i<numRequest;++i)
+        numMeek--;
+        meekpref.putString("Meek_Friends", meek_uid);
+        meekpref.putInt("Meek_number", numMeek);
+        meekpref.commit();
+        for (int i=0;i<numMeek;++i)
         {
             meek_uid=meek_uid.substring(1);
             int pos=meek_uid.indexOf(':');
@@ -248,6 +297,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 numRequest++;
             }
         }
+        reqpref.putInt("Request_number",numRequest);
+
         for (int i=0;i<numRequest;++i)
         {
             request_uid=request_uid.substring(1);
@@ -275,6 +326,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
 
         }
+
 
     }
     private void styleMap() throws ParseException {
@@ -768,15 +820,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onMapLongClick(LatLng arg0) {
                 if(!visible)
                 {
+                    SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+                    uid=pref.getString("uid", "");
                    visible=true;
-                    android.app.FragmentManager fragmentManager = getFragmentManager ();
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction ().setCustomAnimations(R.animator.leftright,R.animator.rightleft);
+                   if(prob_vis)
+                   {
+                       fragmentManager = getSupportFragmentManager();
+                       FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
 
-                    ProfileSet profileSet = new ProfileSet();  //your fragment
+                       profileSet = new ProfileSet();  //your fragment
+                       // work here to add, remove, etc
+                       fragmentTransaction.add(R.id.frag_layout, profileSet);
+                       fragmentTransaction.commit();
+                       profileSet.setActivity(uid);
 
-                    // work here to add, remove, etc
-                    fragmentTransaction.add (R.id.frag_layout, profileSet);
-                    fragmentTransaction.commit ();
+                   }
+                   else
+                   {
+                       fragmentManager = getSupportFragmentManager();
+                       FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
+
+                       ContactsBox contactsBox = new ContactsBox();  //your fragment
+
+                       // work here to add, remove, etc
+                       fragmentTransaction.add(R.id.frag_layout, contactsBox);
+                       fragmentTransaction.commit();
+                   }
                     View view=findViewById(R.id.buttonview);
                     view.setVisibility(View.VISIBLE);
                     Animation anmtn =  AnimationUtils.loadAnimation(getApplicationContext(), R.animator.rightleft_button);
@@ -784,10 +853,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     FloatingActionButton flip_change=(FloatingActionButton)findViewById(R.id.fabb1);
                     flip_change.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
                                                    {
-                       getFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in,R.animator.flip_right_out,R.animator.flip_left_in,R.animator.flip_left_out)
-                       .replace(R.id.frag_layout, new ContactsBox())
-                       .commit();
+                                                       prob_vis=!prob_vis;
+                                                       if(!prob_vis) {
+                                                           getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
+                                                                   .replace(R.id.frag_layout, new ContactsBox())
+                                                                   .commit();
+                                                       }
+                                                       else{
+                                                           getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
+                                                                   .replace(R.id.frag_layout, profileSet)
+                                                                   .commit();
+
+
+                                                       }
                       }}
+                    );
+                    FloatingActionButton dp_change=(FloatingActionButton)findViewById(R.id.fabb2);
+                    dp_change.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
+                                                   {
+                                                       Crop.pickImage(MapsActivity.this);
+                                                   }}
+                    );
+                    FloatingActionButton exit_tick=(FloatingActionButton)findViewById(R.id.fabb3);
+                    exit_tick.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
+                                                 {
+                                                     FragmentManager manager = getSupportFragmentManager();
+                                                     FragmentTransaction ft = manager.beginTransaction();
+                                                     ft.setCustomAnimations(R.animator.rightleft,R.animator.leftright);
+                                                     ft.remove(profileSet);
+                                                     ft.commit();
+                                                     View view=findViewById(R.id.buttonview);
+                                                     view.setVisibility(View.INVISIBLE);
+                                                     Animation anmtn =  AnimationUtils.loadAnimation(getApplicationContext(), R.animator.leftright_button);
+                                                     view.setAnimation(anmtn);
+                                                     visible=false;
+                                                     profileSet.saveActivity(uid);
+
+
+                                                 }}
                     );
                     Toast.makeText(MapsActivity.this,"LOng pressed",LENGTH_LONG).show();
                 }
@@ -797,5 +900,225 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
+    ///////////dp change codes
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode==Crop.REQUEST_PICK&&resultCode==RESULT_OK&&data!=null)
+        {
+            beginCrop(data.getData());
+        }
+        else if(requestCode==Crop.REQUEST_CROP)
+        {
+            try {
+                handleCrop(resultCode,data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
+
+    }
+    private void beginCrop(Uri source)
+    {
+        Uri dest=Uri.fromFile(new File(getCacheDir(),"Cropped"));
+        Crop.of(source,dest).asSquare().start(this);
+    }
+    private void handleCrop(int resultCode,Intent result) throws IOException {
+        if(resultCode==RESULT_OK)
+        {
+            final Uri uri =Crop.getOutput(result);
+            File myFile = new File(uri.getPath());
+            Uri selectedImage=getImageContentUri(getApplicationContext(),myFile);
+            String path = getPath(selectedImage);
+
+            SharedPreferences dpdata = getSharedPreferences("User data", MODE_PRIVATE);
+            SharedPreferences.Editor editor = dpdata.edit();
+            editor.putString("dp","1");
+            editor.commit();
+            String filename=uid+"_dp";
+
+
+            ///////Uploading code
+            final FirebaseStorage  storage = FirebaseStorage.getInstance();
+            StorageReference storageReference = storage.getReference();
+            final NotificationManager mNotifyManager =(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
+            mBuilder.setContentTitle("DP uploading")
+                    .setContentText("Uploading in progress").setSmallIcon(R.drawable.thelogo);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/M/yyyy kk:mm:ss");
+            simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+            String date=simpleDateFormat.format(new Date())+"";
+            String upld_filename=date.substring(0,2)+date.substring(11,13)+date.substring(14,16)+date.substring(17,19);
+            upld_filename=upld_filename+(new Random().nextInt(899)+100);
+            StorageReference ref = storageReference.child("Users DP/"+upld_filename+".jpg");
+            final String finalUpld_filename = upld_filename;
+            ref.putFile(uri)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            FirebaseDatabase database = FirebaseDatabase.getInstance();
+                            final DatabaseReference userRef = database.getReference("Users");
+                            userRef.child(uid).child("dp_code").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot)
+                                {
+                                    String dp_code=dataSnapshot.getValue().toString();
+                                    StorageReference storageRef = storage.getReference();
+                                    Toast.makeText(MapsActivity.this,"dpcode= "+dp_code,Toast.LENGTH_LONG).show();
+                                    StorageReference desertRef = storageRef.child("Users DP/"+dp_code+".jpg");
+                                    desertRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            // File deleted successfully
+                                            ////saving dpcode
+                                            userRef.child(uid).child("dp_code").setValue(finalUpld_filename);
+
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception exception) {
+                                            // Uh-oh, an error occurred!
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                            ///setting notification
+                            mBuilder.setContentText("DP updating Success ! ")
+                                    // Removes the progress bar
+                                    .setProgress(0,0,false);
+                            mNotifyManager.notify(1, mBuilder.build());
+
+
+                            ////saving in memory
+                            String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
+                            String localFilename = sFolder  + "/currentDP.jpg";
+                            new File(sFolder ).mkdirs();
+                            byte[] imageData=new byte[1024];
+                            ///deleting if already another exists
+                            File fdelete = new File(localFilename);
+                            if (fdelete.exists()) {
+                                if (fdelete.delete()) {
+                                    System.out.println("file Deleted :");
+                                } else {
+                                    System.out.println("file not Deleted :");
+                                }
+                            }
+                            try {
+                                File img = new File(localFilename);
+                            OutputStream out = new BufferedOutputStream(new FileOutputStream(img));
+                            InputStream in = getContentResolver().openInputStream(uri);
+                            int bytesread;
+                                while((bytesread=in.read(imageData))>0)
+                                {
+                                    out.write(Arrays.copyOfRange(imageData,0,Math.max(0,bytesread)));
+                                }
+                                in.close();
+                                out.close();
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            mBuilder.setContentText("DP updating failed ! ")
+                                    // Removes the progress bar
+                                    .setProgress(0,0,false);
+                            mNotifyManager.notify(1, mBuilder.build());
+                        }
+                    })
+                    .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                            int incr = (int) (100.0*taskSnapshot.getBytesTransferred()/taskSnapshot
+                                                                .getTotalByteCount());
+                            mBuilder.setProgress(100, incr, false);
+                            // Displays the progress bar for the first time.
+                            mNotifyManager.notify(1, mBuilder.build());                        }
+                    });
+            /////
+            String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
+            String localFilename = sFolder  + "/currentDP.jpg";
+            profileSet.setDP(localFilename);
+        }
+        else if(resultCode==Crop.RESULT_ERROR)
+            Toast.makeText(this,Crop.getError(result).getMessage(),Toast.LENGTH_LONG).show();
+
+    }
+    public String getPath(Uri uri) {
+        Cursor cursor1 = getContentResolver().query(uri, null, null, null, null);
+        cursor1.moveToFirst();
+        String document_id = cursor1.getString(0);
+        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+        cursor1.close();
+
+        cursor1 = getContentResolver().query(
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                null, MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+        cursor1.moveToFirst();
+        String path = cursor1.getString(cursor1.getColumnIndex(MediaStore.Images.Media.DATA));
+        cursor1.close();
+
+        return path;
+    }
+    public static Uri getImageContentUri(Context context, File imageFile) {
+        String filePath = imageFile.getAbsolutePath();
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[] { MediaStore.Images.Media._ID },
+                MediaStore.Images.Media.DATA + "=? ",
+                new String[] { filePath }, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor
+                    .getColumnIndex(MediaStore.MediaColumns._ID));
+            Uri baseUri = Uri.parse("content://media/external/images/media");
+            return Uri.withAppendedPath(baseUri, "" + id);
+        } else {
+            if (imageFile.exists()) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DATA, filePath);
+                return context.getContentResolver().insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            } else {
+                return null;
+            }
+        }}
+
+    /////////////////////
+
+    void groupSpinnerSetter()
+    {
+        Toast.makeText(MapsActivity.this,"group spinner is set",LENGTH_LONG).show();
+        Spinner spin = (Spinner) findViewById(R.id.spinner2);
+        spin.setOnItemSelectedListener( MapsActivity.this);
+        spin.setOnItemLongClickListener(MapsActivity.this);
+        int[] gp_dp={R.drawable.defaultdp,R.drawable.the_user};
+        String[] gp_name={"Default","User"};
+        GroupSpinnerAdapter customAdapter=new GroupSpinnerAdapter(getApplicationContext(),gp_dp,gp_name);
+        spin.setAdapter(customAdapter);
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        return false;
+    }
 }
