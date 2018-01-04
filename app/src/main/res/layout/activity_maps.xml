@@ -23,6 +23,21 @@
         android:layout_marginLeft="185dp"
         android:elevation="20dp" />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/gps_home"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/fabb2"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="15dp"
+        android:layout_marginRight="15dp"
+        android:background="@android:color/white"
+        app:backgroundTint="@android:color/white"
+        app:elevation="6dp"
+        app:pressedTranslationZ="12dp"
+        app:srcCompat="@drawable/gps_home" />
+
     <LinearLayout
         android:id="@+id/rlayout"
         android:layout_width="match_parent"
@@ -44,7 +59,7 @@
             android:visibility="invisible">
 
             <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fabb1"
+                android:id="@+id/send_fab"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
@@ -82,23 +97,24 @@
                 android:textAlignment="center"
                 android:textAllCaps="false"
                 android:textStyle="bold" />
-
+            <include layout="@layout/btmsheet_profile" />
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fabb3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
 
                 android:layout_alignParentBottom="true"
-                android:layout_alignStart="@+id/fabb1"
+                android:layout_alignStart="@+id/send_fab"
                 android:layout_marginLeft="15dp"
                 android:layout_marginTop="40dp"
                 android:background="@drawable/tick"
                 android:foreground="@drawable/tick"
                 app:backgroundTint="?android:attr/colorForeground"
                 app:elevation="6dp"
-                app:pressedTranslationZ="12dp" />
+                app:pressedTranslationZ="12dp"
+                app:layout_anchor="@+id/bottomsheet_profile"
+                app:layout_anchorGravity="top|end"/>
 
         </LinearLayout>
-
     </LinearLayout>
 </android.support.design.widget.CoordinatorLayout>

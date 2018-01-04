@@ -1,32 +1,33 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentTransaction;
 import android.content.Intent;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.content.SharedPreferences;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.view.ViewPager;
-import android.util.Log;
+import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
-import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -34,6 +35,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -54,6 +56,7 @@ import com.soundcloud.android.crop.Crop;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,10 +66,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
-import java.util.UUID;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -251,6 +252,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     meekdpref.putString("Meeked_user_address"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("address").getValue(String.class));
                     meekdpref.putString("Meeked_user_time"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("time").getValue(String.class));
                     meekdpref.putString("Meeked_user_date"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("date").getValue(String.class));
+                    meekdpref.putString("Meeked_user_address"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("Address").getValue(String.class));
                     meekdpref.commit();
                 }
 
@@ -850,7 +852,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     view.setVisibility(View.VISIBLE);
                     Animation anmtn =  AnimationUtils.loadAnimation(getApplicationContext(), R.animator.rightleft_button);
                     view.setAnimation(anmtn);
-                    FloatingActionButton flip_change=(FloatingActionButton)findViewById(R.id.fabb1);
+                    FloatingActionButton flip_change=(FloatingActionButton)findViewById(R.id.send_fab);
                     flip_change.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
                                                    {
                                                        prob_vis=!prob_vis;
@@ -1097,18 +1099,177 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     void groupSpinnerSetter()
     {
-        Toast.makeText(MapsActivity.this,"group spinner is set",LENGTH_LONG).show();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final DatabaseReference userRef = database.getReference("Users");
+        userRef.child(uid).child("Groups").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                groupDataSetter(dataSnapshot);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                groupDataSetter(dataSnapshot);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        int[] gp_dp={R.drawable.defaultdp,R.drawable.the_user};
+        String[] gp_name={"Default","User"};
+
+    }
+    String groupDataSetter(DataSnapshot ds)
+    {
+        String gp_ids=ds.getValue().toString();
+        String gp_ids_temp=gp_ids;
+        SharedPreferences grp_pref = getSharedPreferences("Groups", MODE_PRIVATE);
+        final SharedPreferences.Editor editor = grp_pref.edit();
+
+        int num_groups=0;
+        final AdaptHelper[] gps=new AdaptHelper[50];
+        if(gp_ids.length()>2)
+        {
+            editor.putString("Groups_id",gp_ids);
+            editor.commit();
+            for (int i = 0; i < gp_ids.length(); i++) {
+                if (gp_ids.charAt(i) == ':')
+                {
+                    num_groups++;
+                }
+            }
+            --num_groups;
+            editor.putInt("Num_groups",num_groups);
+            editor.commit();
+            for(int i=0;i<num_groups;++i)
+            {
+                gp_ids=gp_ids.substring(1);
+                int pos=gp_ids.indexOf(':');
+                String gp_id=gp_ids.substring(0,pos);
+                gp_ids=gp_ids.substring(pos);
+                final int position=i;
+                FirebaseDatabase database = FirebaseDatabase.getInstance();
+                DatabaseReference userRef = database.getReference("Groups");
+                userRef.child(gp_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        String gp_no=dataSnapshot.child("Group_no").getValue().toString();
+                        String gp_name=dataSnapshot.child("Group_name").getValue().toString();
+                        String gp_members=dataSnapshot.child("Group_members").getValue().toString();
+                        String gp_dpcode=dataSnapshot.child("Group_dpcode").getValue().toString();
+                        editor.putString("Group_name"+gp_no,gp_name);
+                        editor.putString("Group_members"+gp_no,gp_members);
+                        editor.putString("Group_dpcode"+gp_no,gp_dpcode);
+                        editor.commit();
+                        gps[position].uid=gp_no;
+                        gps[position].name=gp_name;
+                        gps[position].dpno=gp_dpcode;
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+            }
+        }
         Spinner spin = (Spinner) findViewById(R.id.spinner2);
         spin.setOnItemSelectedListener( MapsActivity.this);
         spin.setOnItemLongClickListener(MapsActivity.this);
-        int[] gp_dp={R.drawable.defaultdp,R.drawable.the_user};
-        String[] gp_name={"Default","User"};
-        GroupSpinnerAdapter customAdapter=new GroupSpinnerAdapter(getApplicationContext(),gp_dp,gp_name);
+        GroupSpinnerAdapter customAdapter=new GroupSpinnerAdapter(getApplicationContext(),gps);
         spin.setAdapter(customAdapter);
+        return gp_ids;
     }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+        String gp_id= (String) view.getTag();
+        SharedPreferences grp_pref=getSharedPreferences("Groups",MODE_PRIVATE);
+        String gp_members=grp_pref.getString("Group_members"+gp_id,"");
+        int num_membrs=grp_pref.getInt("Num_groups",0);
+        marekerSetter(gp_members,num_membrs);
+       /* mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                v.vibrate(50);
+                String i= marker.getTitle();
+                String activity=marker.getSnippet();
+                final Typeface bold_font = Typeface.createFromAsset(getAssets(), "Prime Regular.otf");
+                final Typeface light_font = Typeface.createFromAsset(getAssets(), "Prime Light.otf");
+                View bottomSheet = findViewById(R.id.bottom_sheet);
+                TextView btname=(TextView)findViewById(R.id.bottom_name);
+                btname.setTypeface(bold_font);
+                TextView btactivity=(TextView)findViewById(R.id.bottom_activity);
+                btactivity.setTypeface(light_font);
+                TextView btdate=(TextView)findViewById(R.id.bottom_date);
+                btdate.setTypeface(light_font);
+                TextView bttime=(TextView)findViewById(R.id.bottom_time);
+                bttime.setTypeface(light_font);
+                TextView btacc=(TextView)findViewById(R.id.textView2);
+                bttime.setTypeface(light_font);
+                SharedPreferences userdata = getSharedPreferences("User data", MODE_PRIVATE);
+                CircleImageView imguser=(CircleImageView)findViewById(R.id.imageView2);
+                String sFolderuser = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/Friends/"+userdata.getString("dpcode"+i,"")+".jpg";
+                File fuser=new File(sFolderuser);
+                try {
+                    Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(fuser));
+                    imguser.setImageBitmap(bitmap);
+                } catch (FileNotFoundException e) {
+                    Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+                    imguser.setImageBitmap(icon);
+                    e.printStackTrace();
+                }
+                BottomSheetBehavior mBottomSheetBehavior1 = BottomSheetBehavior.from(bottomSheet);
+                mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+                btname.setText(userdata.getString("name"+i,""));
+                btactivity.setText(activity);
+                btacc.setText("Accuracy: "+userdata.getString("acc"+i,"")+"m ");
+                btdate.setText(userdata.getString("date"+i,""));
+                bttime.setText(userdata.getString("time"+i,""));
+                if(i.equals("ME")&&activity.equals(""))
+                {
+                    CircleImageView img=(CircleImageView)findViewById(R.id.imageView2);
+                    String sFolder= Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/DisplayPic/currentDP.jpg";
+                    File f=new File(sFolder);
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f));
+                        img.setImageBitmap(bitmap);
+                    } catch (FileNotFoundException e) {
+                        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+                        img.setImageBitmap(icon);
+                        e.printStackTrace();
+                    }
+                    mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+                    btname.setText("IT'S ME");
+                    btactivity.setText(userdata.getString("activity",""));
+                    btdate.setText(userdata.getString("date",""));
+                    bttime.setText(userdata.getString("time",""));
+                    btacc.setText("Accuracy: "+userdata.getString("acc","")+" m");
+                }
+                return true;
+            }
+
+            //   mapFragment.getMapAsync(this);
+        });*/
 
     }
 
@@ -1120,5 +1281,81 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         return false;
+    }
+    void marekerSetter(String gp_members,int gp_mem_num)
+    {
+        SharedPreferences userdetails=getSharedPreferences("UserDetails",MODE_PRIVATE);
+        if(gp_members.equals("-1"))
+        {
+            gp_members=userdetails.getString("Meek_Friends","");
+            gp_mem_num=userdetails.getInt("Meek_number",0);
+        }
+        if(mMap==null)
+            return;
+        mMap.clear();
+        LatLng myplace = new LatLng(Double.parseDouble(userdetails.getString("lat","")),Double.parseDouble(userdetails.getString("lng","")));
+        View mrkeruser = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
+        CircleImageView fdpuser = (CircleImageView)mrkeruser.findViewById(R.id.imageView1);
+        String sFolderuser = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/DisplayPic/currentDP.jpg";
+        File fuser=new File(sFolderuser);
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(fuser));
+            fdpuser.setImageBitmap(bitmap);
+        } catch (FileNotFoundException e) {
+            Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+            fdpuser.setImageBitmap(icon);
+            e.printStackTrace();
+        }
+        MarkerOptions myops=new MarkerOptions().title("ME").position(myplace).snippet("").icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(this, mrkeruser)));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myplace,10));
+        mMap.addMarker(myops);
+        for (int i = 0; i < gp_mem_num; ++i) {
+            {
+                gp_members=gp_members.substring(1);
+                int pos=gp_members.indexOf(':');
+                String m_all_uid=gp_members.substring(0,pos);
+                String uid=gp_members.substring(pos);
+                LatLng ll = new LatLng(Double.parseDouble(userdetails.getString("Meeked_user_lat"+uid, "")), Double.parseDouble(userdetails.getString("Meeked_user_lat"+uid, "")));
+                View mrker = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
+                CircleImageView rdp=(CircleImageView) mrker.findViewById(R.id.imageView1);
+                String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/Friends/"+userdetails.getString("Meeked_user_dpno"+uid,"")+".jpg";
+                File f=new File(sFolder);
+                try
+                {
+                   Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f));
+                   rdp.setImageBitmap(bitmap);
+                }
+                catch (FileNotFoundException e)
+                {
+                        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+                        rdp.setImageBitmap(icon);
+                        e.printStackTrace();
+                }
+                    MarkerOptions options = new MarkerOptions().title(uid).position(ll).snippet(userdetails.getString("Meeked_user_activity"+uid, "")).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(this, mrker)));
+                    mMap.addMarker(options);
+
+            }
+        }
+
+        //     CameraUpdate update=CameraUpdateFactory.newLatLng(ll);
+        //     mMap.moveCamera(CameraUpdateFactory.newLatLng(ll));
+        //      Toast.makeText(this, "goo daa  "+nums, Toast.LENGTH_LONG).show();
+//
+    }
+
+    // Convert a view to bitmap
+    public static Bitmap createDrawableFromView(Context context, View view) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        view.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+        view.measure(displayMetrics.widthPixels, displayMetrics.heightPixels);
+        view.layout(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels);
+        view.buildDrawingCache();
+        Bitmap bitmap = Bitmap.createBitmap(view.getMeasuredWidth(), view.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(bitmap);
+        view.draw(canvas);
+
+        return bitmap;
     }
 }

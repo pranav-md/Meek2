@@ -122,21 +122,11 @@ public class ContactsListFrag extends Fragment {
                 String uid=uids.substring(0,pos);
                 uids=uids.substring(pos);
                 meekcontacts[i].setTheValues(uid,pref.getString("Meeked_user_name"+uid,""),
-                        pref.getString("Meeked_user_dpno"+uid,""),
-                        pref.getString("Meeked_user_name"+uid,""),
-                        pref.getString("Meeked_user_activity"+uid,""));
+                        pref.getString("Meeked_user_dpno"+uid,""));
             }
-            ListView meek_list=(ListView)view.findViewById(R.id.meek_list);
-            meek_list.setAdapter(new MeekFriendsAdapter(meekFriends,context));
-            meek_list.setOnItemClickListener(new AdapterView.OnItemClickListener()
-            {
-                @Override
-                public void onItemClick(AdapterView<?> adapter, View v, int position,
-                                        long arg3)
-                {
-                    ///bottom sheet loader
-                }
-            });
+            ListView meek_list=(ListView)view.findViewById(R.id.contacts_list);
+            meek_list.setAdapter(new MeekFriendsAdapter(meekcontacts,context));
+
         }
     }
 }

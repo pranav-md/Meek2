@@ -6,12 +6,19 @@ package com.meek;
 
 public class AdaptHelper {
     String name,uid,dpno,phno,activity;
+
     void setTheValues(String uid,String name,String dpno,String phno)
     {
         this.uid=uid;
         this.name=name;
         this.dpno=dpno;
         this.phno=phno;
+    }
+    void setTheValues(String uid,String name,String dpno)
+    {
+        this.uid=uid;
+        this.name=name;
+        this.dpno=dpno;
     }
     void setTheValues(String uid,String name,String dpno,String phno,String activity)
     {

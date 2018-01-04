@@ -9,8 +9,23 @@
         android:id="@+id/textView8"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stealth"
+        android:text=" Stealth mode"
         android:textAlignment="center"
-        android:textSize="25sp"
+        android:textSize="30sp"
         android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/select_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/black"
+        android:text="      Select all"
+        android:textAlignment="textStart"
+        android:textColor="@android:color/white"
+        android:textSize="17sp" />
+
+    <ListView
+        android:id="@+id/stealth_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </LinearLayout>

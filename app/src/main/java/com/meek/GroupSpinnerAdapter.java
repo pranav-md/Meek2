@@ -1,12 +1,19 @@
 package com.meek;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -16,18 +23,16 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class GroupSpinnerAdapter extends BaseAdapter {
     Context context;
-    int flags[];
-    String[] countryNames;
+    AdaptHelper[] gp_ids=new AdaptHelper[50];
     LayoutInflater inflter;
-    public GroupSpinnerAdapter(Context applicationContext, int[] flags, String[] countryNames) {
+    public GroupSpinnerAdapter(Context applicationContext,AdaptHelper[] grps)
+    {
         this.context = applicationContext;
-        this.flags = flags;
-        this.countryNames = countryNames;
-        inflter = (LayoutInflater.from(applicationContext));
+        this.gp_ids=grps;
     }
     @Override
     public int getCount() {
-        return flags.length;
+        return gp_ids.length;
     }
 
     @Override
@@ -45,8 +50,17 @@ public class GroupSpinnerAdapter extends BaseAdapter {
         view=inflter.inflate(R.layout.group_spinner,null);
         CircleImageView icon = (CircleImageView) view.findViewById(R.id.grp_dp);
         TextView names = (TextView) view.findViewById(R.id.grp_name);
-        icon.setImageResource(flags[position]);
-        names.setText(countryNames[position]);
+        view.setTag(gp_ids[position].uid);
+        String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/Groups/" +gp_ids[position].dpno+ ".jpg";
+        File f = new File(sFolder);
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f));
+            icon.setImageBitmap(bitmap);
+        } catch (FileNotFoundException e) {
+            icon.setImageResource(R.drawable.defaultdp);
+            e.printStackTrace();
+        }
+        names.setText(gp_ids[position].name);
         return view;
     }
 }

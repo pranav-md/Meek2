@@ -373,61 +373,36 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                             final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
                             final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference();
 
-                            Query userPhonenum=rootRef.child("Users").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
-                            userPhonenum.addListenerForSingleValueEvent(new ValueEventListener() {
+                            Query userPhonenum=rootRef.child("P_NUM").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
+                            final DatabaseReference userRef = database.getReference("P_NUM");
+                            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
-                                        if(dataSnapshot.exists()) {
-                                            //dataSnapshot=dataSnapshot.child("Users");
-                                            //String uid= dataSnapshot.getKey();
-                                            for(DataSnapshot ds : dataSnapshot.getChildren()) {
-                                                final String uid = ds.getKey();
-                                                Toast.makeText(AuthenticationActivity.this,"key:"+uid,Toast.LENGTH_LONG).show();
-                                                Query query = usersRef.child("Users").child(uid).child("Phone_no").equalTo(String.valueOf(pnum));
-                                                query.addListenerForSingleValueEvent(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(DataSnapshot dataSnapshot) {
-                                                        SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
-                                                        SharedPreferences.Editor uidpref=pref.edit();
-                                                        uidpref.putString("uid", uid);
-                                                        uidpref.commit();
-                                                        Toast.makeText(AuthenticationActivity.this,"already exist  "+uid,Toast.LENGTH_LONG).show();
-                                                    }
-
-                                                    @Override
-                                                    public void onCancelled(DatabaseError databaseError) {
-
-                                                    }
-                                                });
-                                            }
-                                                    //child("User_no").getValue(String.class);
-
+                                    boolean flg=false;
+                                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                                        final String uid = ds.getKey();
+                                        if (ds.child(uid).child("Phone_no").getValue().toString().contains(String.valueOf(pnum)) || ds.child(uid).child("Phone_no").getValue().toString().equals(String.valueOf(pnum))) {
+                                            flg=true;
+                                            SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                            SharedPreferences.Editor uidpref=pref.edit();
+                                            uidpref.putString("uid", uid);
+                                            uidpref.commit();
+                                            Toast.makeText(AuthenticationActivity.this,"already exist  "+uid,Toast.LENGTH_LONG).show();
                                         }
-                                        else
-                                        {
-                                            Toast.makeText(AuthenticationActivity.this,"new dude",Toast.LENGTH_LONG).show();
-                                            final long[] num = new long[1];
-                                            FirebaseDatabase database = FirebaseDatabase.getInstance();
-                                            final DatabaseReference userRef = database.getReference("Users");
-                                            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                                    num[0] =dataSnapshot.getChildrenCount()+1;
-                                                    userRef.child(num[0] +"").child("User_no").setValue(num[0]);
-                                                    userRef.child(num[0] +"").child("Phone_no").setValue(pnum.toString());
-                                                    SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-                                                    SharedPreferences.Editor uidpref=pref.edit();
-                                                    uidpref.putString("uid", num[0]+"");
-                                                    uidpref.commit();
-                                                }
+                                    }
+                                    if(flg==false)
+                                    {
+                                        long u_num =dataSnapshot.getChildrenCount()+1;
+                                        userRef.child("P_NUM").child(u_num+"").child("Phone_no").setValue(String.valueOf(pnum));
+                                        userRef.child("P_NUM").child(u_num+"").child("User_no").setValue(u_num+"");
+                                        userRef.child("Users").child(u_num+"").child("Phone_no").setValue(String.valueOf(pnum));
+                                        userRef.child("Users").child(u_num+"").child("User_no").setValue(u_num+"");
+                                        SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                                        SharedPreferences.Editor uidpref=pref.edit();
+                                        uidpref.putString("uid", u_num+"");
+                                        uidpref.commit();
+                                    }
 
-                                                @Override
-                                                public void onCancelled(DatabaseError databaseError) {
-
-                                                }
-                                            });
-
-                                        }
                                 }
 
                                 @Override
@@ -435,7 +410,6 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
 
                                 }
                             });
-                            ///////////
 
                          //   final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
                        /*     final DatabaseReference userphnoRef = rootRef.child("Users").child("Phone_no");
