@@ -73,10 +73,11 @@ public class MeekFriendsAdapter extends BaseAdapter {
         Button okay,cancel;
     }
     @Override
-    public View getView(final int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View rowView, ViewGroup parent) {
         // TODO Auto-generated method stub
         MeekFriendsAdapter.Holder holder = new MeekFriendsAdapter.Holder();
-        final View rowView;
+        //View rowView;
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         rowView = inflater.inflate(R.layout.meek_list, null);
         holder.imgview = (CircleImageView) rowView.findViewById(R.id.meek_dp);
         holder.textView = (TextView) rowView.findViewById(R.id.meek_name);

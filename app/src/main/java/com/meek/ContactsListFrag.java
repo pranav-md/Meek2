@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -20,18 +21,30 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by User on 25-Dec-17.
  */
 
+@SuppressLint("ValidFragment")
 public class ContactsListFrag extends Fragment {
         View view;
         Context context;
-      @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        this.view=inflater.inflate(R.layout.contacts_tab,container,false);
+        @SuppressLint("ValidFragment")
+        ContactsListFrag(Context context)
+        {
+            this.context=context;
+        }
+        ContactsListFrag()
+        {
 
+        }
+      @Override
+      public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState)
+      {
+        this.view=inflater.inflate(R.layout.contacts_tab,container,false);
+        requestSetter();
+        meekFriendsSetter();
+        contactPeopleSetter();
         return view;
-    }
-    void requestSetter(Context context)
+      }
+    void requestSetter()
     {
-        this.context=context;
         TextView req_tv=(TextView)view.findViewById(R.id.request_tv);
         AdaptHelper[] requestedPeople=new AdaptHelper[150];
         SharedPreferences pref = context.getSharedPreferences("UserDetails", MODE_PRIVATE);
@@ -80,6 +93,7 @@ public class ContactsListFrag extends Fragment {
         {
             for(int i=0;i<meek_number;++i)
             {
+                meekFriends[i]=new AdaptHelper();
                 uids=uids.substring(1);
                 int pos=uids.indexOf(':');
                 String uid=uids.substring(0,pos);
@@ -117,6 +131,7 @@ public class ContactsListFrag extends Fragment {
         {
             for(int i=0;i<num_non_meek;++i)
             {
+                meekcontacts[i]=new AdaptHelper();
                 uids=uids.substring(1);
                 int pos=uids.indexOf(':');
                 String uid=uids.substring(0,pos);

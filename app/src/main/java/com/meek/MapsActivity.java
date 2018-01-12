@@ -9,10 +9,16 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.app.FragmentTransaction;
 import android.content.Intent;
 import android.support.v4.app.FragmentManager;
@@ -22,6 +28,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.Animation;
@@ -29,15 +36,28 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -47,10 +67,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.google.maps.android.clustering.ClusterItem;
+import com.google.maps.android.clustering.ClusterManager;
 import com.soundcloud.android.crop.Crop;
 
 import java.io.BufferedOutputStream;
@@ -61,27 +84,41 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 
+import javax.microedition.khronos.opengles.GL;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import static android.content.ContentValues.TAG;
 import static android.widget.Toast.LENGTH_LONG;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,AdapterView.OnItemSelectedListener, AdapterView.OnItemLongClickListener {
 
-    private GoogleMap mMap;
+    GoogleMap mMap;
     MapStyleOptions style;
     String date,time,uid;
     ProfileSet profileSet;
     FragmentManager fragmentManager;
     boolean visible=false;
+    boolean bs_prof=true;
+    boolean bs_on_off=false;
     boolean prob_vis=true;
+    BottomSheetBehavior<View> mBottomSheetBehavior1;
+    String current_gp="-1";
+    FloatingActionButton fab_btn;
+    ArrayList<Marker> addedMarkers=new ArrayList<Marker>();
+    ArrayList<String> enteredPersons= new ArrayList<String>();
+
 
 
     @Override
@@ -96,7 +133,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         startService(new Intent(getBaseContext(), LocationService.class));
-
+        fab_btn = (FloatingActionButton) findViewById(R.id.gps_home);
         mapFragment.getMapAsync(this);
         try {
             styleMap();
@@ -105,10 +142,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
         groupSpinnerSetter();
+        myLocationUpdate();
     }
     private void dataUpdater()
     {
         final String[] meekusers = new String[1];
+        Log.d(TAG, "dataupdater"+uid);
 
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference ref = database.getReference();
@@ -143,51 +182,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
-
-        ref=ref.child("Users").child(uid).child("meeked_users");
-        ref.addChildEventListener(new ChildEventListener() {
+        DatabaseReference mref = database.getReference();
+        mref=mref.child("Users");
+        mref.child(uid).child("meeked_users").addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s)
+            public void onDataChange(DataSnapshot dataSnapshot)
             {
+                Log.d(TAG, "num children="+dataSnapshot.getChildrenCount());
                 meekusers[0] = (String) dataSnapshot.getValue();
                 meekUpdater(dataSnapshot);
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s)
-            {
-                meekUpdater(dataSnapshot);
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-        SharedPreferences pref = getApplicationContext().getSharedPreferences("Full Meek Contacts", MODE_PRIVATE);
-        String con_all_meek=pref.getString("uids","");
-        SharedPreferences userpref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-        SharedPreferences.Editor non_meek=userpref.edit();
-        non_meek.putString("Non_meeked_users",":");
-        int num_all_meek=0;
-        for( int i=0; i<con_all_meek.length(); i++ ) {
-            if (con_all_meek.charAt(i) == ':') {
-                num_all_meek++;
-            }
-        }
-        --num_all_meek;
+                SharedPreferences pref = getApplicationContext().getSharedPreferences("Full Meek Contacts", MODE_PRIVATE);
+                String con_all_meek=pref.getString("uids","");
+                SharedPreferences userpref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                SharedPreferences.Editor non_meek=userpref.edit();
+                non_meek.putString("Non_meeked_users",":");
+                int num_all_meek=0;
+                for( int i=0; i<con_all_meek.length(); i++ ) {
+                    if (con_all_meek.charAt(i) == ':') {
+                        num_all_meek++;
+                    }
+                }
+                --num_all_meek;
 
         int num_meek=0;
         for( int i=0; i<meekusers[0].length(); i++ ) {
@@ -196,22 +211,54 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         --num_meek;
-        int num_non_meek=0;
-        for(int i=0;i<num_all_meek;++i)
-        {
-            con_all_meek=con_all_meek.substring(1);
-            int pos=con_all_meek.indexOf(':');
-            String m_all_uid=con_all_meek.substring(0,pos);
-            con_all_meek=con_all_meek.substring(pos);
-            if(!meekusers[0].contains(m_all_uid))
-            {
-                num_non_meek++;
-                non_meek.putString("Non_meeked_users",userpref.getString("Non_meeked_users",":")+m_all_uid+":");
-                non_meek.commit();
+                Log.d(TAG, "num meeek="+num_meek);
+                int num_non_meek=0;
+                for(int i=0;i<num_all_meek;++i)
+                {
+                    con_all_meek=con_all_meek.substring(1);
+                    int pos=con_all_meek.indexOf(':');
+                    String m_all_uid=con_all_meek.substring(0,pos);
+                    con_all_meek=con_all_meek.substring(pos);
+                    if(!meekusers[0].contains(m_all_uid))
+                    {
+                        num_non_meek++;
+                        non_meek.putString("Non_meeked_users",userpref.getString("Non_meeked_users",":")+m_all_uid+":");
+                        non_meek.commit();
+                    }
+                    non_meek.putInt("Num_non_meek",num_non_meek);
+                    non_meek.commit();
+                }
             }
-            non_meek.putInt("Num_non_meek",num_non_meek);
-            non_meek.commit();
-        }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+
+    }
+    void myLocationUpdate()
+    {
+        DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
+        db_ref=db_ref.child("Users").child(uid);
+        db_ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                SharedPreferences mypref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                SharedPreferences.Editor editor=mypref.edit();
+                editor.putString("lat", dataSnapshot.child("lat").getValue().toString());
+                editor.putString("lng",dataSnapshot.child("lng").getValue().toString());
+                editor.putString("acc",dataSnapshot.child("acc").getValue().toString());
+                editor.putString("date_time", dataSnapshot.child("date_time").getValue().toString());
+                editor.putString("date_time", dataSnapshot.child("Address").getValue().toString());
+                editor.commit();
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
     void meekUpdater(DataSnapshot ds)
     {
@@ -225,9 +272,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         numMeek--;
+        Log.d(TAG, meek_uid+" num meeek   "+numMeek);
+
         meekpref.putString("Meek_Friends", meek_uid);
         meekpref.putInt("Meek_number", numMeek);
         meekpref.commit();
+        final int num_meek=numMeek;
+        int j = 0;
         for (int i=0;i<numMeek;++i)
         {
             meek_uid=meek_uid.substring(1);
@@ -236,28 +287,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             meek_uid=meek_uid.substring(pos);
             DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
             db_ref=db_ref.child("Users").child(m_uid);
-            db_ref.addChildEventListener(new ChildEventListener() {
+            db_ref.addValueEventListener(new ValueEventListener() {
                 @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                public void onDataChange(DataSnapshot dataSnapshot) {
                     SharedPreferences meeked = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                     SharedPreferences contacts = getSharedPreferences("Phone Contacts", MODE_PRIVATE);
                     SharedPreferences.Editor meekdpref=meeked.edit();
+                    Log.d(TAG, "the latitude of "+dataSnapshot.child("User_no").getValue().toString()+" is "+dataSnapshot.child("lat").getValue().toString());
 
                     meekdpref.putString("Meeked_user_name"+dataSnapshot.child("User_no").getValue(),contacts.getString((String) dataSnapshot.child("Phone no").getValue(),""));
-                    meekdpref.putString("Meeked_user_lat"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("lat").getValue(String.class));
-                    meekdpref.putString("Meeked_user_lng"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("lng").getValue(String.class));
-                    meekdpref.putString("Meeked_user_acc"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("acc").getValue(String.class));
+                    meekdpref.putString("Meeked_user_lat"+dataSnapshot.child("User_no").getValue(),""+dataSnapshot.child("lat").getValue().toString());
+                    meekdpref.putString("Meeked_user_lng"+dataSnapshot.child("User_no").getValue(),""+dataSnapshot.child("lng").getValue().toString());
+                    meekdpref.putString("Meeked_user_acc"+dataSnapshot.child("User_no").getValue(),""+dataSnapshot.child("acc").getValue().toString());
                     meekdpref.putString("Meeked_user_activity"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("activity").getValue(String.class));
-                    meekdpref.putString("Meeked_user_dpno"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("dpno").getValue(String.class));
+                    meekdpref.putString("Meeked_user_dpno"+dataSnapshot.child("User_no").getValue(),""+dataSnapshot.child("dpno").getValue().toString());
                     meekdpref.putString("Meeked_user_address"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("address").getValue(String.class));
-                    meekdpref.putString("Meeked_user_time"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("time").getValue(String.class));
-                    meekdpref.putString("Meeked_user_date"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("date").getValue(String.class));
+                    meekdpref.putString("Meeked_user_date_time"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("date_time").getValue(String.class));
+                   // meekdpref.putString("Meeked_user_date"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("date").getValue(String.class));
                     meekdpref.putString("Meeked_user_address"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("Address").getValue(String.class));
                     meekdpref.commit();
+                    markerSetter(dataSnapshot.child("User_no").getValue().toString());
                 }
 
-                @Override
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+             /*   @Override
+                public void onChildChanged(DataSnapshot dataSnapshot) {
                     SharedPreferences req = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                     SharedPreferences contacts = getSharedPreferences("Phone Contacts", MODE_PRIVATE);
                     SharedPreferences.Editor reqpref=req.edit();
@@ -265,19 +318,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     reqpref.putString("Request_phone_no"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("Phone_no").getValue(String.class));
                     reqpref.putString("Request_dpno"+dataSnapshot.child("User_no").getValue(),dataSnapshot.child("dpno").getValue(String.class));
                     reqpref.commit();
-                }
+                }*/
 
-                @Override
-                public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-                }
-
-                @Override
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-                }
-
-                @Override
+               @Override
                 public void onCancelled(DatabaseError databaseError) {
 
                 }
@@ -815,92 +858,153 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        fab_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                if(bs_on_off==true)
+                {
+                    ///animation thing
+
+                }
+                else if(bs_on_off==false)
+                {
+
+                    ///gps camera move
+                    myLocationUpdate();
+                    SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+                    String lat=pref.getString("lat","");
+                    String lng=pref.getString("lng","");
+                    Toast.makeText(MapsActivity.this,"pressed gps  "+lat,LENGTH_LONG).show();
+                    LatLng ll=new LatLng(Double.parseDouble(lat),Double.parseDouble(lng));
+                    CameraUpdate location=CameraUpdateFactory.newLatLngZoom(ll,15);
+                    mMap.animateCamera(location);
+
+                }
+            }
+        });
         googleMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
 
             @SuppressLint("ResourceType")
             @Override
             public void onMapLongClick(LatLng arg0) {
-                if(!visible)
-                {
+                //markerSetter();
+
+                if (!visible) {
                     SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
-                    uid=pref.getString("uid", "");
-                   visible=true;
-                   if(prob_vis)
-                   {
-                       fragmentManager = getSupportFragmentManager();
-                       FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
+                    uid = pref.getString("uid", "");
+                    visible = true;
+                    if (prob_vis) {
+                        fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
 
-                       profileSet = new ProfileSet();  //your fragment
-                       // work here to add, remove, etc
-                       fragmentTransaction.add(R.id.frag_layout, profileSet);
-                       fragmentTransaction.commit();
-                       profileSet.setActivity(uid);
+                        profileSet = new ProfileSet();  //your fragment
+                        // work here to add, remove, etc
+                        fragmentTransaction.add(R.id.frag_layout, profileSet);
+                        fragmentTransaction.commit();
+                        profileSet.setActivity(uid);
 
-                   }
-                   else
-                   {
-                       fragmentManager = getSupportFragmentManager();
-                       FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
+                    } else {
+                        fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().addToBackStack("Profile frag").setCustomAnimations(R.animator.leftright, R.animator.rightleft);
 
-                       ContactsBox contactsBox = new ContactsBox();  //your fragment
+                        ContactsBox contactsBox = new ContactsBox(MapsActivity.this);  //your fragment
 
-                       // work here to add, remove, etc
-                       fragmentTransaction.add(R.id.frag_layout, contactsBox);
-                       fragmentTransaction.commit();
-                   }
-                    View view=findViewById(R.id.buttonview);
+                        // work here to add, remove, etc
+                        fragmentTransaction.add(R.id.frag_layout, contactsBox);
+                        fragmentTransaction.commit();
+                    }
+                    View view = findViewById(R.id.buttonview);
                     view.setVisibility(View.VISIBLE);
-                    Animation anmtn =  AnimationUtils.loadAnimation(getApplicationContext(), R.animator.rightleft_button);
+                    Animation anmtn = AnimationUtils.loadAnimation(getApplicationContext(), R.animator.rightleft_button);
                     view.setAnimation(anmtn);
-                    FloatingActionButton flip_change=(FloatingActionButton)findViewById(R.id.send_fab);
-                    flip_change.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
-                                                   {
-                                                       prob_vis=!prob_vis;
-                                                       if(!prob_vis) {
-                                                           getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
-                                                                   .replace(R.id.frag_layout, new ContactsBox())
-                                                                   .commit();
+                    FloatingActionButton flip_change = (FloatingActionButton) findViewById(R.id.send_fab);
+
+                    flip_change.setOnClickListener(new View.OnClickListener() {
+                                                       public void onClick(View v) {
+                                                           prob_vis = !prob_vis;
+                                                           if (!prob_vis) {
+                                                               getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
+                                                                       .replace(R.id.frag_layout, new ContactsBox(MapsActivity.this))
+                                                                       .commit();
+                                                           } else {
+                                                               getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
+                                                                       .replace(R.id.frag_layout, profileSet)
+                                                                       .commit();
+
+
+                                                           }
                                                        }
-                                                       else{
-                                                           getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
-                                                                   .replace(R.id.frag_layout, profileSet)
-                                                                   .commit();
-
-
-                                                       }
-                      }}
+                                                   }
                     );
-                    FloatingActionButton dp_change=(FloatingActionButton)findViewById(R.id.fabb2);
-                    dp_change.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
-                                                   {
-                                                       Crop.pickImage(MapsActivity.this);
-                                                   }}
+                    FloatingActionButton dp_change = (FloatingActionButton) findViewById(R.id.fabb2);
+                    dp_change.setOnClickListener(new View.OnClickListener() {
+                                                     public void onClick(View v) {
+                                                         Crop.pickImage(MapsActivity.this);
+                                                     }
+                                                 }
                     );
-                    FloatingActionButton exit_tick=(FloatingActionButton)findViewById(R.id.fabb3);
-                    exit_tick.setOnClickListener(new View.OnClickListener() {public void onClick(View v)
-                                                 {
-                                                     FragmentManager manager = getSupportFragmentManager();
-                                                     FragmentTransaction ft = manager.beginTransaction();
-                                                     ft.setCustomAnimations(R.animator.rightleft,R.animator.leftright);
-                                                     ft.remove(profileSet);
-                                                     ft.commit();
-                                                     View view=findViewById(R.id.buttonview);
-                                                     view.setVisibility(View.INVISIBLE);
-                                                     Animation anmtn =  AnimationUtils.loadAnimation(getApplicationContext(), R.animator.leftright_button);
-                                                     view.setAnimation(anmtn);
-                                                     visible=false;
-                                                     profileSet.saveActivity(uid);
+                    FloatingActionButton exit_tick = (FloatingActionButton) findViewById(R.id.fabb3);
+                    exit_tick.setOnClickListener(new View.OnClickListener() {
+                                                     public void onClick(View v) {
+                                                         FragmentManager manager = getSupportFragmentManager();
+                                                         FragmentTransaction ft = manager.beginTransaction();
+                                                         ft.setCustomAnimations(R.animator.rightleft, R.animator.leftright);
+                                                         ft.remove(profileSet);
+                                                         ft.commit();
+                                                         View view = findViewById(R.id.buttonview);
+                                                         view.setVisibility(View.INVISIBLE);
+                                                         Animation anmtn = AnimationUtils.loadAnimation(getApplicationContext(), R.animator.leftright_button);
+                                                         view.setAnimation(anmtn);
+                                                         visible = false;
+                                                         profileSet.saveActivity(uid);
 
 
-                                                 }}
+                                                     }
+                                                 }
                     );
-                    Toast.makeText(MapsActivity.this,"LOng pressed",LENGTH_LONG).show();
+                    Toast.makeText(MapsActivity.this, "LOng pressed", LENGTH_LONG).show();
                 }
-            }});
+            }
+        });
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+       // mClusterManager = new ClusterManager<Person>(this, mMap);
+        dataUpdater();
+        final View bottomSheet = findViewById(R.id.btm_sheet);
+        mBottomSheetBehavior1 = BottomSheetBehavior.from(bottomSheet);
+        mBottomSheetBehavior1.setPeekHeight(0);
+        mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        mBottomSheetBehavior1.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(View bottomSheet, int newState) {
+                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                    mBottomSheetBehavior1.setPeekHeight(0);
+                    Drawable drawable = getResources().getDrawable(R.drawable.gps_home);
+                    fab_btn.setImageDrawable(drawable);
+                    bs_on_off=false;
+                }
+            }
+
+            @Override
+            public void onSlide(View bottomSheet, float slideOffset) {
+
+            }
+        });
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if(bs_prof==true)
+                {
+                    showProfileBottomSheet(marker);
+                    Drawable drawable = getResources().getDrawable(R.drawable.quotes);
+                    fab_btn.setImageDrawable(drawable);
+                    bs_on_off=true;
+                }
+
+            return true;
+            }
+        });
     }
     ///////////dp change codes
     @Override
@@ -934,11 +1038,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Uri selectedImage=getImageContentUri(getApplicationContext(),myFile);
             String path = getPath(selectedImage);
 
-            SharedPreferences dpdata = getSharedPreferences("User data", MODE_PRIVATE);
-            SharedPreferences.Editor editor = dpdata.edit();
-            editor.putString("dp","1");
-            editor.commit();
-            String filename=uid+"_dp";
 
 
             ///////Uploading code
@@ -1174,6 +1273,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         editor.putString("Group_name"+gp_no,gp_name);
                         editor.putString("Group_members"+gp_no,gp_members);
                         editor.putString("Group_dpcode"+gp_no,gp_dpcode);
+                        int num_gp_mems=0;
+                        for (int i = 0; i < gp_members.length(); i++) {
+                            if (gp_members.charAt(i) == ':')
+                            {
+                                num_gp_mems++;
+                            }
+                        }
+                        --num_gp_mems;
+                        editor.putInt("Group_num_mems"+gp_no,num_gp_mems);
                         editor.commit();
                         gps[position].uid=gp_no;
                         gps[position].name=gp_name;
@@ -1204,8 +1312,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SharedPreferences grp_pref=getSharedPreferences("Groups",MODE_PRIVATE);
         String gp_members=grp_pref.getString("Group_members"+gp_id,"");
         int num_membrs=grp_pref.getInt("Num_groups",0);
-        marekerSetter(gp_members,num_membrs);
-       /* mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+
+        for (int i=0;i<num_membrs;++i)
+        {
+            gp_members = gp_members.substring(1);
+            int pos = gp_members.indexOf(':');
+            String mem_uid = gp_members.substring(0, pos);
+            gp_members = gp_members.substring(pos);
+            markerSetter(mem_uid);
+        }
+        /* mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
 
             @Override
             public boolean onMarkerClick(Marker marker) {
@@ -1282,18 +1398,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         return false;
     }
-    void marekerSetter(String gp_members,int gp_mem_num)
+    void markerSetter(final String p_uid)
     {
-        SharedPreferences userdetails=getSharedPreferences("UserDetails",MODE_PRIVATE);
-        if(gp_members.equals("-1"))
+        String gp_members;
+        int gp_mem_num;
+        final SharedPreferences userdetails=getSharedPreferences("UserDetails",MODE_PRIVATE);
+        final SharedPreferences.Editor urisetter=userdetails.edit();
+        if(!(current_gp.equals("-1")||userdetails.getString("Group_members"+current_gp,"").contains(uid)))
         {
-            gp_members=userdetails.getString("Meek_Friends","");
-            gp_mem_num=userdetails.getInt("Meek_number",0);
+            return;
         }
         if(mMap==null)
             return;
-        mMap.clear();
-        LatLng myplace = new LatLng(Double.parseDouble(userdetails.getString("lat","")),Double.parseDouble(userdetails.getString("lng","")));
+        final Uri[] dpuri = new Uri[1];
+       // mMap.clear();
+/*        LatLng myplace = new LatLng(Double.parseDouble(userdetails.getString("lat","")),Double.parseDouble(userdetails.getString("lng","")));
         View mrkeruser = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
         CircleImageView fdpuser = (CircleImageView)mrkeruser.findViewById(R.id.imageView1);
         String sFolderuser = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/DisplayPic/currentDP.jpg";
@@ -1308,34 +1427,80 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         MarkerOptions myops=new MarkerOptions().title("ME").position(myplace).snippet("").icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(this, mrkeruser)));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myplace,10));
-        mMap.addMarker(myops);
-        for (int i = 0; i < gp_mem_num; ++i) {
-            {
-                gp_members=gp_members.substring(1);
-                int pos=gp_members.indexOf(':');
-                String m_all_uid=gp_members.substring(0,pos);
-                String uid=gp_members.substring(pos);
-                LatLng ll = new LatLng(Double.parseDouble(userdetails.getString("Meeked_user_lat"+uid, "")), Double.parseDouble(userdetails.getString("Meeked_user_lat"+uid, "")));
-                View mrker = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
-                CircleImageView rdp=(CircleImageView) mrker.findViewById(R.id.imageView1);
-                String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Meek/Friends/"+userdetails.getString("Meeked_user_dpno"+uid,"")+".jpg";
-                File f=new File(sFolder);
-                try
-                {
-                   Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f));
-                   rdp.setImageBitmap(bitmap);
-                }
-                catch (FileNotFoundException e)
-                {
-                        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
-                        rdp.setImageBitmap(icon);
-                        e.printStackTrace();
-                }
-                    MarkerOptions options = new MarkerOptions().title(uid).position(ll).snippet(userdetails.getString("Meeked_user_activity"+uid, "")).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(this, mrker)));
-                    mMap.addMarker(options);
+        mMap.addMarker(myops);*/
 
-            }
-        }
+                Log.d(TAG, "the marker user uid"+p_uid);
+                StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+                final LatLng ll = new LatLng(Double.parseDouble(userdetails.getString("Meeked_user_lat"+p_uid, "")), Double.parseDouble(userdetails.getString("Meeked_user_lng"+p_uid, "")));
+
+        try {
+            final File localFile = File.createTempFile("images", "jpg");
+            storageReference.child("Users DP/"+userdetails.getString("Meeked_user_dpno"+p_uid, "")+".jpg").getFile(localFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                    Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                    View mrker = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
+                    final CircleImageView rdp=(CircleImageView) mrker.findViewById(R.id.imageView1);
+                    rdp.setImageBitmap(bitmap);
+                    MarkerOptions options=new MarkerOptions().title(p_uid).snippet(userdetails.getString("Meeked_user_activity"+p_uid, "")).position(ll).snippet("").icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(MapsActivity.this, mrker)));
+                    boolean enterflg=false;
+                    ArrayList<Marker> tmp=new ArrayList<Marker>();
+                    tmp.addAll(addedMarkers);
+                    Marker remkr=null;
+                    for(Marker mkr:tmp)
+                    {
+                        if(mkr.getTitle().equals(p_uid))
+                        {
+                            Log.d(TAG,"the location change"+p_uid);
+                            enterflg=true;
+                            // mkr.remove();
+                            remkr=mkr;
+                            mkr.setVisible(false);
+                            Marker m=mMap.addMarker(options);
+                            addedMarkers.remove(mkr);
+                            addedMarkers.add(m);
+                        }
+                    }
+                    if(enterflg==false)
+                    {
+                        Marker m= mMap.addMarker(options);
+                        addedMarkers.add(m);
+                    }
+                    else
+                        remkr.remove();
+                    Log.d(TAG, p_uid+" lat="+Double.parseDouble(userdetails.getString("Meeked_user_lat"+p_uid, ""))+" lng="+Double.parseDouble(userdetails.getString("Meeked_user_lng"+p_uid, "")));
+
+
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                }
+            });
+        } catch (IOException e ) {}
+        //Glide.with(MapsActivity.this).
+                storageReference.child("Users DP/"+userdetails.getString("Meeked_user_dpno"+p_uid, "")+".jpg").getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>()
+                {
+                    @Override
+                    public void onSuccess(Uri uri)
+                    {
+                        Log.d(TAG, "the image uri"+uri);
+                        urisetter.putString("Meeked_user_uri"+p_uid,uri.toString());
+                        urisetter.commit();
+
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                 @Override
+                 public void onFailure(@NonNull Exception exception)
+                 {
+                     Log.d(TAG, "Something wrong with uri thing" );
+
+                 }
+                });
+
+
+
+
 
         //     CameraUpdate update=CameraUpdateFactory.newLatLng(ll);
         //     mMap.moveCamera(CameraUpdateFactory.newLatLng(ll));
@@ -1344,7 +1509,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // Convert a view to bitmap
-    public static Bitmap createDrawableFromView(Context context, View view) {
+    public Bitmap createDrawableFromView(Context context, View view) {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         view.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
@@ -1358,4 +1523,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         return bitmap;
     }
+    void showProfileBottomSheet(Marker marker) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(50);
+        String i = marker.getTitle();
+        String activity = marker.getSnippet();
+        View bottomSheet = findViewById(R.id.btm_sheet);
+        TextView btname = (TextView) bottomSheet.findViewById(R.id.bs_name);
+        //btname.setTypeface(bold_font);
+        TextView btactivity = (TextView) bottomSheet.findViewById(R.id.bs_activity);
+        //btactivity.setTypeface(light_font);
+        TextView btdate = (TextView) bottomSheet.findViewById(R.id.bs_time_date);
+        //btdate.setTypeface(light_font);
+        TextView bttime = (TextView) bottomSheet.findViewById(R.id.bs_address);
+        //bttime.setTypeface(light_font);
+        TextView btacc = (TextView) bottomSheet.findViewById(R.id.textView2);
+        //bttime.setTypeface(light_font);
+        SharedPreferences userdata = getSharedPreferences("UserDetails", MODE_PRIVATE);
+        CircleImageView imguser = (CircleImageView) bottomSheet.findViewById(R.id.imageView1);
+        Glide.with(this).load(userdata.getString("Meeked_user_uri"+i,"")).override(50,50).into(imguser);
+        String sFolderuser = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/Friends/" + userdata.getString("dpcode" + i, "") + ".jpg";
+      /*  File fuser = new File(sFolderuser);
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(fuser));
+            imguser.setImageBitmap(bitmap);
+        } catch (FileNotFoundException e) {
+            Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+            imguser.setImageBitmap(icon);
+            e.printStackTrace();
+        }*/
+        BottomSheetBehavior mBottomSheetBehavior1 = BottomSheetBehavior.from(bottomSheet);
+        mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+        btname.setText(userdata.getString("Meeked_user_name" + i, ""));
+        btactivity.setText(userdata.getString("Meeked_user_activity" + i, ""));
+      /*  Circle circle = mMap.addCircle(new CircleOptions()
+                .center(new LatLng(Double.parseDouble(userdata.getString("Meeked_user_lat" + i, "")), Double.parseDouble(userdata.getString("Meeked_user_lng" + i, ""))))
+                .radius(Float.parseFloat(userdata.getString("Meeked_user_acc" + i, "")))
+                .strokeColor(Color.RED)
+                .fillColor(Color.BLUE));*/
+        btdate.setText(userdata.getString("Meeked_user_date_time" + i, ""));
+        if (i.equals("ME") && activity.equals("")) {
+            CircleImageView img = (CircleImageView) bottomSheet.findViewById(R.id.imageView1);
+            String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic/currentDP.jpg";
+            File f = new File(sFolder);
+            try {
+                Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f));
+                img.setImageBitmap(bitmap);
+            } catch (FileNotFoundException e) {
+                Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.defaultdp);
+                img.setImageBitmap(icon);
+                e.printStackTrace();
+            }
+            mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+            btname.setText("IT'S ME");
+            btactivity.setText(userdata.getString("activity", ""));
+            btdate.setText(userdata.getString("date", ""));
+            bttime.setText(userdata.getString("time", ""));
+            btacc.setText("Accuracy: " + userdata.getString("acc", "") + " m");
+
+        }
+    }
 }
+
+

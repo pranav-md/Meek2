@@ -80,6 +80,7 @@ public class AllContactsAdapter extends BaseAdapter {
         // TODO Auto-generated method stub
         final AllContactsAdapter.Holder holder=new AllContactsAdapter.Holder();
         final View rowView;
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         rowView = inflater.inflate(R.layout.contacts_list, null);
         holder.imgview=(CircleImageView) rowView.findViewById(R.id.imageView1);
         holder.textView=(TextView)rowView.findViewById(R.id.textView6);

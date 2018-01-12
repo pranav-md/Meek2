@@ -33,8 +33,11 @@
         android:layout_marginBottom="15dp"
         android:layout_marginRight="15dp"
         android:background="@android:color/white"
+        android:clickable="true"
         app:backgroundTint="@android:color/white"
         app:elevation="6dp"
+        app:layout_anchor="@+id/btm_sheet"
+        app:layout_anchorGravity="top|end"
         app:pressedTranslationZ="12dp"
         app:srcCompat="@drawable/gps_home" />
 
@@ -97,7 +100,7 @@
                 android:textAlignment="center"
                 android:textAllCaps="false"
                 android:textStyle="bold" />
-            <include layout="@layout/btmsheet_profile" />
+
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fabb3"
                 android:layout_width="match_parent"
@@ -111,10 +114,25 @@
                 android:foreground="@drawable/tick"
                 app:backgroundTint="?android:attr/colorForeground"
                 app:elevation="6dp"
-                app:pressedTranslationZ="12dp"
-                app:layout_anchor="@+id/bottomsheet_profile"
-                app:layout_anchorGravity="top|end"/>
+                app:pressedTranslationZ="12dp" />
 
         </LinearLayout>
     </LinearLayout>
+
+    <android.support.v4.widget.NestedScrollView
+        android:id="@+id/btm_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="275dp"
+        android:background="@android:color/holo_blue_bright"
+        android:clipToPadding="true"
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+
+        <include
+            layout="@layout/btmsheet_profile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom">
+
+        </include>
+    </android.support.v4.widget.NestedScrollView>
 </android.support.design.widget.CoordinatorLayout>

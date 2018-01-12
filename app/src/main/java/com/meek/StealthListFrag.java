@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -29,9 +30,16 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by User on 25-Dec-17.
  */
 
+@SuppressLint("ValidFragment")
 public class StealthListFrag extends Fragment {
     View view;
     String uid;
+    Context context;
+    @SuppressLint("ValidFragment")
+    StealthListFrag(Context context)
+    {
+        this.context=context;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         this.view = inflater.inflate(R.layout.stealth_box, container, false);

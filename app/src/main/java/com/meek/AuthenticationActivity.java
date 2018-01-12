@@ -4,15 +4,23 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+//import android.database.Cursor;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -40,6 +48,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.concurrent.TimeUnit;
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by User on 19-Dec-17.
@@ -47,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
+    private  ProgressDialog progressBar;
     String[] countryNames={"Afghanistan 	+93",
             "Albania 	+355",
             "Algeria 	+213",
@@ -257,7 +267,8 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
     String mVerificationCode;
     Editable pnum;
     ProgressDialog pd;
-
+    boolean status=true;
+    private Handler progressBarbHandler = new Handler();
     private PhoneAuthProvider.ForceResendingToken mResendToken;
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
     boolean mVerificationInProgress;
@@ -314,6 +325,10 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
     public void onNothingSelected(AdapterView<?> parent) {
 
     }
+    boolean checkStatus()
+    {
+        return status;
+    }
     void verifyNumber(View v)
     {
         if (!validatePhoneNumber()) {
@@ -366,28 +381,64 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                             authview.setText("Authenciation success");
                             FirebaseUser user = task.getResult().getUser();
                             ////////
+                            progressBar = new ProgressDialog(AuthenticationActivity.this);
+                            progressBar.setCancelable(true);
+                            progressBar.setMessage("Please wait ...");
+                            progressBar.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                            progressBar.setProgress(0);
+                            progressBar.setMax(100);
+                            progressBar.show();
+                            new Thread(new Runnable() {
+                                public void run() {
+                                    boolean progress=true;
+                                    while (progress) {
+                                        progress = checkStatus();
+
+                                        try {
+                                            Thread.sleep(1000);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+
+                                        progressBarbHandler.post(new Runnable() {
+                                            public void run() {
+                                                progressBar.setProgress(20);
+                                            }
+                                        });
+                                    }
+                                }
+                            }).start();
+
                             ////////
+                            new AuthenticationActivity.Contact_BackGround().execute();
 
                             FirebaseDatabase database = FirebaseDatabase.getInstance();
                             //////////
                             final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
                             final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference();
 
-                            Query userPhonenum=rootRef.child("P_NUM").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
-                            final DatabaseReference userRef = database.getReference("P_NUM");
-                            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            //Query userPhonenum=rootRef.child("P_NUM").orderByChild("Phone_no").equalTo(String.valueOf(pnum));
+                            final DatabaseReference userRef = database.getReference();
+                            userRef.child("P_NUM").addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
                                     boolean flg=false;
                                     for (DataSnapshot ds : dataSnapshot.getChildren()) {
                                         final String uid = ds.getKey();
-                                        if (ds.child(uid).child("Phone_no").getValue().toString().contains(String.valueOf(pnum)) || ds.child(uid).child("Phone_no").getValue().toString().equals(String.valueOf(pnum))) {
+                                        Toast.makeText(AuthenticationActivity.this,"THE key ds="+uid,Toast.LENGTH_LONG).show();
+                                        if(ds.child("Phone_no").getValue()!=null)
+                                        if (ds.child("Phone_no").getValue().toString().contains(String.valueOf(pnum)) || ds.child("Phone_no").getValue().toString().equals(String.valueOf(pnum))) {
                                             flg=true;
                                             SharedPreferences pref = getSharedPreferences("UserDetails", MODE_PRIVATE);
                                             SharedPreferences.Editor uidpref=pref.edit();
                                             uidpref.putString("uid", uid);
                                             uidpref.commit();
                                             Toast.makeText(AuthenticationActivity.this,"already exist  "+uid,Toast.LENGTH_LONG).show();
+                                            status=false;
+                                            progressBar.dismiss();
+                                            startActivity(new Intent(AuthenticationActivity.this,MapsActivity.class));
+                                            finish();
+                                            break;
                                         }
                                     }
                                     if(flg==false)
@@ -401,6 +452,10 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                         SharedPreferences.Editor uidpref=pref.edit();
                                         uidpref.putString("uid", u_num+"");
                                         uidpref.commit();
+                                        progressBar.dismiss();
+                                        startActivity(new Intent(AuthenticationActivity.this,MapsActivity.class));
+                                        finish();
+                                        status=false;
                                     }
 
                                 }
@@ -481,8 +536,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                 }
                             });*/
                             // [START_EXCLUDE]
-                            startActivity(new Intent(AuthenticationActivity.this,MapsActivity.class));
-                            finish();
+
                         } else {
                             // Sign in failed, display a message and update the UI
                             authview.setText("Failed to authenciate");
@@ -518,4 +572,109 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
 
         return true;
     }
+    class Contact_BackGround extends AsyncTask<String, String, String> {
+        Cursor cursor1;
+        @Override
+        protected String doInBackground(String... params) {
+            final Contact[] contaact = new Contact[5000];
+            cursor1 = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
+            // startManagingCursor(cursor1);
+            Cursor ctmp=getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
+            Cursor cursor=getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC");
+
+            int i=0;
+            SharedPreferences contacts = getSharedPreferences("Phone Contacts", MODE_PRIVATE);
+            SharedPreferences.Editor coneditor = contacts.edit();
+            String text=new String();
+            while(cursor1.moveToNext())
+            {
+
+                String id = cursor1.getString(
+                        cursor1.getColumnIndex(ContactsContract.CommonDataKinds.Phone._ID));//(ContactsContract.Contacts._ID));
+                String name=cursor1.getString(cursor1.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));//(ContactsContract.Contacts.DISPLAY_NAME));
+                Cursor c1=getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null,
+                        ContactsContract.CommonDataKinds.Phone._ID +" = ?",
+                        new String[]{ id }, null);
+                while(c1.moveToNext())
+                {
+                    //  System.out.println(i);
+                    Log.d(TAG, String.valueOf(i));
+                    contaact[i]=new Contact();
+                    contaact[i].name=name;
+                    String phno=c1.getString(c1.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));contaact[i].phno = phno;
+                    phno=phno.replace("-","");
+                    phno=phno.replace(" ","");
+                    phno=phno.replace("-","");
+                    Log.d(TAG, phno);
+                    ++i;
+                }
+                // c1.close();
+            }
+            //cursor1.close();
+            SharedPreferences pref = getApplicationContext().getSharedPreferences("Full Meek Contacts", MODE_PRIVATE);
+            SharedPreferences.Editor con_pref = pref.edit();
+            con_pref.putString("uids", ":");
+            con_pref.commit();
+            for (int k = 0; k < i; ++k) {
+                for (int j = k; j < i; ++j) {
+                    if (contaact[k].phno == contaact[j].phno) {
+                        for (int l = j; l < i - 1; ++l) {
+                            contaact[l].name = contaact[l + 1].name;
+                            contaact[l].phno = contaact[l + 1].phno;
+                        }
+                        --i;
+                    }
+                }
+                coneditor.putString(contaact[k].phno, contaact[k].name);
+                coneditor.commit();
+                // text = text + contaact[k].phno + "\n";
+                // finish();
+                final String check_num = contaact[k].phno;
+                FirebaseDatabase database = FirebaseDatabase.getInstance();
+                final DatabaseReference userRef = database.getReference("P_NUM");
+                userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                            final String uid = ds.getKey();
+                            if (ds.child("Phone_no").getValue() != null)
+                                if (ds.child("Phone_no").getValue().toString().contains(check_num) || ds.child("Phone_no").getValue().toString().equals(check_num)) {
+                                    SharedPreferences pref = getApplicationContext().getSharedPreferences("Full Meek Contacts", MODE_PRIVATE);
+                                    SharedPreferences.Editor uidpref = pref.edit();
+                                    if (!pref.getString("uids", "").contains(uid)) {
+                                        Log.d(TAG, uid+"Meek user saved");
+
+                                        uidpref.putString("uids", pref.getString("uids", ":") + uid + ":");
+                                        SharedPreferences contacts = getSharedPreferences("Phone Contacts", MODE_PRIVATE);
+                                        uidpref.putString("name" + uid, contacts.getString(check_num, ""));
+                                        uidpref.putString("phone_num" + uid, check_num);
+                                        uidpref.commit();
+                                    }
+                                }
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+                //coneditor.putString("AllContacts", text);
+
+                // new BackGroundContact().execute(text);
+            }
+
+
+            return "";
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+
+
+        }
+
+    }
+
 }

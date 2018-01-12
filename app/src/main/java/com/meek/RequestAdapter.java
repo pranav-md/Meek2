@@ -77,6 +77,7 @@ public class RequestAdapter extends BaseAdapter {
         // TODO Auto-generated method stub
         Holder holder=new Holder();
         final View rowView;
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         rowView = inflater.inflate(R.layout.request_checkbox, null);
         holder.imgview=(CircleImageView) rowView.findViewById(R.id.imageView1);
         holder.textView=(TextView)rowView.findViewById(R.id.textView2);

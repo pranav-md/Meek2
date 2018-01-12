@@ -108,6 +108,7 @@ public class StealthAdapter extends BaseAdapter {
 
             }
         });
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         StealthAdapter.Holder holder=new StealthAdapter.Holder();
         final View rowView;
         rowView = inflater.inflate(R.layout.stealth_list_element, null);
