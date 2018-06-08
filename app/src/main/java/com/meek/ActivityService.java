@@ -3,8 +3,15 @@ package com.meek;
 import android.app.Activity;
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
+import android.os.Process;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
@@ -20,6 +27,9 @@ import io.realm.RealmConfiguration;
 
 public class ActivityService extends IntentService
 {
+    private Looper mServiceLooper;
+    private ServiceConHandler mServiceHandler;
+
     public ActivityService()
     {
         super("ActivityRecognitionService");
@@ -28,6 +38,21 @@ public class ActivityService extends IntentService
     {
         super(res);
     }
+    final class ServiceConHandler extends Handler {
+        public ServiceConHandler(Looper looper) {
+            super(looper);
+        }
+        @Override
+        public void handleMessage(Message msg) {
+            try {
+                //Register contact observer
+                startContactObserver();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
@@ -38,6 +63,29 @@ public class ActivityService extends IntentService
             ActivityRecognitionResult result=ActivityRecognitionResult.extractResult(intent);
             handleDetectedActivity(result.getProbableActivities());
         }
+        Log.v("Actvityservice","onHandleIntent");
+    }
+
+    @Override
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+
+        Message msg = mServiceHandler.obtainMessage();
+        msg.arg1 = startId;
+        mServiceHandler.sendMessage(msg);
+        return super.onStartCommand(intent, flags, startId);
+
+
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        HandlerThread thread = new HandlerThread("ServiceStartArguments",
+                Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceConHandler(mServiceLooper);
     }
 
     public  void handleDetectedActivity(List<DetectedActivity> probActs)
@@ -55,15 +103,11 @@ public class ActivityService extends IntentService
             }
         }
 
+        Realm.init(this);
 
-        Realm realm = null;
-        Realm.init(getApplicationContext());
-        RealmConfiguration config = new RealmConfiguration.
-                Builder().name("activity").
-                deleteRealmIfMigrationNeeded().
-                build();
-        Realm.setDefaultConfiguration(config);
-        realm=Realm.getInstance(config);
+       // RealmConfiguration
+
+        Realm realm = Realm.getDefaultInstance();
 
      // create your Realm configuration
 
@@ -84,9 +128,10 @@ public class ActivityService extends IntentService
                 {
                     old_act.activity= finalAct;
                 }
+
             }
         });
-
+        realm.close();
 
 
 
@@ -114,7 +159,14 @@ public class ActivityService extends IntentService
 
         }
     }
-
-
-
+    private void startContactObserver(){
+        try{
+            //Registering contact observer
+            getApplication().getContentResolver().registerContentObserver(ContactsContract.Contacts.CONTENT_URI, true,new ContactObserver(new Handler(),getApplicationContext()));
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        Log.i("Contact_sync","contact watch service");
+    }
 }

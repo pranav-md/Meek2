@@ -7,10 +7,10 @@ import io.realm.RealmObject;
  */
 
 public class Contact extends RealmObject {
-   private String ID,name,phnum,status;
+   private String id,name,phnum,status;
 
     public void setID(String ID) {
-        this.ID = ID;
+        this.id = ID;
     }
 
     public void setName(String name) {
@@ -27,7 +27,7 @@ public class Contact extends RealmObject {
 
 
     public String getID() {
-        return ID;
+        return id;
     }
 
     public String getName() {

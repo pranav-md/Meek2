@@ -8,6 +8,20 @@
     android:fitsSystemWindows="true">
 
 
+    <RelativeLayout
+        android:id="@+id/tabscontainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/placess"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="200dp"
+        android:text="TextView" />
+
     <it.sephiroth.android.library.bottomnavigation.BottomNavigation
         android:id="@+id/bottom_nav"
         android:layout_width="match_parent"

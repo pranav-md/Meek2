@@ -3,6 +3,7 @@ package com.meek;
 import android.content.Context;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.github.tamir7.contacts.*;
 import com.github.tamir7.contacts.Contact;
@@ -22,35 +23,54 @@ import io.realm.RealmResults;
 public class ContactSync {
     Context context;
 
-    void syncContact(final String status, Context context)
-    {
+    void syncContact(final String status, Context context) throws NumberParseException {
+        Log.v("Contact_sync","contactsync...synccontact");
         this.context=context;
         Contacts.initialize(context);
 
         List<com.github.tamir7.contacts.Contact> contacts=Contacts.getQuery().find();
-
+        Realm.init(context);
         Realm myRealm= Realm.getDefaultInstance();
+        Toast.makeText(context,"Contacts size="+contacts.size(),Toast.LENGTH_LONG);
+        Log.v("Contact syncing","Contacts size="+contacts.size());
 
         for(final Contact contct:contacts)
         {
-            Log.d("Contact syncing","id="+contct.getId()+"  name="+contct.getDisplayName());
             for(final PhoneNumber phno:contct.getPhoneNumbers()) {
                 PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-                String phonenum=phno.getNumber();
-                if(!phoneUtil.isValidNumber(new Phonenumber.PhoneNumber().setRawInput(phonenum)))
+                Phonenumber.PhoneNumber phNumberProto = null;
+                try {
+                    phNumberProto = phoneUtil.parse(phno.getNumber().replaceAll(" ","").replaceAll("-",""),"IN");
+                } catch (NumberParseException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+                Log.v("Contact syncing","id="+contct.getId()+"  name="+contct.getDisplayName()+"  phno="+phno.getNumber());
+
+                String phonenum=phno.getNumber().replaceAll(" ","").replaceAll("-","");
+               // String phonenum=phno.getNumber().replace(" ","")
+                //                                .replace("-","");
+                if(!phoneUtil.isValidNumber(phNumberProto))
                 {
                     try {
-                        Phonenumber.PhoneNumber p_num=phoneUtil.parse(phonenum,"IN");
-                        phonenum=p_num.toString();
+                        // Phonenumber.PhoneNumber p_num = new Phonenumber.PhoneNumber().setCountryCode(91).setNationalNumber(Long.parseLong(phonenum));
+
+                        phonenum = "+91" + phNumberProto.getNationalNumber();
+                        Log.v("Contct aftr crct sync", "id=" + contct.getId() + "  name=" + contct.getDisplayName() + "  phno=" +(phoneUtil.parse(phonenum,"IN")).getRawInput()+ " valid=" + phoneUtil.isValidNumber((phoneUtil.parse(phonenum,"IN"))));
+                    }
+                    catch (NumberFormatException excp)
+                    {
+                        continue;
                     } catch (NumberParseException e) {
                         e.printStackTrace();
                         continue;
                     }
                 }
-                phonenum=phoneUtil.format(new Phonenumber.PhoneNumber().setRawInput(phonenum), PhoneNumberUtil.PhoneNumberFormat.E164);
-                if(phoneUtil.isValidNumber(new Phonenumber.PhoneNumber().setRawInput(phonenum))) {
+                Log.v("Contact syncing","id="+contct.getId()+"  name="+contct.getDisplayName()+"  phno="+phonenum);
+              //  phonenum=phoneUtil.format(new Phonenumber.PhoneNumber().setRawInput(phonenum), PhoneNumberUtil.PhoneNumberFormat.E164);
+                if(phoneUtil.isValidNumber((phoneUtil.parse(phonenum,"IN")))) {
                     final String finalPhonenum = phonenum;
-                    myRealm.executeTransactionAsync(new Realm.Transaction() {
+                    myRealm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(Realm realm) {
                             com.meek.Contact contact = realm.createObject(com.meek.Contact.class);
@@ -58,18 +78,14 @@ public class ContactSync {
                             contact.setName(contct.getDisplayName());
                             contact.setPhnum(finalPhonenum);
                             contact.setStatus(status);
-                        }
+                            Log.v("Contact realm syncing", "id=" + contct.getId() + "  name=" + contct.getDisplayName() + "  phno=" + finalPhonenum);
 
-                    }, new Realm.Transaction.OnSuccess() {
-                        @Override
-                        public void onSuccess() {
-                            Log.d("Contact syncing","id="+contct.getId()+"  name="+contct.getDisplayName()+"  phno="+finalPhonenum);
-                        }
-                    });
+                        }  });
                 }
             }
 
         }
+        myRealm.close();
         if(status.equals("update"))
             crossCheck();
     }
@@ -77,8 +93,45 @@ public class ContactSync {
     void crossCheck()
     {
         Realm myRealm= Realm.getDefaultInstance();
-        RealmResults<com.meek.Contact> syncAct=myRealm.where(com.meek.Contact.class)
-                                                .equalTo("status","update").findAll();
+        RealmResults<com.meek.Contact> syncCon=myRealm.where(com.meek.Contact.class)
+                                                .equalTo("status","sync").findAll();
+        RealmResults<com.meek.Contact> updCon=myRealm.where(com.meek.Contact.class)
+                .equalTo("status","update").findAll();
+
+        for(final com.meek.Contact con:syncCon)
+        {
+            if(myRealm.where(com.meek.Contact.class).equalTo("id",con.getID()).equalTo("status","update").equalTo("phnum",con.getPhnum()).findAll().size()==0)
+            {
+                   myRealm.executeTransaction(new Realm.Transaction() {
+                       @Override
+                       public void execute(Realm realm) {
+                           com.meek.Contact contact=realm.where(com.meek.Contact.class).equalTo("status","sync").equalTo("phnum",con.getPhnum()).findFirst();
+                           contact.setStatus("delete");
+                       }
+                   });
+            }
+        }
+
+
+        for(final com.meek.Contact con:updCon)
+        {
+            if(myRealm.where(com.meek.Contact.class).equalTo("id",con.getID()).equalTo("status","sync").equalTo("phnum",con.getPhnum()).findAll().size()==0)
+            {
+                myRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        com.meek.Contact contact=realm.where(com.meek.Contact.class).equalTo("status","update").equalTo("phnum",con.getPhnum()).findFirst();
+                        contact.setStatus("add");
+                    }
+                });
+            }
+        }
+        myRealm.where(com.meek.Contact.class)
+                .equalTo("status","update").findAll().deleteAllFromRealm();
+        for(com.meek.Contact con:myRealm.where(com.meek.Contact.class).findAll())
+        {
+            Log.v("All realm contact", "id=" + con.getID() + "  name=" + con.getName() + "  phno=" +con.getPhnum()+"   status="+con.getStatus());
+        }
 
     }
 

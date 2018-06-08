@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="40dp"
+    android:alpha="0.9"
+    android:gravity="left"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="253dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@drawable/round_corner"
+        android:gravity="left"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/activity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="activity" />
+
+        <Button
+            android:id="@+id/music"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="music" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="346dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_weight="1"
+        android:background="@drawable/round_corner"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/set_dest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="set destination" />
+    </LinearLayout>
+
+</LinearLayout>
