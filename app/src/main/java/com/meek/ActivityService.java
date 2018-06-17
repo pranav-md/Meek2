@@ -42,15 +42,6 @@ public class ActivityService extends IntentService
         public ServiceConHandler(Looper looper) {
             super(looper);
         }
-        @Override
-        public void handleMessage(Message msg) {
-            try {
-                //Register contact observer
-                startContactObserver();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 
@@ -159,14 +150,5 @@ public class ActivityService extends IntentService
 
         }
     }
-    private void startContactObserver(){
-        try{
-            //Registering contact observer
-            getApplication().getContentResolver().registerContentObserver(ContactsContract.Contacts.CONTENT_URI, true,new ContactObserver(new Handler(),getApplicationContext()));
-        }catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        Log.i("Contact_sync","contact watch service");
-    }
+
 }

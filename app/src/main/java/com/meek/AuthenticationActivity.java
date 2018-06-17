@@ -54,7 +54,8 @@ import static android.content.ContentValues.TAG;
  * Created by User on 19-Dec-17.
  */
 
-public class AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+public class
+AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     private ProgressDialog progressBar;
     String[] countryNames={"Afghanistan 	+93",
@@ -368,14 +369,20 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                             final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference();
 
                             boolean isNew = task.getResult().getAdditionalUserInfo().isNewUser();
-                            if(isNew==true)
+                            Log.e("AUTH","inside taskcomplete");
+
+                            if(isNew!=true)
                             {
+                                Log.e("AUTH","inside not isnew");
+
                                 usersRef.child("NUM_ID").child(String.valueOf(pnum)).addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(DataSnapshot dataSnapshot)
                                     {
+                                        Log.e("AUTH","inside ondatachange");
                                         if(dataSnapshot!=null)
                                         {
+                                            Log.e("AUTH","inside ds!=null");
                                             String uid=dataSnapshot.child("uid").getValue().toString();
                                             String enc_key=dataSnapshot.child("enc_key").getValue().toString();
                                             SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
@@ -383,25 +390,30 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                                             uidpref.putString("uid", uid);
                                             uidpref.putString("enc_key", enc_key);
                                             uidpref.commit();
+                                            nextActivity();
                                         }
-                                        else
+                                        else{
+                                            Log.e("AUTH","inside setnewnode");
                                             setNewNode();
+
+                                        }
                                     }
 
                                     @Override
                                     public void onCancelled(DatabaseError databaseError) {
+                                        Log.e("AUTH","inside oncancelled "+databaseError);
 
                                     }
                                 });
                             }
                             else
                             {
+                                Log.e("AUTH","inside outer else setnewnode");
                                 setNewNode();
                             }
+                            Log.e("AUTH","going inside intent");
 
-                            authwait.dismiss();
-                            startActivity(new Intent(AuthenticationActivity.this,MainActivity.class));
-                            finish();
+
                         } else {
                             // Sign in failed, display a message and update the UI
                             authview.setText("Failed to authenciate");
@@ -422,10 +434,13 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
         final DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
         final DatabaseReference userRef = FirebaseDatabase.getInstance().getReference();
 
+        Log.e("AUTH","inside setnewnode");
 
         rootRef.child("num_users").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Log.e("AUTH","inside setnewnode firebase");
                 String uid= ((int)dataSnapshot.getValue()+1)+"";
                 String enc_key=random();
                 userRef.child("NUM_ID").child(String.valueOf(pnum)).child("uid").setValue(uid);
@@ -437,6 +452,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
                 uidpref.putString("uid", uid);
                 uidpref.putString("enc_key", enc_key);
                 uidpref.commit();
+                nextActivity();
             }
 
             @Override
@@ -444,8 +460,15 @@ public class AuthenticationActivity extends AppCompatActivity implements Adapter
 
             }
         });
-
     }
+
+    void nextActivity()
+    {
+        authwait.dismiss();
+        startActivity(new Intent(AuthenticationActivity.this,MainActivity.class));
+        finish();
+    }
+
 
     private void startPhoneNumberVerification(String phoneNumber) {
         // [START start_phone_auth]

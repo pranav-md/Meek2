@@ -10,7 +10,16 @@
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="expandableItemStyle">@style/ExpandableItemStyle</item>
         <item name="android:windowContentTransitions">true</item>
     </style>
 
+    <style name="ExpandableItemStyle">
+        <item name="android:layout_height">@dimen/item_size</item>
+        <item name="android:layout_width">@dimen/item_size</item>
+        <item name="android:background">@color/white</item>
+        <item name="android:layout_margin">@dimen/item_margin</item>
+        <item name="android:textColor">@color/gray</item>
+        <item name="android:textSize">@dimen/item_text_size</item>
+    </style>
 </resources>

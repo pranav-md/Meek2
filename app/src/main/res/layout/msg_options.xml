@@ -26,17 +26,27 @@
                 app:civ_border_color="#FF000000"
                 app:civ_border_width="2dp" />
 
-            <TextView
-                android:id="@+id/badge"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+            <RelativeLayout
+                android:layout_width="22dp"
+                android:layout_height="25dp"
                 android:layout_marginLeft="40dp"
                 android:layout_marginTop="40dp"
-                android:background="@drawable/round_corner" />
+                android:background="@drawable/round_corner">
+
+                <TextView
+                    android:id="@+id/badge"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginTop="3dp"
+                    android:textAlignment="center" />
+            </RelativeLayout>
+
         </RelativeLayout>
 
         <TextView
-            android:id="@+id/textView12"
+            android:id="@+id/name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
@@ -54,7 +64,7 @@
             android:background="@android:color/darker_gray" />
 
         <Button
-            android:id="@+id/button8"
+            android:id="@+id/reply_expand"
             android:layout_width="5dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -65,7 +75,7 @@
     </LinearLayout>
 
     <net.cachapa.expandablelayout.ExpandableLayout
-        android:id="@+id/expandable_layout"
+        android:id="@+id/reply_expandable_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="50dp"
@@ -73,9 +83,39 @@
         app:el_expanded="false"
         app:el_parallax="0.5">
 
-        <include
-            layout="@layout/activity_set_box"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+            <TextView
+                android:id="@+id/msg_came"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="TextView" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/reply_box"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:inputType="textPersonName"
+                    android:text="Name" />
+
+                <Button
+                    android:id="@+id/reply_bttn"
+                    android:layout_width="50dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="Button" />
+            </LinearLayout>
+        </LinearLayout>
     </net.cachapa.expandablelayout.ExpandableLayout>
 </LinearLayout>

@@ -7,12 +7,30 @@ import io.realm.RealmObject;
  */
 
 public class Contact extends RealmObject {
-   private String id,name,phnum,status;
+    private String id, name, phnum, status, uid,dpno;
+    int conn_level;
+    boolean in_meek;
+
+    public String getDpno() {
+        return dpno;
+    }
+
+    public void setDpno(String dpno) {
+        this.dpno = dpno;
+    }
 
     public void setID(String ID) {
         this.id = ID;
     }
 
+    Contact()
+    {
+        this.uid="0";
+    }
+    public void setUid(String uid)
+    {
+        this.uid=uid;
+    }
     public void setName(String name) {
         this.name = name;
     }
@@ -40,5 +58,9 @@ public class Contact extends RealmObject {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getUid() {
+        return uid;
     }
 }

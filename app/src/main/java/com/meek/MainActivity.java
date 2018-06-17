@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -74,13 +75,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         sp = getSharedPreferences("CONTACT_SYNC", Context.MODE_PRIVATE);
         sc = sp.getString("CON_FLAG", "");
         if (sc.equals("")) {
-            Log.wtf("Contact_sync", "inside new syncing mainactivity");
 
             try {
                 if (ActivityCompat.checkSelfPermission(MainActivity.this,
                         android.Manifest.permission.READ_CONTACTS)
                         == PackageManager.PERMISSION_GRANTED) {//Checking permission
-                    new ContactSync().syncContact("sync", MainActivity.this);
                     SharedPreferences.Editor con_sync = sp.edit();
                     con_sync.putString("CON_FLAG", "SYNCED");
                     sc = "SYNCED";
@@ -120,8 +119,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View v) {
                 TransitionDrawable transition = (TransitionDrawable) view.getBackground();
                 transition.startTransition(1000);
+                SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+                String uid=mypref.getString("uid","");
+/*try {
+                    new ContactSync().syncContact("update", MainActivity.this,uid);
 
+                } catch (NumberParseException e) {
+                    e.printStackTrace();
+                }
 
+*/
             }
         });
 
@@ -132,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .build();
 
         mApiClient.connect();
-        startContactLookService();
+    //    startContactLookService();
         dp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -170,22 +177,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private void startContactLookService() {
-        try {
-            if (ActivityCompat.checkSelfPermission(MainActivity.this,
-                    android.Manifest.permission.READ_CONTACTS)
-                    == PackageManager.PERMISSION_GRANTED) {//Checking permission
-                //Starting service for registering ContactObserver
-                Intent intent = new Intent(MainActivity.this, ContactWatchService.class);
-                startService(intent);
-            } else {
-                //Ask for READ_CONTACTS permission
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_CONTACTS}, MY_PERMISSIONS_READ_CONTACTS);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -193,17 +184,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //If permission granted
         if (requestCode == MY_PERMISSIONS_READ_CONTACTS && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             if (sc.equals("")) {
-                try {
-                    new ContactSync().syncContact("sync", MainActivity.this);
-                } catch (NumberParseException e) {
-                    e.printStackTrace();
-                }
+
                 SharedPreferences.Editor con_sync = sp.edit();
                 con_sync.putString("CON_FLAG", "SYNCED");
                 sc = "SYNCED";
                 con_sync.commit();
-            } else
-                startContactLookService();
+            }
         }
     }
 

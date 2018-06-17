@@ -54,10 +54,12 @@
                         android:id="@+id/tabs"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
+                        app:tabGravity="fill"
+                        app:tabMode="fixed"
                         android:background="@color/Indigo_hi"></android.support.design.widget.TabLayout>
 
 
-                    <android.support.v4.view.ViewPager
+                    <com.meek.NonSwipeableActivityTabs
                         android:id="@+id/tab_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -74,18 +76,37 @@
                     android:layout_marginTop="5dp"
                     android:orientation="horizontal">
 
-                    <Spinner
-                        android:id="@+id/spinner"
-                        android:layout_width="216dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:layout_weight="1" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <RelativeLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <include
+                                layout="@layout/set_travelling"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+
+                        </RelativeLayout>
+
+                        <Spinner
+                            android:id="@+id/spinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:layout_weight="1" />
+                    </LinearLayout>
 
                     <include
                         android:id="@+id/activities"
                         layout="@layout/activity_manip_buttons"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
+
                 </LinearLayout>
 
             </LinearLayout>

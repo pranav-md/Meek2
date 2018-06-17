@@ -1,6 +1,7 @@
 package com.meek;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -27,6 +28,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.dshantanu.androidsquareslib.AndroidSquares;
 import com.jsibbold.zoomage.ZoomageView;
@@ -38,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static android.content.ContentValues.TAG;
+import static android.content.Context.MODE_PRIVATE;
 
 
 /**
@@ -46,26 +49,26 @@ import static android.content.ContentValues.TAG;
 
 public class ActivityImage extends Fragment {
     String mCurrentPhotoPath;
-    int CAM_CODE=1;
+    int CAM_CODE = 1;
     private static final float BLUR_RADIUS = 25f;
     View img_view;
     boolean active;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         img_view = inflater.inflate(R.layout.image_activity, container, false);
-
+        setFront();
         return img_view;
     }
 
-    void askCamera()
-    {
+    void askCamera() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
             // Create the File where the photo should go
             File photoFile = null;
             try {
-                photoFile = createImageFile(".png");
+                photoFile = createImageFile();
             } catch (IOException ex) {
                 // Error occurred while creating the File
 
@@ -79,17 +82,56 @@ public class ActivityImage extends Fragment {
                 startActivityForResult(takePictureIntent, CAM_CODE);
             }
         }
+    }
+
+    void setFront()
+    {
+        SharedPreferences actPrefs= getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
+        int curr_stat=actPrefs.getInt("curr_stat",11);
+        RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
+        if(curr_stat==9)
+        {
+            tap_open.setVisibility(View.INVISIBLE);
+            setImage();
+        }
+        else
+        {
+            tap_open.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    askCamera();
+                }
+            });
+        }
 
 
 
     }
-    private File createImageFile(String ext) throws IOException {
+
+    void setImage()
+    {
+        RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
+        tap_open.setVisibility(View.INVISIBLE);
+        ZoomageView act_img=(ZoomageView)img_view.findViewById(R.id.act_img);
+        File imgFile = new  File(mCurrentPhotoPath);
+        AndroidSquares bg_img=(AndroidSquares) img_view.findViewById(R.id.bg_layout);
+        if(imgFile.exists())
+        {
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            act_img.setImageBitmap(myBitmap);
+            bg_img.setBackground(new BitmapDrawable(getResources(),blur(myBitmap)));
+        }
+    }
+
+
+    private File createImageFile() throws IOException {
         // Create an image file name
         String imageFileName = "activity";
         String storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
         File image = new File(storageDir,
                 imageFileName+ /* prefix */
-                        ext /* suffix */
+                        ".png" /* suffix */
                       /* directory */
         );
 
@@ -101,20 +143,14 @@ public class ActivityImage extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        final SharedPreferences actPrefs= getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
+        final int curr_stat=actPrefs.getInt("curr_stat",11);
+        final SharedPreferences.Editor actPrefEdit=actPrefs.edit();
+        actPrefEdit.putInt("curr_stat",9);
+        actPrefEdit.commit();
         if(requestCode==CAM_CODE&& resultCode == getActivity().RESULT_OK)
         {
-
-            ZoomageView act_img=(ZoomageView)img_view.findViewById(R.id.act_img);
-            File imgFile = new  File(mCurrentPhotoPath);
-            AndroidSquares bg_img=(AndroidSquares) img_view.findViewById(R.id.bg_layout);
-            if(imgFile.exists())
-            {
-                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
-
-                act_img.setImageBitmap(myBitmap);
-                bg_img.setBackground(new BitmapDrawable(getResources(),blur(myBitmap)));
-
-            }
+            setImage();
         }
     }
 
@@ -145,8 +181,6 @@ public class ActivityImage extends Fragment {
         theIntrinsic.setInput(tmpIn);
         theIntrinsic.forEach(tmpOut);
         tmpOut.copyTo(mut_otBitmap);
-
-
 
         return mut_otBitmap;
     }

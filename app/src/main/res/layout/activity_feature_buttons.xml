@@ -30,19 +30,29 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="346dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="30dp"
+        android:layout_marginLeft="15dp"
         android:layout_weight="1"
         android:background="@drawable/round_corner"
+        android:gravity="right"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/set_dest"
+        <TextView
+            android:id="@+id/textView12"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
             android:layout_weight="1"
-            android:text="set destination" />
+            android:text="Visibility:"
+            android:textSize="18sp" />
+
+        <com.karumi.expandableselector.ExpandableSelector
+            android:id="@+id/visblty"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginRight="10dp" />
     </LinearLayout>
 
 </LinearLayout>

@@ -14,7 +14,6 @@
         android:layout_height="0dip"
         android:layout_gravity="center_vertical|center"
         android:layout_weight="1"
-        android:background="#2196F3"
         android:elevation="8dp">
 
         <com.jsibbold.zoomage.ZoomageView
@@ -22,7 +21,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right|fill_vertical|center|clip_vertical"
-            android:src="@drawable/sos"
             app:zoomage_animateOnReset="true"
             app:zoomage_autoCenter="true"
             app:zoomage_autoResetMode="UNDER"
@@ -33,4 +31,27 @@
             app:zoomage_zoomable="true" />
 
     </com.dshantanu.androidsquareslib.AndroidSquares>
+
+    <RelativeLayout
+        android:id="@+id/tap_open"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp">
+
+        <TextView
+            android:id="@+id/textView18"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="170dp"
+            android:text="Tap to open camera"
+            android:textAlignment="center"
+            android:textSize="40sp" />
+
+        <ImageView
+            android:id="@+id/imageView7"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:alpha="0.3"
+            app:srcCompat="@drawable/camera" />
+    </RelativeLayout>
 </FrameLayout>

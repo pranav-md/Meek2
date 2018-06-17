@@ -7,10 +7,13 @@ import android.widget.Toast;
 
 import com.github.tamir7.contacts.*;
 import com.github.tamir7.contacts.Contact;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 
+import java.util.Iterator;
 import java.util.List;
 
 import io.realm.Realm;
@@ -22,15 +25,19 @@ import io.realm.RealmResults;
 
 public class ContactSync {
     Context context;
-
-    void syncContact(final String status, Context context) throws NumberParseException {
+    String uid;
+    void syncContact(final String status, Context context,String uid) throws NumberParseException {
         Log.v("Contact_sync","contactsync...synccontact");
         this.context=context;
         Contacts.initialize(context);
-
+        this.uid=uid;
         List<com.github.tamir7.contacts.Contact> contacts=Contacts.getQuery().find();
         Realm.init(context);
         Realm myRealm= Realm.getDefaultInstance();
+        Log.v("All realm contact stat", "size:"+myRealm.where(com.meek.Contact.class).equalTo("status",status).findAll().size()+"   status: "+status);
+
+        if(myRealm.where(com.meek.Contact.class).equalTo("status","sync").findAll().size()==0&&!status.equals("sync"))
+            syncContact("sync",context,uid);
         Toast.makeText(context,"Contacts size="+contacts.size(),Toast.LENGTH_LONG);
         Log.v("Contact syncing","Contacts size="+contacts.size());
 
@@ -68,7 +75,7 @@ public class ContactSync {
                 }
                 Log.v("Contact syncing","id="+contct.getId()+"  name="+contct.getDisplayName()+"  phno="+phonenum);
               //  phonenum=phoneUtil.format(new Phonenumber.PhoneNumber().setRawInput(phonenum), PhoneNumberUtil.PhoneNumberFormat.E164);
-                if(phoneUtil.isValidNumber((phoneUtil.parse(phonenum,"IN")))) {
+                if(phoneUtil.isValidNumber((phoneUtil.parse(phonenum,"IN")))&&myRealm.where(com.meek.Contact.class).equalTo("phnum",phonenum).findAll().size()==0) {
                     final String finalPhonenum = phonenum;
                     myRealm.executeTransaction(new Realm.Transaction() {
                         @Override
@@ -79,7 +86,6 @@ public class ContactSync {
                             contact.setPhnum(finalPhonenum);
                             contact.setStatus(status);
                             Log.v("Contact realm syncing", "id=" + contct.getId() + "  name=" + contct.getDisplayName() + "  phno=" + finalPhonenum);
-
                         }  });
                 }
             }
@@ -93,6 +99,10 @@ public class ContactSync {
     void crossCheck()
     {
         Realm myRealm= Realm.getDefaultInstance();
+        Log.v("All realm contact stat", "sync size:"+myRealm.where(com.meek.Contact.class).equalTo("status","sync").findAll().size());
+
+        Log.v("All realm contact stat", "update size:"+myRealm.where(com.meek.Contact.class).equalTo("status","update").findAll().size());
+
         RealmResults<com.meek.Contact> syncCon=myRealm.where(com.meek.Contact.class)
                                                 .equalTo("status","sync").findAll();
         RealmResults<com.meek.Contact> updCon=myRealm.where(com.meek.Contact.class)
@@ -100,7 +110,7 @@ public class ContactSync {
 
         for(final com.meek.Contact con:syncCon)
         {
-            if(myRealm.where(com.meek.Contact.class).equalTo("id",con.getID()).equalTo("status","update").equalTo("phnum",con.getPhnum()).findAll().size()==0)
+            if(myRealm.where(com.meek.Contact.class).equalTo("id",con.getID()).equalTo("status","update").findAll().size()==0)
             {
                    myRealm.executeTransaction(new Realm.Transaction() {
                        @Override
@@ -120,19 +130,37 @@ public class ContactSync {
                 myRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
+
                         com.meek.Contact contact=realm.where(com.meek.Contact.class).equalTo("status","update").equalTo("phnum",con.getPhnum()).findFirst();
                         contact.setStatus("add");
                     }
                 });
             }
         }
-        myRealm.where(com.meek.Contact.class)
-                .equalTo("status","update").findAll().deleteAllFromRealm();
+
+        RealmResults<com.meek.Contact> add=myRealm.where(com.meek.Contact.class).equalTo("status","add").findAll();
+        RealmResults<com.meek.Contact> delt=myRealm.where(com.meek.Contact.class).equalTo("status","delete").findAll();
+        DatabaseReference con_ref= FirebaseDatabase.getInstance().getReference();
+        for (Iterator<com.meek.Contact> it = add.iterator(); it.hasNext(); )
+        {
+            com.meek.Contact addcon = it.next();
+            Log.v("All realm contact", "id=" + addcon.getID() + "  name=" + addcon.getName() + "  phno=" +addcon.getPhnum()+"   status="+addcon.getStatus());
+            con_ref.child("Contacts_DB").child(uid).child(addcon.getPhnum()).setValue(addcon.getName());
+        }
+            myRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    realm.where(com.meek.Contact.class)
+                            .equalTo("status","update").findAll().deleteAllFromRealm();
+                }
+            });
+
         for(com.meek.Contact con:myRealm.where(com.meek.Contact.class).findAll())
         {
             Log.v("All realm contact", "id=" + con.getID() + "  name=" + con.getName() + "  phno=" +con.getPhnum()+"   status="+con.getStatus());
+            con_ref.child("Contacts_DB").child(uid).child(con.getPhnum()).setValue(con.getName());
         }
-
+        myRealm.close();
     }
 
 }

@@ -18,6 +18,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="2"
         android:orientation="vertical">
 
         <Button
@@ -26,23 +27,46 @@
             android:layout_height="wrap_content"
             android:text="Save curent place" />
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="5dp"
-            android:orientation="vertical">
+            android:layout_height="match_parent">
 
-            <TextView
-                android:id="@+id/textView13"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Saved places"
-                android:textSize="20sp" />
+                android:layout_height="match_parent"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
 
-            <ListView
+                <TextView
+                    android:id="@+id/textView13"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Saved places"
+                    android:textSize="20sp" />
+
+                <ListView
+                    android:id="@+id/place_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/place_loading"
+                style="?android:attr/progressBarStyle"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-        </LinearLayout>
+
+            <TextView
+                android:id="@+id/no_place"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/white"
+                android:text="No place added"
+                android:textAlignment="center"
+                android:textSize="30sp" />
+
+
+        </RelativeLayout>
 
     </LinearLayout>
 

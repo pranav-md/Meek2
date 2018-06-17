@@ -3,8 +3,10 @@ package com.meek;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -23,11 +25,24 @@ import android.support.v7.app.ActionBar;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.myhexaville.smartimagepicker.ImagePicker;
 import com.myhexaville.smartimagepicker.OnImagePickedListener;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +61,7 @@ import io.realm.Realm;
 public class MyProfileFrag extends AppCompatActivity {
 
     CircleImageView dp;
+    String uid;
     ImagePicker imagePicker;
 
 
@@ -56,6 +72,10 @@ public class MyProfileFrag extends AppCompatActivity {
         Button dpchange=(Button)findViewById(R.id.dpchange);
         CardView my_places=(CardView)findViewById(R.id.places);
         CardView my_activities=(CardView)findViewById(R.id.activities);
+        SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+        uid=mypref.getString("uid","");
+
+
         my_places.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -71,16 +91,46 @@ public class MyProfileFrag extends AppCompatActivity {
                     public void onImagePicked(Uri imageUri) {
                         try {
                             Bitmap bitmap = MediaStore.Images.Media.getBitmap(MyProfileFrag.this.getContentResolver(), imageUri);
-                            dp.setImageBitmap(bitmap);
-                            saveImage(imageUri);
+                            final Bitmap dp_bp=bitmap;
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 35, out);
+                            final byte[] byteArray = out.toByteArray();
+                            FirebaseDatabase database = FirebaseDatabase.getInstance();
+                            final DatabaseReference userRef = database.getReference("Users");
+                            /////
+                            userRef.child(uid).child("dpno").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(final DataSnapshot dataSnapshot)
+                                {
+                                    StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+                                    storageReference.child("Users DP/"+uid+"_"+(Integer.parseInt(dataSnapshot.getValue().toString())+1)+".jpg").putBytes(byteArray).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>(){
+                                        @Override
+                                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                            saveImage(byteArray);
+                                            dp.setImageBitmap(dp_bp);
+                                            userRef.child(uid).child("dpno").setValue(Integer.parseInt(dataSnapshot.getValue().toString())+1);
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception exception) {
+                                        }
+                                    });
 
+
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                            /////
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
 
                     }
                 }).setWithImageCrop(1,1);
-                imagePicker.choosePicture(true /*show camera intents*/);
+                imagePicker.choosePicture(false /*show camera intents*/);
 
             }
         });
@@ -164,7 +214,7 @@ public class MyProfileFrag extends AppCompatActivity {
                 return null;
             }
         }}
-        void saveImage(Uri uri)
+        void saveImage(byte[] imageData)
         {
             String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
             String localFilename = sFolder + "/dp.jpg";
@@ -181,13 +231,11 @@ public class MyProfileFrag extends AppCompatActivity {
             try {
                 File img = new File(localFilename);
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(img));
-                InputStream in = getContentResolver().openInputStream(uri);
+                //InputStream in = getContentResolver().openInputStream(uri);
                 int bytesread;
-                byte[] imageData = new byte[1024];
-                while ((bytesread = in.read(imageData)) > 0) {
-                    out.write(Arrays.copyOfRange(imageData, 0, Math.max(0, bytesread)));
-                }
-                in.close();
+                //byte[] imageData = new byte[1024];
+                    out.write(imageData);
+                //in.close();
                 out.close();
 
 

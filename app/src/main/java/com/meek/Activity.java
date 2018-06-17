@@ -1,5 +1,7 @@
 package com.meek;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import io.realm.RealmObject;
 
 /**
@@ -8,6 +10,7 @@ import io.realm.RealmObject;
 
 public class Activity extends RealmObject{
     int activity;
+
     public Activity()
     {
         activity=-1;

@@ -23,21 +23,24 @@
         app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
         <com.wajahatkarim3.easyflipview.EasyFlipView
+            android:id="@+id/prof_act_flipper"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             app:flipDuration="400"
             app:flipEnabled="true"
-            app:flipOnTouch="true"
             app:flipType="horizontal"
             app:layout_anchorGravity="bottom">
 
             <!-- Back Layout Goes Here -->
-            <include layout="@layout/activity_card" />
+            <include
+                android:id="@+id/activity_fp_view"
+                layout="@layout/bottomsheet" />
 
             <!-- Front Layout Goes Here -->
             <include
-                layout="@layout/bottomsheet_profile" />
+                android:id="@+id/profile_fp_view"
+                layout="@layout/bottomsheet" />
         </com.wajahatkarim3.easyflipview.EasyFlipView>
 
     </LinearLayout>

@@ -42,7 +42,12 @@ dependencies {
     implementation 'com.github.simbiose:Encryption:2.0.1'
     implementation 'net.cachapa.expandablelayout:expandablelayout:2.9.2'
 
+    implementation	'se.emilsjolander:stickylistheaders:2.7.0'
+ //   implementation 'com.iceteck.silicompressorr:silicompressor:2.1'
+
+
     implementation 'com.github.tamir7.contacts:contacts:1.1.7'
+    implementation 'com.github.stfalcon:chatkit:0.2.2'
 
     implementation 'com.myhexaville:smart-image-picker:1.0.4'
     implementation 'io.supercharge:shimmerlayout:2.1.0'
@@ -54,6 +59,7 @@ dependencies {
     implementation 'life.knowledge4:k4l-video-trimmer:1.0'
     implementation 'me.grantland:autofittextview:0.2.+'
     implementation 'com.theartofdev.edmodo:android-image-cropper:1.2.+'
+    implementation 'me.relex:circleindicator:1.2.2@aar'
 
     implementation 'com.dshantanu.androidsquareslib:androidsquareslib:1.0'
     implementation 'com.jsibbold:zoomage:1.2.0-SNAPSHOT'
