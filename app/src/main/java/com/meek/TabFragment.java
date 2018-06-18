@@ -133,6 +133,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         super.onAttach(context);
         this.context=context;
     }
+    public TabFragment()
+    {    }
     @Override
     public Animation onCreateAnimation(int transit, boolean enter, int nextAnim) {
         return FlipAnimation.create(FlipAnimation.RIGHT, enter, 500);
@@ -146,6 +148,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         final BottomNavigation check_sel=btm_nav;
         btm_nav.setSelectedIndex(2,true);
        plcs=(TextView)view.findViewById(R.id.placess);
+       context=getContext();
         tabcontainer=view.findViewById(R.id.tabscontainer);
         // Construct a GeoDataClient.
         mGeoDataClient = Places.getGeoDataClient(getActivity(), null);

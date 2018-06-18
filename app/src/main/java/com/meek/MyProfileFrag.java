@@ -75,7 +75,12 @@ public class MyProfileFrag extends AppCompatActivity {
         SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=mypref.getString("uid","");
 
-
+        my_activities.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MyProfileFrag.this,MyActivities.class));
+            }
+        });
         my_places.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

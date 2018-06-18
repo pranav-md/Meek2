@@ -23,7 +23,7 @@ public class Contact extends RealmObject {
         this.id = ID;
     }
 
-    Contact()
+    public Contact()
     {
         this.uid="0";
     }

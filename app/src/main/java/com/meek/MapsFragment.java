@@ -247,7 +247,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     {
         final boolean[] adapt_bit = {false};
         act_marker=new ArrayList<Marker>();
-        final ActivitiesPageAdapter ActivitiesPageAdapter=new ActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
+        final ActivitiesPageAdapter activitiesPageAdapter=new ActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -263,13 +263,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     if(adapt_bit[0] ==false)
                     {
                         adapt_bit[0] =true;
-                        ActivitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        Activities_pg.setAdapter(ActivitiesPageAdapter);
+                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                        Activities_pg.setAdapter(activitiesPageAdapter);
                     }
                     else
                     {
-                        ActivitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        ActivitiesPageAdapter.notifyDataSetChanged();
+                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                        activitiesPageAdapter.notifyDataSetChanged();
                     }
                 }
             }
@@ -591,28 +591,4 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         }
     }
 
-    public class ActivitiesPageAdapter extends FragmentPagerAdapter
-    {
-        ArrayList<Activities> map_activities;
-        String u_uid;
-
-        public ActivitiesPageAdapter(FragmentManager childFragmentManager,String u_uid) {
-            super(childFragmentManager);
-            this.u_uid=u_uid;
-        }
-        @Override
-        public Fragment getItem(int position) {
-            BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,map_activities.get(position).act_id);
-            return bsActivitiesFragment;
-        }
-        void setData(ArrayList<Activities> map_activities)
-        {
-            this.map_activities=map_activities;
-        }
-
-        @Override
-        public int getCount() {
-            return map_activities.size();
-        }
-    }
 }
