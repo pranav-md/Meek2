@@ -26,8 +26,15 @@
                 android:layout_height="45dp"
                 android:orientation="horizontal">
 
+                <io.supercharge.shimmerlayout.ShimmerLayout
+                    android:id="@+id/shim_dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    app:shimmer_animation_duration="1200">
+
                 <de.hdodenhof.circleimageview.CircleImageView
-                    android:id="@+id/my_prof_dp"
+                    android:id="@+id/act_dp"
                     app:civ_border_color="#FF000000"
                     app:civ_border_width="2dp"
                     android:layout_width="40dp"
@@ -37,6 +44,13 @@
                     android:layout_alignParentTop="true"
                     android:src="@drawable/defaultdp" />
 
+                </io.supercharge.shimmerlayout.ShimmerLayout>
+                <io.supercharge.shimmerlayout.ShimmerLayout
+                    android:id="@+id/shim_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    app:shimmer_animation_duration="1200">
                 <TextView
                     android:id="@+id/textView8"
                     android:layout_width="wrap_content"
@@ -46,7 +60,7 @@
                     android:layout_weight="1"
                     android:text="TextView"
                     android:textSize="20sp" />
-
+                </io.supercharge.shimmerlayout.ShimmerLayout>
             </LinearLayout>
 
             <LinearLayout
@@ -76,6 +90,15 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <io.supercharge.shimmerlayout.ShimmerLayout
+                android:id="@+id/shim_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="50dp"
+                android:paddingLeft="30dp"
+                android:paddingRight="30dp"
+                app:shimmer_animation_duration="1200">
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="150dp">
@@ -99,7 +122,7 @@
                     android:textSize="40sp"
                     autofit:minTextSize="16sp" />
             </RelativeLayout>
-
+            </io.supercharge.shimmerlayout.ShimmerLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"

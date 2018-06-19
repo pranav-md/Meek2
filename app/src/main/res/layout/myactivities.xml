@@ -64,21 +64,55 @@
             android:textSize="18sp" />
     </LinearLayout>
 
-    <me.relex.circleindicator.CircleIndicator
-        android:id="@+id/indicator"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="10dp" >
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <me.relex.circleindicator.CircleIndicator
+                android:id="@+id/indicator"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp" >
 
-    </me.relex.circleindicator.CircleIndicator>
+            </me.relex.circleindicator.CircleIndicator>
 
-    <android.support.v4.view.ViewPager
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+            <android.support.v4.view.ViewPager
+                android:id="@+id/act_pgs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-    <ImageView
-        android:id="@+id/imageView8"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/activity" />
+            <ImageView
+                android:id="@+id/imageView8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/activity" />
+        </LinearLayout>
+
+        <LinearLayout
+
+            android:id="@+id/no_act"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/white"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="100dp"
+                app:srcCompat="@drawable/activity" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No activity"
+                android:textAlignment="center"
+                android:textSize="45sp" />
+        </LinearLayout>
+
+    </RelativeLayout>
+
 </LinearLayout>

@@ -10,28 +10,28 @@ import java.util.ArrayList;
  * Created by User on 18-Jun-18.
 
  */
-class ActivitiesPageAdapter extends FragmentPagerAdapter
+class MapActivitiesPageAdapter extends FragmentPagerAdapter
 {
-    ArrayList<Activities> map_activities;
+    ArrayList<Activities> activities;
     String u_uid;
 
-    public ActivitiesPageAdapter(FragmentManager childFragmentManager, String u_uid) {
+    public MapActivitiesPageAdapter(FragmentManager childFragmentManager, String u_uid) {
         super(childFragmentManager);
         this.u_uid=u_uid;
     }
     @Override
     public Fragment getItem(int position) {
-        BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,map_activities.get(position).act_id);
+        BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,activities.get(position).act_id);
         return bsActivitiesFragment;
     }
     void setData(ArrayList<Activities> map_activities)
     {
-        this.map_activities=map_activities;
+        this.activities=map_activities;
     }
 
     @Override
     public int getCount() {
-        return map_activities.size();
+        return activities.size();
     }
 }
 

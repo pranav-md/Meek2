@@ -15,6 +15,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import io.supercharge.shimmerlayout.ShimmerLayout;
+
 /**
  * Created by User on 11-Jun-18.
  */
@@ -39,8 +41,10 @@ public class BSActivityFragment extends Fragment
         view = inflater.inflate(R.layout.activity_card, container, false);
 
       //  getDataActivity();
+        if(act_id.equals("0"))
+            shimmer();
 
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return view;
     }
 
     void getDataActivity()
@@ -59,7 +63,16 @@ public class BSActivityFragment extends Fragment
 
             }
         });
+    }
 
+    void shimmer()
+    {
+        ShimmerLayout shim_dp = (ShimmerLayout) view.findViewById(R.id.shim_dp);
+        ShimmerLayout shim_name = (ShimmerLayout) view.findViewById(R.id.shim_name);
+        ShimmerLayout shim_content = (ShimmerLayout) view.findViewById(R.id.shim_content);
 
+        shim_dp.startShimmerAnimation();
+        shim_name.startShimmerAnimation();
+        shim_content.startShimmerAnimation();
     }
 }

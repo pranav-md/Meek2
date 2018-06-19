@@ -247,7 +247,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     {
         final boolean[] adapt_bit = {false};
         act_marker=new ArrayList<Marker>();
-        final ActivitiesPageAdapter activitiesPageAdapter=new ActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
+        final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
