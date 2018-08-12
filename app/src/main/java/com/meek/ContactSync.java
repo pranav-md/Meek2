@@ -36,8 +36,10 @@ public class ContactSync {
         Realm myRealm= Realm.getDefaultInstance();
         Log.v("All realm contact stat", "size:"+myRealm.where(com.meek.Contact.class).equalTo("status",status).findAll().size()+"   status: "+status);
 
-        if(myRealm.where(com.meek.Contact.class).equalTo("status","sync").findAll().size()==0&&!status.equals("sync"))
-            syncContact("sync",context,uid);
+        if(myRealm.where(com.meek.Contact.class).equalTo("status","sync").findAll().size()==0&&!status.equals("sync")) {
+            syncContact("sync", context, uid);
+            myRealm.close();
+        }
         Toast.makeText(context,"Contacts size="+contacts.size(),Toast.LENGTH_LONG);
         Log.v("Contact syncing","Contacts size="+contacts.size());
 
@@ -157,7 +159,7 @@ public class ContactSync {
 
         for(com.meek.Contact con:myRealm.where(com.meek.Contact.class).findAll())
         {
-            Log.v("All realm contact", "id=" + con.getID() + "  name=" + con.getName() + "  phno=" +con.getPhnum()+"   status="+con.getStatus());
+            Log.v("All realm contact", "id=" + con.getUID() + "  name=" + con.getName() + "  phno=" +con.getPhnum()+"   status="+con.getStatus());
             con_ref.child("Contacts_DB").child(uid).child(con.getPhnum()).setValue(con.getName());
         }
         myRealm.close();

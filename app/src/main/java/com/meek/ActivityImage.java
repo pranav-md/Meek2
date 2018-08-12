@@ -1,5 +1,7 @@
 package com.meek;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -7,30 +9,39 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
+import android.support.v4.widget.ViewDragHelper;
 import android.support.v8.renderscript.Allocation;
 import android.support.v8.renderscript.Element;
 import android.support.v8.renderscript.RenderScript;
 import android.support.v8.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.WindowInsets;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.dshantanu.androidsquareslib.AndroidSquares;
+import com.google.android.gms.vision.Frame;
 import com.jsibbold.zoomage.ZoomageView;
 
 import java.io.File;
@@ -52,14 +63,100 @@ public class ActivityImage extends Fragment {
     int CAM_CODE = 1;
     private static final float BLUR_RADIUS = 25f;
     View img_view;
-    boolean active;
+    boolean active,kb_on;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         img_view = inflater.inflate(R.layout.image_activity, container, false);
         setFront();
+        kb_on=true;
+        setKeyboardListener();
         return img_view;
+    }
+    void noKeyBoard()
+    {
+        Log.v("KYBRD", "keyboard is off");
+        View layout = img_view.findViewById(R.id.bg_layout);
+        View layout_bg=(View) img_view.findViewById(R.id.layout_bg_img);
+
+        ViewGroup.LayoutParams params = layout.getLayoutParams();
+// Changes the height and width to the specified *pixels*
+        params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        layout.setLayoutParams(params);
+        EditText img_caption=img_view.findViewById(R.id.img_caption);
+
+        ViewGroup.LayoutParams bg_params = (ViewGroup.LayoutParams)((ViewGroup)img_view.findViewById(R.id.layout_bg_img)).getLayoutParams();
+        bg_params.height= ViewGroup.LayoutParams.WRAP_CONTENT;
+        layout_bg.setLayoutParams(bg_params);
+    /*    ViewGroup.MarginLayoutParams edt_parms=new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,50);
+        edt_parms.setMargins(0,100,0,0);
+        img_caption.setLayoutParams(edt_parms);
+    */
+
+    }
+
+    void keyBoardON()
+    {
+        kb_on=true;
+        ViewGroup layout=img_view.findViewById(R.id.bg_layout);
+        ViewGroup layout_bg=(ViewGroup) img_view.findViewById(R.id.layout_bg_img);
+
+        ViewGroup.LayoutParams params = (ViewGroup.LayoutParams) layout.getLayoutParams();
+        // Changes the height and width to the specified *pixels*
+        params.width = 300;
+        layout.setLayoutParams(params);
+
+        ViewGroup.LayoutParams bg_params = (ViewGroup.LayoutParams)((ViewGroup)img_view.findViewById(R.id.layout_bg_img)).getLayoutParams();
+        bg_params.height=300;
+        layout_bg.setLayoutParams(bg_params);
+    }
+
+    void setKeyboardListener()
+    {
+        LinearLayout i_act=img_view.findViewById(R.id.img_act);
+        //////
+        final View activityRootView = img_view.findViewById(R.id.img_act);
+        final Handler handler = new Handler();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                boolean lis_on=true;
+                while(true)
+                {
+                    if(activityRootView.getViewTreeObserver().isAlive())
+                    activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                  @Override
+                  public void onGlobalLayout() {
+                      Rect r = new Rect();
+                      img_view.getWindowVisibleDisplayFrame(r);
+                      if (img_view.getRootView().getHeight() - (r.bottom - r.top) > 500) {
+                          Log.v("KYBRD", "keyboard is on");
+                          keyBoardON();
+
+                      } else {
+                          noKeyBoard();
+                      }
+
+                      activityRootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+
+                  }
+
+                });
+
+                        try {
+                            Thread.sleep(250);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                }
+            }
+        });
+
+        t.start();
+
+        //////
+        EditText img_caption=img_view.findViewById(R.id.img_caption);
     }
 
     void askCamera() {
@@ -103,25 +200,56 @@ public class ActivityImage extends Fragment {
                 }
             });
         }
-
-
-
+    }
+    void setTakePhoto()
+    {
+        RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
+        tap_open.setVisibility(View.VISIBLE);
+        SharedPreferences actPrefs= getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor actPrefEdit=actPrefs.edit();
+        actPrefEdit.putInt("curr_stat",11);
+        actPrefEdit.commit();
+        ZoomageView act_img=(ZoomageView)img_view.findViewById(R.id.act_img);
+        AndroidSquares bg_img=(AndroidSquares) img_view.findViewById(R.id.bg_layout);
+        act_img.setImageDrawable(null);
+        bg_img.setBackground(null);
     }
 
     void setImage()
     {
         RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
         tap_open.setVisibility(View.INVISIBLE);
+        ImageView retake=(ImageView)img_view.findViewById(R.id.retake);
+        ImageView close_img=(ImageView)img_view.findViewById(R.id.close_img);
+        retake.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                askCamera();
+            }
+        });
+        close_img.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setTakePhoto();
+            }
+        });
+        try {
+            createImageFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         ZoomageView act_img=(ZoomageView)img_view.findViewById(R.id.act_img);
         File imgFile = new  File(mCurrentPhotoPath);
         AndroidSquares bg_img=(AndroidSquares) img_view.findViewById(R.id.bg_layout);
+        bg_img.setVisibility(View.VISIBLE);
         if(imgFile.exists())
         {
             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
 
             act_img.setImageBitmap(myBitmap);
-            bg_img.setBackground(new BitmapDrawable(getResources(),blur(myBitmap)));
+            bg_img.setBackground(new BitmapDrawable(getResources(),blur(myBitmap,getContext())));
         }
+
     }
 
 
@@ -154,7 +282,7 @@ public class ActivityImage extends Fragment {
         }
     }
 
-    public Bitmap blur(Bitmap image) {
+    public static Bitmap blur(Bitmap image,Context ctxt) {
         if (null == image) return null;
 
         Bitmap outputBitmap = Bitmap.createBitmap(image);
@@ -171,7 +299,7 @@ public class ActivityImage extends Fragment {
 
             c.drawBitmap(mut_otBitmap,image.getHeight()/2,image.getHeight()/2,null);
         }
-        final RenderScript renderScript = RenderScript.create(getContext());
+        final RenderScript renderScript = RenderScript.create(ctxt);
         Allocation tmpIn = Allocation.createFromBitmap(renderScript, image);
         Allocation tmpOut = Allocation.createFromBitmap(renderScript, mut_otBitmap);
 

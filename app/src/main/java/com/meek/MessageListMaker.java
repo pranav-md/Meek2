@@ -5,12 +5,17 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.stfalcon.chatkit.commons.ImageLoader;
 import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
@@ -38,13 +43,29 @@ public class MessageListMaker extends AppCompatActivity
         Intent intentExtra= getIntent();
         Bundle bundle=intentExtra.getExtras();
         r_uid=bundle.getString("r_uid");
+        String name=bundle.getString("name");
         msg_id=msgID(uid,r_uid);
+        Log.e("Msglister","before messagelist at oncreate");
 
         MessagesList messagesList=findViewById(R.id.messagesList);
-        adapter = new MessagesListAdapter<>("1", null);
+        MessagesListAdapter.HoldersConfig holdersConfig = new MessagesListAdapter.HoldersConfig();
+        holdersConfig.setOutcomingTextLayout(R.layout.message_recieve);
+        adapter = new MessagesListAdapter<>(uid, holdersConfig, new ImageLoader() {
+            @Override
+            public void loadImage(ImageView imageView, String url) {
+                imageView.setImageResource(R.drawable.defaultdp);
+            }
+        });
         messagesList.setAdapter(adapter);
+        Log.e("Msglister","before getinfo at oncreate");
 
         getInfo(msg_id);
+        setTop(name);
+    }
+    void setTop(String name)
+    {
+        TextView nm=(TextView)findViewById(R.id.name);
+        nm.setText(name);
     }
 
     String msgID(String uid,String r_uid)
@@ -56,29 +77,34 @@ public class MessageListMaker extends AppCompatActivity
 
     }
 
-    void getInfo(String msg_id)
+    void getInfo(final String msg_id)
     {
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
+
+        Log.e("Msglister","inside get info yoo");
 
         db_ref.child("Messages_DB").child(msg_id).child("Info").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
-                    String allMsgs= dataSnapshot.child("uid"+uid+"_msgs").getValue().toString();
-                    int msgNum=Integer.parseInt(dataSnapshot.child("tot_msgs").getValue().toString());
+                    if(dataSnapshot.exists()) {
+                        Log.e("Msglister","my uid"+uid+"   msg_id="+msg_id);
+                        String allMsgs = dataSnapshot.child("uid" + uid + "_msgs").getValue().toString();
+                        int msgNum = Integer.parseInt(dataSnapshot.child("tot_msgs").getValue().toString());
 
-                    if(upr_bound==0)
-                    {
-                        if(msgNum<11)
-                        {
-                            upr_bound=lwr_bound=1;
+                        if (upr_bound == 0) {
+                            if (msgNum < 11) {
+                                upr_bound = lwr_bound = 1;
+                            } else {
+                                upr_bound = lwr_bound = msgNum - 10;
+                            }
                         }
-                        else
-                        {
-                            upr_bound=lwr_bound=msgNum-10;
-                        }
+                        getMessages(allMsgs, msgNum);
                     }
-                    getMessages(allMsgs,msgNum);
+                    else
+                    {
+                        noMsgYet();
+                    }
             }
 
             @Override
@@ -86,18 +112,25 @@ public class MessageListMaker extends AppCompatActivity
 
             }
         });
+
     }
 
+    void noMsgYet()
+    {
+        findViewById(R.id.nomsg).setVisibility(View.VISIBLE);
+    }
     void getMessages(String allMsgs,int msgNum)
     {
+        Log.v("Msgsss","lwr_bound and msgnum"+lwr_bound+" & "+msgNum);
         boolean got_msg=false;
         while(lwr_bound<msgNum)
         {
+            Log.v("Msgsss","allmsgs="+allMsgs+"   lwrbound="+lwr_bound);
             if(allMsgs.contains(":"+lwr_bound+":"))     ///logic to add for the sent messages
             {
                 got_msg=true;
                 DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
-                msg_ref.child("Messages_DB").child(msg_id).child("Messages").addListenerForSingleValueEvent(new ValueEventListener() {
+                msg_ref.child("Messages_DB").child(msg_id).child("Messages").child((lwr_bound++)+"").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
@@ -109,7 +142,10 @@ public class MessageListMaker extends AppCompatActivity
 
                             String msgDate=dataSnapshot.child("msg_date_time").getValue().toString();
 
-                            // decrypt the msgText
+                            Message one = new Message(msgSenderID, msgText, "", Calendar.getInstance().getTime());
+                            adapter.addToStart(one, true);
+
+                        // decrypt the msgText
                             //date format conversion
 
                     }
@@ -121,6 +157,7 @@ public class MessageListMaker extends AppCompatActivity
                 });
 
             }
+            else ++lwr_bound;
 
         }
         if(!got_msg)
@@ -136,9 +173,6 @@ public class MessageListMaker extends AppCompatActivity
             getMessages(allMsgs,msgNum);
         }
 
-
-        Message one = new Message("1", "pmd is cool", "pmd", Calendar.getInstance().getTime());
-        adapter.addToStart(one, true);
     }
 
     void setSendMessage()

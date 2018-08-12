@@ -14,5 +14,5 @@
         android:layout_marginRight="10dp"
         android:layout_marginTop="2dp"
         android:text="Travelling? Set destination"
-        android:textSize="18sp" />
+        android:textSize="15sp" />
 </LinearLayout>

@@ -5,19 +5,6 @@
     android:orientation="horizontal">
 
     <Button
-        android:id="@+id/cancel"
-        android:layout_width="50dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:background="@drawable/cancel_cross" />
-
-    <Button
-        android:id="@+id/share"
-        android:layout_width="50dp"
-        android:layout_height="match_parent"
-        android:background="?attr/actionModeShareDrawable" />
-
-    <Button
         android:id="@+id/okay"
         android:layout_width="50dp"
         android:layout_height="wrap_content"

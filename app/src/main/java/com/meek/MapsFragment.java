@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Environment;
@@ -29,14 +30,20 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.TileOverlay;
+import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.maps.android.heatmaps.Gradient;
+import com.google.maps.android.heatmaps.HeatmapTileProvider;
+import com.google.maps.android.heatmaps.WeightedLatLng;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
 import com.wajahatkarim3.easyflipview.EasyFlipView;
 
@@ -44,6 +51,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.realm.Realm;
@@ -63,18 +71,34 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     GoogleMap mMap;
     UserMarker my_marker;
     SupportMapFragment mapFragment;
-    ArrayList<Marker> ppl_marker;
-    ArrayList<Marker> act_marker;
+    ArrayList<Marker> ppl_marker=null;
+    ArrayList<Marker> act_marker=null;
     ArrayList<MapPeople> mapPeople;
     BottomSheetBehavior<View> mBottomSheetBehavior1;
     Marker Activities;
+    Marker cur_marker;
     ProfilePageAdapter ppl_page_adapter;
     LatLng cur_location;
     String uid,current_ppl=":";
+    int cur_p_pos,cur_a_post;
     EasyFlipView flip_bs;
     View bottomSheet,view;
     ViewPager profile_pg,Activities_pg;
     boolean bs,bs_act,bs_prof;
+    TileOverlay mOverlay;
+    private static final int[] ALT_HEATMAP_GRADIENT_COLORS = {
+
+            Color.rgb(102, 225, 0),
+            Color.rgb(255, 0, 0)
+    };
+    public static final float[] ALT_HEATMAP_GRADIENT_START_POINTS = {
+            0.2f, 1f
+    };
+
+    public static final Gradient ALT_HEATMAP_GRADIENT = new Gradient(ALT_HEATMAP_GRADIENT_COLORS,
+            ALT_HEATMAP_GRADIENT_START_POINTS);
+
+
     class UserMarker
     {
         Marker marker;
@@ -99,6 +123,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
         ppl_marker=new ArrayList<Marker>();
+        locationListenSet();
         mapPeople=new ArrayList<MapPeople>();
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         bs_prof=false;
@@ -132,6 +157,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     bs_prof = false;
                     bs=false;
                     bs_act=false;
+
                     visibleMarkers();
                     removeActivitiesMarkers();
 
@@ -169,12 +195,39 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             mMap=googleMap;
             setUserMarker();
             getMeekLocPpl();
+            mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+                @Override
+                public void onCameraChange(CameraPosition cameraPosition) {
+                    Toast.makeText(getContext(),"Camera postn= "+cameraPosition,Toast.LENGTH_LONG).show();
+                    if(bs_prof||bs_act) {
+                        if (cameraPosition.zoom > 12) {
+                            actMkrVisble(true);
+                        }
+                        else
+                        {
+                            actMkrVisble(false);
+                        }
+                    }
+                    if(ppl_marker!=null)
+                    for(Marker mkr:ppl_marker)
+                    {
+                        View mrker = ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.activty_marker, null);
+                       // ViewGroup.LayoutParams mkrparams=mrker.getLayoutParams();
+                        mrker.getLayoutParams().height= (int)(50*cameraPosition.zoom/15);
+                        mrker.getLayoutParams().width= (int)(50*cameraPosition.zoom/15);
+                        //mrker.setLayoutParams(mkrparams);
+                        mkr.setIcon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(),mrker)));
+                    }
+                }
+            });
+
             mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                 @Override
                 public boolean onMarkerClick(Marker marker)
                 {
                     if(marker.getSnippet().equals("1"))
                     {
+                        cur_marker=marker;
                         if(bs==false)
                         {
                             bs=true;
@@ -243,10 +296,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             Toast.makeText(getContext(),"wait pls",Toast.LENGTH_LONG).show();
     }
 
+
     void getActData(String a_uid, final int pos)
     {
         final boolean[] adapt_bit = {false};
+        cur_p_pos=pos;
         act_marker=new ArrayList<Marker>();
+        final List<WeightedLatLng> list=new ArrayList<WeightedLatLng>();
         final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -257,6 +313,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     Activities newone=new Activities();
                     newone.act_id=ds.getKey().toString();
                     newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
+                    list.add(new WeightedLatLng(newone.latLng,2));
                     newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
                     mapPeople.get(pos).activities.add(newone);
                     setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
@@ -272,6 +329,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         activitiesPageAdapter.notifyDataSetChanged();
                     }
                 }
+                addHeatMap(list);
             }
 
             @Override
@@ -301,19 +359,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             rdp.setImageBitmap(icon);
             e.printStackTrace();
         }
-        MarkerOptions options = new MarkerOptions().title(mapPeople.get(pos).uid).snippet("1").position(latLng).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(), mrker)));
-
+        Log.v("Marker status","mkr pos="+pos+"  uid="+uid);
         if(ppl_marker.size()>pos+1)
         {
             Marker mkr=ppl_marker.get(pos);
-            mkr.remove();
-            mkr=mMap.addMarker(options);
-            mkr.setTag(pos);
-            ppl_marker.set(pos,mkr);
+           // mkr.remove();
+            new AnimationUtil().animateMarkerTo(mkr,latLng);
+         //   mkr.setTag(pos);
+         //   ppl_marker.set(pos,mkr);
 
         }
         else
         {
+            MarkerOptions options = new MarkerOptions().title(mapPeople.get(pos).uid).snippet("1").position(latLng).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(), mrker)));
             Marker mkr=mMap.addMarker(options);
             mkr.setTag(pos);
             ppl_marker.add(mkr);
@@ -453,8 +511,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     void setActivitiesMarker(int p_pos,int a_pos)
     {
         View mrker = ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.activty_marker, null);
-        MarkerOptions options = new MarkerOptions().title(p_pos+"").snippet("2").position(mapPeople.get(p_pos).activities.get(a_pos).latLng).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(), mrker)));
+        MarkerOptions options = new MarkerOptions().title(p_pos+"").snippet("2").position(cur_marker.getPosition()).icon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(), mrker)));
         Marker mkr=mMap.addMarker(options);
+        if(mMap.getCameraPosition().zoom<12)
+            mkr.setVisible(false);
+        new AnimationUtil().animateMarkerTo(mkr,mapPeople.get(p_pos).activities.get(a_pos).latLng);
         mkr.setTag(a_pos);
         act_marker.add(mkr);
     }
@@ -476,14 +537,51 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             mkr.setVisible(true);
         }
     }
-
+    void actMkrVisble(boolean show)
+    {
+        if(act_marker!=null)
+        if(!act_marker.get(act_marker.size()-1).isVisible()&&show)
+        {
+            mOverlay.setVisible(false);
+            for(Marker mkr:act_marker)
+            {
+                mkr.setVisible(show);
+            }
+        }
+        else if(show==false)
+        {
+            if(act_marker.get(0).isVisible())
+            {
+                mOverlay.setVisible(true);
+                for(Marker mkr:act_marker)
+                {
+                    mkr.setVisible(show);
+                }
+            }
+        }
+    }
     void removeActivitiesMarkers()
     {
+        mOverlay.remove();
         for(Marker mkr:act_marker)
         {
             mkr.remove();
         }
         act_marker.clear();
+        act_marker=null;
+    }
+
+    /////////////////heat map
+    private void addHeatMap(List<WeightedLatLng> list) {
+
+        // Create a heat map tile provider, passing it the latlngs of the police stations.
+        HeatmapTileProvider mProvider = new HeatmapTileProvider.Builder()
+                .weightedData(list)
+                .build();
+        mProvider.setGradient(ALT_HEATMAP_GRADIENT);
+       // mProvider.setRadius(5);
+        // Add a tile overlay to the map, using the heat map tile provider.
+        mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
     }
 
     ///////////////location marker

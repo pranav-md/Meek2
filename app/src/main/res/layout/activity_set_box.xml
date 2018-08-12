@@ -8,15 +8,10 @@
 
     <android.support.v7.widget.CardView
         android:id="@+id/activity_cardview"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_margin="5dp"
-
-        app:cardBackgroundColor="@color/Blue_low"
-        app:cardElevation="10dp"
-        app:cardPreventCornerOverlap="false"
-        card_view:cardCornerRadius="5dp"
+        card_view:cardCornerRadius="2dp"
         card_view:contentPadding="10dp">
 
         <RelativeLayout
@@ -47,16 +42,16 @@
                 <LinearLayout
                     android:id="@+id/tab_lin_lyt"
                     android:layout_width="match_parent"
-                    android:layout_height="336dp"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical">
 
                     <android.support.design.widget.TabLayout
                         android:id="@+id/tabs"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
+                        android:background="@color/Indigo_hi"
                         app:tabGravity="fill"
-                        app:tabMode="fixed"
-                        android:background="@color/Indigo_hi"></android.support.design.widget.TabLayout>
+                        app:tabMode="fixed"></android.support.design.widget.TabLayout>
 
 
                     <com.meek.NonSwipeableActivityTabs
@@ -68,46 +63,6 @@
 
                 </LinearLayout>
 
-
-                <LinearLayout
-                    android:id="@+id/layer3"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="5dp"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <RelativeLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <include
-                                layout="@layout/set_travelling"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
-
-                        </RelativeLayout>
-
-                        <Spinner
-                            android:id="@+id/spinner"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:layout_weight="1" />
-                    </LinearLayout>
-
-                    <include
-                        android:id="@+id/activities"
-                        layout="@layout/activity_manip_buttons"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-
-                </LinearLayout>
 
             </LinearLayout>
         </RelativeLayout>

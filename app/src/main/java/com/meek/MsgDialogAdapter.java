@@ -1,6 +1,8 @@
 package com.meek;
 
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,7 +49,7 @@ public class MsgDialogAdapter extends BaseAdapter {
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         view = inflater.inflate(R.layout.msg_options, null);
 
         TextView name=(TextView)view.findViewById(R.id.name);
@@ -72,7 +74,19 @@ public class MsgDialogAdapter extends BaseAdapter {
                 reply_view.toggle();
             }
         });
-
+        view.setTag(msgPPLS.get(i).r_uid);
+        view.setTag(R.integer.name,msgPPLS.get(i).name);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String r_uid=view.getTag().toString();
+                Log.v("Message clicked","r_uid= "+r_uid);
+                Intent intent=new Intent(context,MessageListMaker.class);
+                intent.putExtra("r_uid",r_uid);
+                intent.putExtra("name",view.getTag(R.integer.name).toString());
+                context.startActivity(intent);
+            }
+        });
         return view;
     }
 }

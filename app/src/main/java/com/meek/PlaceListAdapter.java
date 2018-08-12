@@ -9,6 +9,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.location.places.Place;
+
 import java.util.ArrayList;
 
 /**
@@ -20,7 +22,7 @@ public class PlaceListAdapter extends BaseAdapter {
    Context context;
 
 
-    void getData(ArrayList<Places> place_list,Context context)
+    void getData(ArrayList<Places> place_list, Context context)
    {
        this.place_list=place_list;
        this.context=context;

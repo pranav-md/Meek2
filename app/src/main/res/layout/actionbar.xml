@@ -5,16 +5,16 @@
     android:id="@+id/app_bar"
     android:layout_width="match_parent"
     android:layout_height="50dp"
-    android:background="@drawable/bg_trans"
+    android:background="@drawable/clr_trans0"
     android:orientation="horizontal">
 
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/dp"
-        android:transitionName="profile"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:src="@drawable/defaultdp"
+        android:transitionName="profile"
         app:civ_border_color="#FF000000"
         app:civ_border_width="2dp" />
 

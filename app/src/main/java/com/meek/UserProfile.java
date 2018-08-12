@@ -62,22 +62,27 @@ public class UserProfile extends AppCompatActivity {
             act_ref.child("Activities").child(r_uid).child("pg_view").child(upr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (dataSnapshot != null) {
+                    if (dataSnapshot != null)
+                    {
                         curr_act=new MyActivities.CheckActivity();
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            try {
+                        for (DataSnapshot ds : dataSnapshot.getChildren())
+                        {
+                            try
+                            {
                                 Date act_date = d_format.parse(ds.getValue().toString());
                                 Log.v("My act_pg set","upr date = "+act_date);
-                                if (act_date.before(upr_gmt)) {
+                                if (act_date.before(upr_gmt))
+                                {
                                     curr_act.exists=true;
                                     Log.v("My act_pg set","Inside date before");
                                     curr_act.act_id.add(ds.getKey().toString());
                                 }
-                            } catch (ParseException e) {
+                            }
+                            catch (ParseException e)
+                            {
                                 e.printStackTrace();
                             }
-
                         }
                     }
                     comp_up=true;
@@ -125,7 +130,8 @@ public class UserProfile extends AppCompatActivity {
                 }
 
                 @Override
-                public void onCancelled(DatabaseError databaseError) {
+                public void onCancelled(DatabaseError databaseError)
+                {
 
                 }
             });
@@ -134,17 +140,18 @@ public class UserProfile extends AppCompatActivity {
     {
         SimpleDateFormat d_format=new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
         d_format.setTimeZone(TimeZone.getTimeZone("GMT"));
-        try {
+        try
+        {
             lwr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 00:00:01");
             upr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 23:59:59");
 
             lwr_dt=d_format.format(lwr_gmt).substring(0,d_format.format(lwr_gmt).indexOf(" ")).trim();
             upr_dt=d_format.format(upr_gmt).substring(0,d_format.format(upr_gmt).indexOf(" ")).trim();
         }
-        catch (ParseException e) {
+        catch (ParseException e)
+        {
             e.printStackTrace();
         }
-
         Log.v("GMT time daa","lwr:"+lwr_dt+"  upr_gmt"+upr_dt);
     }
     void fetchActivityData()
@@ -196,10 +203,12 @@ public class UserProfile extends AppCompatActivity {
         }
 
     }
+
     void setNoActivityFound()
     {
         no_act.setVisibility(View.INVISIBLE);
     }
+
     void setPages()
     {
         Log.v("My act_pg set","Inside setpages");

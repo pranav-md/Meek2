@@ -26,7 +26,8 @@ public class BSActivityFragment extends Fragment
 {
     String uid,act_id;
     View view;
-
+    BSActivityFragment()
+    {}
     @SuppressLint("ValidFragment")
     BSActivityFragment(String uid,String act_id)
     {

@@ -64,8 +64,6 @@ public class ActivityService extends IntentService
         msg.arg1 = startId;
         mServiceHandler.sendMessage(msg);
         return super.onStartCommand(intent, flags, startId);
-
-
     }
 
     @Override

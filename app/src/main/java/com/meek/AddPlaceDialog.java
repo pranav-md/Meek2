@@ -42,11 +42,10 @@ public class AddPlaceDialog extends DialogFragment {
         Button cancel=(Button)view.findViewById(R.id.done);
         Spinner plc_type=(Spinner)view.findViewById(R.id.place_type);
         plc_type.setAdapter(new TypeAdapter(getContext()));
-        ExpandableSelector privacy = (ExpandableSelector)view.findViewById(R.id.privacy_setting);
-        List<ExpandableItem> expandableItems = new ArrayList<ExpandableItem>();
-        expandableItems.add(new ExpandableItem(R.drawable.locked));
-        expandableItems.add(new ExpandableItem(R.drawable.vis_others));
-        privacy.showExpandableItems(expandableItems);
+      //  List<ExpandableItem> expandableItems = new ArrayList<ExpandableItem>();
+      //  expandableItems.add(new ExpandableItem(R.drawable.locked));
+       // expandableItems.add(new ExpandableItem(R.drawable.vis_others));
+//        privacy.showExpandableItems(expandableItems);
         ok.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
             @Override
@@ -99,10 +98,10 @@ class TypeAdapter extends BaseAdapter{
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        view = inflater.inflate(R.layout.place_list_item, null);
+        view = inflater.inflate(R.layout.place_typ_item, null);
         TextView name=(TextView)view.findViewById(R.id.plc_name);
         Drawable typ = null;
-        String txt="";
+        String txt="-";
         switch (i)
         {
             case 1: txt="Home";
@@ -131,8 +130,10 @@ class TypeAdapter extends BaseAdapter{
                     break;
         }
         ImageView plc_type=(ImageView)view.findViewById(R.id.plc_icon);
-        plc_type.setImageDrawable(typ);
-        name.setText(txt);
+        if(typ!=null)
+            plc_type.setImageDrawable(typ);
+        if(name!=null)
+            name.setText(txt);
 
         return view;
     }

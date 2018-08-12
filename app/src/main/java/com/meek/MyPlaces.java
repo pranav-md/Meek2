@@ -125,50 +125,44 @@ public class MyPlaces extends AppCompatActivity implements OnMapReadyCallback,Ad
                            DataSnapshot ds2 = dataSnapshot.child("Loc_friends");
                             myplcs.deleteAllFromRealm();
 
-                           for(DataSnapshot ds:ds1.getChildren())
+                           for(final DataSnapshot ds:ds1.getChildren())
                            {
-                               my_plc=new Places();
-                               my_plc.p_num = Integer.parseInt(ds.getKey().toString());
-                               my_plc.name = ds.child("name").getValue().toString();
-                               my_plc.type = Integer.parseInt(ds.child("type").getValue().toString());
-                               my_plc.visibility =0;
-                               my_plc.timestamp = ds.child("date_time_stamp").getValue().toString();
-                               my_plc.lat=Double.parseDouble(ds.child("lat").getValue().toString());
-                               my_plc.lng=Double.parseDouble(ds.child("lng").getValue().toString());
-                               plcs_list.add(my_plc);
-                               Log.v("Places checkkk","name="+my_plc.name+"  type"+my_plc.type);
-                               final Places finalMy_plc = my_plc;
                                myRealm.executeTransaction(new Realm.Transaction() {
                                    @Override
-                                   public void execute(Realm realm)
-                                   {
+                                   public void execute(Realm realm) {
                                        Places plcs=myRealm.createObject(Places.class);
-                                       plcs= finalMy_plc;
+                                       plcs.p_num = Integer.parseInt(ds.getKey().toString());
+                                       plcs.name = ds.child("name").getValue().toString();
+                                       plcs.type = Integer.parseInt(ds.child("type").getValue().toString());
+                                       plcs.visibility =0;
+                                       plcs.timestamp = ds.child("date_time_stamp").getValue().toString();
+                                       plcs.lat=Double.parseDouble(ds.child("lat").getValue().toString());
+                                       plcs.lng=Double.parseDouble(ds.child("lng").getValue().toString());
+                                       plcs_list.add(plcs);
+                                       Log.v("Places checkkk","name="+plcs.name+"  type"+plcs.type);
                                    }
                                });
                            }
-                            for(DataSnapshot ds:ds2.getChildren())
+                            for(final DataSnapshot ds:ds2.getChildren())
                             {
-                                my_plc=new Places();
-                                my_plc.p_num = Integer.parseInt(ds.getKey().toString());
-                                my_plc.name = ds.child("name").getValue().toString();
-                                my_plc.type = Integer.parseInt(ds.child("type").getValue().toString());
-                                my_plc.visibility =1;
-                                my_plc.timestamp = ds.child("date_time_stamp").getValue().toString();
-                                my_plc.lat=Double.parseDouble(ds.child("lat").getValue().toString());
-                                my_plc.lng=Double.parseDouble(ds.child("lng").getValue().toString());
-                                plcs_list.add(my_plc);
-                                Log.v("Places checkkk","name="+my_plc.name+"  type"+my_plc.type);
-                                final Places finalMy_plc = my_plc;
                                 myRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
-                                    public void execute(Realm realm)
-                                    {
-                                        Places plcs=myRealm.createObject(Places.class);
-                                        plcs= finalMy_plc;
-                                    }
+                                public void execute(Realm realm) {
+                                Places plcs=myRealm.createObject(Places.class);
+                                plcs.p_num = Integer.parseInt(ds.getKey().toString());
+                                plcs.name = ds.child("name").getValue().toString();
+                                plcs.type = Integer.parseInt(ds.child("type").getValue().toString());
+                                plcs.visibility =1;
+                                plcs.timestamp = ds.child("date_time_stamp").getValue().toString();
+                                plcs.lat=Double.parseDouble(ds.child("lat").getValue().toString());
+                                plcs.lng=Double.parseDouble(ds.child("lng").getValue().toString());
+                                plcs_list.add(plcs);
+                                Log.v("Places checkkk","name="+plcs.name+"  type"+plcs.type);
+                               }
                                 });
                             }
+                            myRealm.close();
+
                             setPlaceList();
 
                             TextView no_plc=(TextView)findViewById(R.id.no_place);
@@ -183,7 +177,6 @@ public class MyPlaces extends AppCompatActivity implements OnMapReadyCallback,Ad
                         }
                     });
                 }
-
             }
 
             @Override
@@ -214,6 +207,7 @@ public class MyPlaces extends AppCompatActivity implements OnMapReadyCallback,Ad
             ProgressBar pbar=(ProgressBar)findViewById(R.id.place_loading);
             pbar.setVisibility(View.VISIBLE);
         }
+        myRealm.close();
     }
 
     void setPlaceList()

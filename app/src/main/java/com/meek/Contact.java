@@ -48,6 +48,11 @@ public class Contact extends RealmObject {
         return id;
     }
 
+    public String getUID() {
+        return uid;
+    }
+
+
     public String getName() {
         return name;
     }

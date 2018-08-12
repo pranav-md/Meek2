@@ -1,86 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:autofit="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/vid_act"
     android:layout_width="match_parent"
-    android:layout_height="300dp"
-    android:gravity="top">
+    android:layout_height="wrap_content"
+    android:gravity="top"
+    android:orientation="vertical">
 
-    <VideoView
-        android:id="@+id/comp_player"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <VideoView
-        android:id="@+id/act_player"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_alignParentStart="true" />
-
-    <LinearLayout
-        android:id="@+id/vid_buttons"
+    <FrameLayout
+        android:id="@+id/layout_bg_vid"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/act_player"
-        android:layout_marginTop="50dp"
-        android:orientation="horizontal">
+        android:layout_gravity="top|center"
+        android:adjustViewBounds="true">
 
-        <Button
-            android:id="@+id/retake"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <com.dshantanu.androidsquareslib.AndroidSquares
+            android:id="@+id/bg_layout"
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:layout_gravity="center_vertical|center"
             android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:text="retake" />
+            android:elevation="8dp"
+            android:visibility="invisible">
 
-        <Button
-            android:id="@+id/play"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:text="play" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="visible">
 
-        <Button
-            android:id="@+id/trim"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:text="trim" />
+                <VideoView
+                    android:id="@+id/act_player"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_centerInParent="true"
+                    android:layout_gravity="center" />
 
-        <Button
-            android:id="@+id/cancel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:text="cancel" />
-    </LinearLayout>
+                <RelativeLayout
+                    android:id="@+id/play_layer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-    <RelativeLayout
-        android:id="@+id/tap_open"
+                    <Button
+                        android:id="@+id/trim"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/video_cut"
+                        android:gravity="left" />
+
+                    <Button
+                        android:id="@+id/play"
+                        android:layout_width="75dp"
+                        android:layout_height="75dp"
+                        android:layout_alignBottom="@+id/imageView7"
+                        android:layout_alignParentStart="true"
+                        android:layout_marginBottom="20dp"
+                        android:layout_marginStart="156dp"
+                        android:layout_marginTop="100dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_media_play_light"
+                        android:gravity="center"
+                        android:text="play" />
+
+                    <Button
+                        android:id="@+id/retake"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_weight="1"
+                        android:background="@drawable/retake" />
+
+                </RelativeLayout>
+
+            </RelativeLayout>
+        </com.dshantanu.androidsquareslib.AndroidSquares>
+
+        <RelativeLayout
+            android:id="@+id/tap_open"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/white">
+
+            <TextView
+                android:id="@+id/textView18"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="170dp"
+                android:text="Tap to open video camera"
+                android:textAlignment="center"
+                android:textSize="35sp" />
+
+            <ImageView
+                android:id="@+id/imageView7"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_alignBottom="@+id/textView18"
+                android:layout_alignParentStart="true"
+                android:layout_marginBottom="30dp"
+                android:alpha="0.3"
+                app:srcCompat="@drawable/video" />
+
+        </RelativeLayout>
+    </FrameLayout>
+
+    <EditText
+        android:id="@+id/vid_caption"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/white">
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Caption"
+        android:inputType="textPersonName"
+        android:textAlignment="center" />
 
-        <TextView
-            android:id="@+id/textView18"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="170dp"
-            android:text="Tap to open video camera"
-            android:textAlignment="center"
-            android:textSize="35sp" />
-
-        <ImageView
-            android:id="@+id/imageView7"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_alignBottom="@+id/textView18"
-            android:layout_alignParentStart="true"
-            android:layout_marginBottom="30dp"
-            android:alpha="0.3"
-            app:srcCompat="@drawable/video" />
-    </RelativeLayout>
-</RelativeLayout>
+</LinearLayout>

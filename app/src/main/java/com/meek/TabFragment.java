@@ -1,7 +1,8 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
+import android.app.*;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -9,12 +10,15 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.internal.BottomNavigationMenu;
 import android.support.design.widget.BottomNavigationView;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -29,9 +33,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -42,6 +48,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.PlaceLikelihood;
@@ -98,8 +105,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
 
     ActivityVideo act_vid;
+    ListView act_feed_list;
     ActivityImage act_img;
-
+    ArrayList<ActFeed> actFeeds;
+    ActFeedAdapter actFeedAdapter=null;
+    boolean adapted=false;
     private static final int GOOGLE_API_CLIENT_ID = 0;
     Context context;
     ImagePicker imagePicker;
@@ -239,77 +249,103 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         current_layout=inflatedLayout;
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
-
-        setTabsSetActivity();
-
-/*
-        Button camera,video;
-        camera=(Button)inflatedLayout.findViewById(R.id.camera);
-        video=(Button)inflatedLayout.findViewById(R.id.video);
-
-        video.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton add_activity=inflatedLayout.findViewById(R.id.add_act);
+        add_activity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(context,permission.CAMERA)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{permission.CAMERA},
-                            100);
-                }
-                else
-                {
-                    File photoFile = null;
-                    try {
-                        photoFile = createImageFile(".mp4");
-                    } catch (IOException ex) {
-                        // Error occurred while creating the File
-
-                    }
-                    // Continue only if the File was successfully created
-                    if (photoFile != null) {
-                        Uri photoURI = FileProvider.getUriForFile(getActivity(),
-                                "com.example.android.fileprovider",
-                                photoFile);
-                        Intent cameraIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-                        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                        getActivity().startActivityForResult(cameraIntent, VID_REQ);
-                    }
-                }
+                startActivity(new Intent(getContext(),CreateActivity.class));
             }
         });
-        camera.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(context,permission.CAMERA)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{permission.CAMERA},
-                            100);
-                }
-                else
-                {
-                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    // Ensure that there's a camera activity to handle the intent
-                    if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                        // Create the File where the photo should go
-                        File photoFile = null;
-                        try {
-                            photoFile = createImageFile(".png");
-                        } catch (IOException ex) {
-                            // Error occurred while creating the File
+      //  setActFeatureButton();
+     //   setTabsSetActivity();
 
-                        }
-                        // Continue only if the File was successfully created
-                        if (photoFile != null) {
-                            Uri photoURI = FileProvider.getUriForFile(getActivity(),
-                                    "com.example.android.fileprovider",
-                                    photoFile);
-                            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                            startActivityForResult(takePictureIntent, CAM_CODE);
-                        }
-                    }
+        setUsersActivity(inflatedLayout);
+    }
+    void setActFeatureButton()
+    {
+        View cur_view=getView();
+        LinearLayout functions=(LinearLayout)cur_view.findViewById(R.id.functions);
+        Button actbtn=(Button)functions.findViewById(R.id.activity);
+        Button musicbtn=(Button)functions.findViewById(R.id.music);
 
-                }
+        Realm realm = Realm.getDefaultInstance();
+        Realm.init(context);
+        realm.beginTransaction();
+        Drawable icon=null;
+        com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
+        if(result!=null)
+            switch(result.activity)
+            {
+                case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                                                    Log.d("HAH","In Vehicle");
+                                                    break;
+                case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                                                    Log.d("HAH","ON_BICYCLE");
+                                                    break;
+
+                case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                 Log.d("HAH","ON_FOOT");
+                                                 break;
+
+                case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                Log.d("HAH","RUNNING");
+                                                break;
+
+                case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
+                                                Log.d("HAH","STILL");
+                                                break;
+
+                case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                Log.d("HAH","WALKING");
+                                                break;
+
             }
-        });*/
+            if(icon!=null)
+                actbtn.setBackground(icon);
+            else
+                actbtn.setVisibility(View.INVISIBLE);
+        realm.commitTransaction();
+        realm.close();
+        AudioManager audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
+        ;
+        if(audioManager.isMusicActive()==true) {
+            actbtn.setVisibility(View.VISIBLE);
+         //   audiotext.setText("Playing  "+ audioManager.getParameters(""));
+        }
+        else
+            actbtn.setVisibility(View.INVISIBLE);
+
+        // else
+            //audiotext.setText("Not playing");
+
+    }
+
+    void setUsersActivity(View inf_layout)
+    {
+        act_feed_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
+        actFeedAdapter=new ActFeedAdapter();
+        feedListen();
+    }
+
+    void feedListen()
+    {
+        DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
+
+        act_feed_ref.child("Users").child(uid).child("activity_feed").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                String actfeedstr=dataSnapshot.getValue().toString();
+                int num_act=0;
+                actFeeds=new ArrayList<ActFeed>();
+                adaptActFeed(actfeedstr);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override
@@ -330,9 +366,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         super.onActivityResult(requestCode, resultCode, data);
         Log.v("Camera daa", "handle activity");
 
-        if (requestCode == VID_REQ && resultCode == getActivity().RESULT_OK)
+        if (requestCode == VID_REQ)
         {
-           act_vid.onActivityResult(requestCode,resultCode,data);
+            Log.v("vid cam path", "tabfragmnt");
+            act_vid.onActivityResult(requestCode,resultCode,data);
         }
         else if (requestCode == CAM_CODE)
         {
@@ -341,9 +378,61 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         else if(requestCode==SET_DEST)
         {
             Log.v("SET DEST","yoyoyo");
+            String place_name=data.getStringExtra("Place name");
+            final LayoutInflater inflater = LayoutInflater.from(context);
+            View inflatedLayout= getView();
+            final RelativeLayout dest_set=(RelativeLayout)inflatedLayout.findViewById(R.id.dest_set);
+            dest_set.removeAllViews();
+            inflatedLayout= inflater.inflate(R.layout.destination_set, null, false);
+            TextView dest_name=(TextView)inflatedLayout.findViewById(R.id.dest_name);
+            Button close_dest=(Button)inflatedLayout.findViewById(R.id.close_dest);
+            dest_name.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    startActivityForResult(new Intent(getContext(),DestinationPlace.class),SET_DEST);
+                }
+            });
+            close_dest.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    dest_set.removeAllViews();
+                    View inflatedLayout= inflater.inflate(R.layout.set_travelling, null, false);
+                    dest_set.addView(inflatedLayout);
+                    inflatedLayout.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            startActivityForResult(new Intent(getContext(),DestinationPlace.class),SET_DEST);
+                        }
+                    });
+
+                }
+            });
+            dest_name.setText(place_name);
+            dest_set.addView(inflatedLayout);
         }
     }
+    void adaptActFeed(String actFeed)
+    {
+        while(!actFeed.equals(":"))
+        {
+            String a_uid=actFeed.substring(1,actFeed.indexOf('.'));
+            String act_content=actFeed.substring(1,actFeed.substring(1).indexOf(':')+1);
+            actFeed=actFeed.substring(actFeed.substring(1).indexOf(':')+1);
+            Log.v("Adapt Act","act_uid="+a_uid+"  act_content="+act_content);
+            actFeeds.add(new ActFeed("."+act_content+".",a_uid));
+        }
+        actFeedAdapter.getData(actFeeds,getContext(),getChildFragmentManager());
 
+        if(adapted==true)
+        {
+            actFeedAdapter.notifyDataSetChanged();
+        }
+        else
+        {
+            adapted=true;
+            act_feed_list.setAdapter(actFeedAdapter);
+        }
+    }
 
     @SuppressLint("WrongViewCast")
     void setMsgTab()
@@ -353,6 +442,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
         mg_dg_View=(ListView) inflatedLayout.findViewById(R.id.msg_d_list);
+        mg_dg_View.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+
+        });
         mg_dg_adapter=new MsgDialogAdapter(getContext());
         msg_load=(ProgressBar)inflatedLayout.findViewById(R.id.msg_load);
         //// firebase listener to the message list
@@ -375,6 +471,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 }
                 --tot_msg_ppl;
                 adaptMsgs();
+
             }
 
             @Override
@@ -388,6 +485,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             mg_dg_View.setAdapter(mg_dg_adapter);
 
         }
+
+
         /// Declare an array list...assign the data of the messages of list one by one
                             /// such a way that, for each uid-> check offline realm data for the name and dp
                             ///if found save to the arraylist... if not found, query to firebase download the dp and save internal and to realm
@@ -429,6 +528,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         }
         if(msg_load.getVisibility()==View.VISIBLE)
             msg_load.setVisibility(View.INVISIBLE);
+
+
     }
 
 
@@ -451,7 +552,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             public void onDataChange(DataSnapshot dataSnapshot)
             {
                 Realm.init(context);
-                final Realm myRealm= Realm.getDefaultInstance();
+                Realm myRealm= Realm.getDefaultInstance();
                 RealmResults<Contact> everyone=myRealm.where(Contact.class).findAll();
                 final String con_meek=dataSnapshot.child("con_meek").getValue().toString();
                 String activity_meek=dataSnapshot.child("activity_meek").getValue().toString();
@@ -480,6 +581,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
+                                Realm myRealm= Realm.getDefaultInstance();
                                 myRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
                                     public void execute(Realm realm)
@@ -489,6 +591,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                                             cont=realm.where(Contact.class).contains("phnum",phnm.substring(3)).findFirst();
                                         if(cont!=null)
                                         {
+                                            Log.e("Conn setting","current name="+cont.getName());
                                             cont.conn_level=1;
                                             cont.in_meek=true;
                                             cont.setUid(id);
@@ -496,6 +599,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                                         }
                                     }
                                 });
+                                myRealm.close();
                             }
 
                             @Override
@@ -522,6 +626,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 for(final String id:activity_cons)
                 {
                     Log.e("Conn setting","current id="+id);
+                    Log.e("Conn setting","if uid find size="+myRealm.where(Contact.class).equalTo("uid",id).findAll().size());
                     if(myRealm.where(Contact.class).equalTo("uid",id).findAll().size()==0)
                     {
                         ppl_ref.child("Users").child(id).child("Info").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -529,13 +634,14 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.child("phno").getValue().toString();
                                 final String name=dataSnapshot.child("name").getValue().toString();
+                                Realm myRealm= Realm.getDefaultInstance();
                                 myRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
                                     public void execute(Realm realm)
                                     {
-                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).findFirst();
-                                        if(cont==null)
-                                            cont=realm.where(Contact.class).contains("phnum",phnm.substring(3)).findFirst();
+                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).or()
+                                                .contains("phnum",phnm.substring(3))
+                                                .findAll().first();
                                         if(cont==null)
                                         {
                                             cont=realm.createObject(Contact.class);
@@ -571,6 +677,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 for(final String id:loc_cons)
                 {
                     Log.e("Conn setting","current id="+id);
+                    Log.e("Conn setting","if uid find size="+myRealm.where(Contact.class).equalTo("uid",id).findAll().size());
                     if(myRealm.where(Contact.class).equalTo("uid",id).findAll().size()==0)
                     {
                         ppl_ref.child("Users").child(id).child("Info").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -578,13 +685,14 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.child("phno").getValue().toString();
                                 final String name=dataSnapshot.child("name").getValue().toString();
+                                Realm myRealm= Realm.getDefaultInstance();
                                 myRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
                                     public void execute(Realm realm)
                                     {
-                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).findFirst();
-                                        if(cont==null)
-                                            cont=realm.where(Contact.class).contains("phnum",phnm.substring(3)).findFirst();
+                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).or()
+                                                            .contains("phnum",phnm.substring(3))
+                                                            .findAll().first();
                                         if(cont==null)
                                         {
                                             cont=realm.createObject(Contact.class);
@@ -616,6 +724,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                         });
                     }
                 }
+                myRealm.close();
                 setConnectionList();
 
 
@@ -680,7 +789,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         int curr_stat=actPrefs.getInt("curr_stat",11);
         final NonSwipeableActivityTabs mviewPager = (NonSwipeableActivityTabs) current_layout.findViewById(R.id.tab_container);
         ActivityTabAdapter activityTabAdapter = new ActivityTabAdapter(getChildFragmentManager());
-
         act_vid=new ActivityVideo();
         act_img=new ActivityImage();
         final ActivityText act_txt=new ActivityText();
@@ -837,6 +945,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             conn_list.add(contact);
             Log.e("Setconnectionlist","list guy="+contact.getName());
         }
+
         connectionAdapter.getData(conn_list,getContext());
         if(curr_tab==0)
         {
@@ -850,9 +959,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 connectionAdapter.notifyDataSetChanged();
             }
         }
-
-
-
+       // myRealm.close();
     }
 
 }
@@ -912,4 +1019,29 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
     {
         return conn_ppl.get(position).conn_level;
     }
+}
+
+class ActFeed
+{
+    String a_uid;
+    ArrayList<Activities> activities;
+
+    ActFeed(String act_content,String a_uid)
+    {
+        activities=new ArrayList<Activities>();
+        this.a_uid=a_uid;
+        int num=0;
+        while(!act_content.equals("."))
+        {
+            Activities newone= new Activities();
+
+            newone.act_id=act_content.substring(1,act_content.substring(1).indexOf('.')+1);
+            act_content=act_content.substring(act_content.substring(1).indexOf('.')+1);
+            activities.add(newone);
+        }
+
+        //getName();
+
+    }
+
 }

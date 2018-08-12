@@ -1,1 +1,1 @@
-include ':app', ':CustomRadioAndShapes'
+include ':app', ':silicompressor', ':ffmpeg4android_lib'

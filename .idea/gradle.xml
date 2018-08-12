@@ -8,8 +8,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/CustomRadioAndShapes" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/ffmpeg4android_lib" />
+            <option value="$PROJECT_DIR$/silicompressor" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
