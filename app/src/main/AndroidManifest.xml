@@ -78,7 +78,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <activity android:name=".MyProfileFrag">
+        <activity android:name=".Fragments.MyProfileFrag">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -135,7 +135,7 @@
 
 
 
-        <activity android:name=".AuthenticationActivity">
+        <activity android:name=".Authentication.AuthenticationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -143,9 +143,9 @@
 
         </activity>
 
-        <service android:name=".LocationService" android:process=":my_service" />
+        <service android:name=".Service.LocationService" android:process=":my_service" />
 
-        <service android:name=".ActivityService"/>
+        <service android:name=".Service.ActivityService"/>
 
         <activity android:name="com.soundcloud.android.crop.CropImageActivity"/>
 

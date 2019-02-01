@@ -28,6 +28,7 @@ import java.util.Locale;
 /**
  * Created by bruno on 17/05/16.
  */
+@SuppressLint("NewApi")
 public class CompressAsyncTask extends AsyncTask<Uri, Void, Uri> {
     private static final String TAG = CompressAsyncTask.class.getSimpleName();
     private WeakReference<MainActivity> mWeakReference;
@@ -41,7 +42,7 @@ public class CompressAsyncTask extends AsyncTask<Uri, Void, Uri> {
         mWeakReference = new WeakReference<>(context);
         this.context=context;
 
-        File mediaFolder = Environment.getExternalStoragePublicDirectory("VideoCompression");
+        @SuppressLint({"NewApi", "LocalSuppress"}) File mediaFolder = Environment.getExternalStoragePublicDirectory("VideoCompression");
         if(!mediaFolder.exists()){
             Log.i(TAG, "fCreating [" + mediaFolder.getAbsolutePath() + "] folders " + mediaFolder.mkdirs());
         }
@@ -53,16 +54,17 @@ public class CompressAsyncTask extends AsyncTask<Uri, Void, Uri> {
     protected Uri doInBackground(Uri... uris) {
         mStartTime = System.currentTimeMillis();
         ///
+        /*
         String imageFileName = "trim_uncom_activity";
         String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
         File image = new File(storageDir,
                 imageFileName + /* prefix */
-                        ".mp4" /* suffix */
+                   //     ".mp4" /* suffix */
                       /* directory */
-        );
-
+  //      );
 
         ///
+        /*
         String input =getRealPath(Uri.fromFile(image));
         String output = image.getPath().replace("trim_uncom_activity","compressed_act");
         LoadJNI vk = new LoadJNI();
@@ -77,16 +79,9 @@ public class CompressAsyncTask extends AsyncTask<Uri, Void, Uri> {
         } catch (Throwable e) {
             Log.e(TAG, "vk run exception.", e);
         }
+*/
+        return null;
 
-        return Uri.fromFile(new File(output));
-    }
-
-    @Override
-    protected void onPostExecute(Uri uri) {
-        super.onPostExecute(uri);
-        Log.i(TAG, "Total time spent: " + (mEndTime-mStartTime));
-      //  mWeakReference.get().compressFinished(uri, mEndTime-mStartTime);
-        Toast.makeText(mWeakReference.get(), "Finished", Toast.LENGTH_LONG).show();
     }
 
     @SuppressLint("NewApi")

@@ -1,4 +1,4 @@
-package com.meek;
+package com.meek.Fragments;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -14,6 +14,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.meek.MapPeople;
+import com.meek.R;
 
 /**
  * Created by User on 11-Jun-18.

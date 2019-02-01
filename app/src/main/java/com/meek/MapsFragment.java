@@ -45,6 +45,7 @@ import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
+import com.meek.Fragments.BSProfileFragment;
 import com.wajahatkarim3.easyflipview.EasyFlipView;
 
 import java.io.File;

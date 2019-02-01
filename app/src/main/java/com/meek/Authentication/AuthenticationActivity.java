@@ -1,16 +1,13 @@
-package com.meek;
+package com.meek.Authentication;
 
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -34,7 +31,6 @@ import com.google.firebase.FirebaseTooManyRequestsException;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.database.DataSnapshot;
@@ -42,11 +38,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.meek.MainActivity;
+import com.meek.R;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import static android.content.ContentValues.TAG;
 
 //import android.database.Cursor;
 
@@ -54,8 +53,7 @@ import static android.content.ContentValues.TAG;
  * Created by User on 19-Dec-17.
  */
 
-public class
-AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+public class AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     private ProgressDialog progressBar;
     String[] countryNames={"Afghanistan 	+93",
@@ -451,6 +449,24 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
 
                 uidpref.putString("uid", uid);
                 uidpref.putString("enc_key", enc_key);
+
+                MessageDigest md = null;
+                try {
+                    md = MessageDigest.getInstance("SHA-256");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+                byte[] hashInBytes = md.digest(String.valueOf(pnum).getBytes(StandardCharsets.UTF_8));
+
+                // bytes to hex
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hashInBytes) {
+                    sb.append(String.format("%02x", b));
+                }
+                userRef.child("Users").child(uid).child("hashed_phnum").setValue(sb.toString());
+                userRef.child("NUM_ID").child(sb.toString()).child("hashed_phnum").setValue(enc_key);
+
+
                 uidpref.commit();
                 nextActivity();
             }
