@@ -1,4 +1,4 @@
-package com.meek;
+package com.meek.Service;
 
 import android.app.Activity;
 import android.app.IntentService;
@@ -111,11 +111,11 @@ public class ActivityService extends IntentService
                 if(old_act==null)
                 {
                     com.meek.Activity new_act=realm.createObject(com.meek.Activity.class);
-                    new_act.activity= finalAct;
+                   // new_act.activity= finalAct;
                 }
                 else
                 {
-                    old_act.activity= finalAct;
+                  //  old_act.activity= finalAct;
                 }
 
             }

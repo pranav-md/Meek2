@@ -1,4 +1,4 @@
-package com.meek;
+package com.meek.Fragments;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.widget.DatePicker;
 import android.widget.TimePicker;
+
+import com.meek.MyActivities;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

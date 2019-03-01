@@ -1,4 +1,4 @@
-package com.meek;
+package com.meek.Service;
 
 import android.app.Service;
 import android.content.Intent;
@@ -20,6 +20,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.meek.Contact;
 
 import java.io.File;
 import java.io.FileNotFoundException;
