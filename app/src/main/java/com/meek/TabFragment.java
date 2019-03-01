@@ -63,6 +63,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
+import com.meek.Database.PeopleDBHelper;
 import com.myhexaville.smartimagepicker.ImagePicker;
 import com.myhexaville.smartimagepicker.OnImagePickedListener;
 
@@ -131,7 +132,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     int tot_msg_ppl;
     ProgressBar msg_load;
     MsgDialogAdapter mg_dg_adapter;
-
+    View btnView;
     //////////////////////
     ConnectionAdapter connectionAdapter=null;
     StickyListHeadersListView con_list=null;
@@ -157,6 +158,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         final BottomNavigation btm_nav=(BottomNavigation)view.findViewById(R.id.bottom_nav);
         final BottomNavigation check_sel=btm_nav;
         btm_nav.setSelectedIndex(2,true);
+        btnView=view;
        plcs=(TextView)view.findViewById(R.id.placess);
        context=getContext();
         tabcontainer=view.findViewById(R.id.tabscontainer);
@@ -222,7 +224,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setPlaceList()
     {
-        plcs.setText(placess);
+        plcs.setText(" ");
     }
 
     @Override
@@ -249,7 +251,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         current_layout=inflatedLayout;
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
-        FloatingActionButton add_activity=inflatedLayout.findViewById(R.id.add_act);
+        FloatingActionButton add_activity=btnView.findViewById(R.id.add_act);
         add_activity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -395,15 +397,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             close_dest.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    dest_set.removeAllViews();
-                    View inflatedLayout= inflater.inflate(R.layout.set_travelling, null, false);
-                    dest_set.addView(inflatedLayout);
-                    inflatedLayout.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            startActivityForResult(new Intent(getContext(),DestinationPlace.class),SET_DEST);
-                        }
-                    });
 
                 }
             });
@@ -551,9 +544,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
-                Realm.init(context);
-                Realm myRealm= Realm.getDefaultInstance();
-                RealmResults<Contact> everyone=myRealm.where(Contact.class).findAll();
                 final String con_meek=dataSnapshot.child("con_meek").getValue().toString();
                 String activity_meek=dataSnapshot.child("activity_meek").getValue().toString();
                 String location_meek=dataSnapshot.child("location_meek").getValue().toString();
@@ -561,45 +551,19 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 ArrayList<String> meek_cons=extractor(con_meek);
                 ArrayList<String> activity_cons=extractor(activity_meek);
                 ArrayList<String> loc_cons=extractor(location_meek);
-                myRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        for(Contact con:realm.where(Contact.class).findAll()) {
-                            con.in_meek=false;
-                            con.conn_level = 0;
-                        }
-                    }
-                });
-
-                /////
+                new PeopleDBHelper(getContext());
                 for(final String id:meek_cons)
                 {
-                    if(myRealm.where(Contact.class).equalTo("uid",id).findAll().size()==0)
+                    Log.e("MEEK CONS","id="+id);
+                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
                     {
-                        Log.e("Conn setting","current id="+id);
+                        Log.e("Conn meek_con setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
-                                Realm myRealm= Realm.getDefaultInstance();
-                                myRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(Realm realm)
-                                    {
-                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).findFirst();
-                                        if(cont==null)
-                                            cont=realm.where(Contact.class).contains("phnum",phnm.substring(3)).findFirst();
-                                        if(cont!=null)
-                                        {
-                                            Log.e("Conn setting","current name="+cont.getName());
-                                            cont.conn_level=1;
-                                            cont.in_meek=true;
-                                            cont.setUid(id);
-                                            cont.setPhnum(phnm);
-                                        }
-                                    }
-                                });
-                                myRealm.close();
+                                if(phnm!=null)
+                                    new PeopleDBHelper(getContext()).insertPerson(id,phnm,1);
                             }
 
                             @Override
@@ -608,123 +572,64 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else
+                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,1)))
                     {
-
-                        myRealm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(Realm realm)
-                            {
-                                Contact cont=realm.where(Contact.class).equalTo("uid",id).findFirst();
-                                cont.conn_level=1;
-                                cont.in_meek=true;
-                            }
-                        });
+                        new PeopleDBHelper(getContext()).changePersonStatus(id,1);
                     }
                 }
                 ///////////
                 for(final String id:activity_cons)
                 {
-                    Log.e("Conn setting","current id="+id);
-                    Log.e("Conn setting","if uid find size="+myRealm.where(Contact.class).equalTo("uid",id).findAll().size());
-                    if(myRealm.where(Contact.class).equalTo("uid",id).findAll().size()==0)
+                    Log.e("ACTIVITY CONS","id="+id);
+                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
                     {
-                        ppl_ref.child("Users").child(id).child("Info").addListenerForSingleValueEvent(new ValueEventListener() {
+                        Log.e("Conn activity setting","current id="+id);
+                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm=dataSnapshot.child("phno").getValue().toString();
-                                final String name=dataSnapshot.child("name").getValue().toString();
-                                Realm myRealm= Realm.getDefaultInstance();
-                                myRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(Realm realm)
-                                    {
-                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).or()
-                                                .contains("phnum",phnm.substring(3))
-                                                .findAll().first();
-                                        if(cont==null)
-                                        {
-                                            cont=realm.createObject(Contact.class);
-                                            cont.setName(name);
-                                        }
-                                        cont.conn_level=2;
-                                        cont.in_meek=true;
-                                        cont.setUid(id);
-                                        cont.setPhnum(phnm);
-                                    }
-                                });
+                                final String phnm=dataSnapshot.getValue().toString();
+                                if(phnm!=null);
+                                    new PeopleDBHelper(getContext()).insertPerson(id,phnm,2);
                             }
+
                             @Override
                             public void onCancelled(DatabaseError databaseError) {
 
                             }
                         });
                     }
-                    else
+                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,2)))
                     {
-                        myRealm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(Realm realm)
-                            {
-                                Contact cont=realm.where(Contact.class).equalTo("uid",id).findFirst();
-                                cont.conn_level=2;
-                                cont.in_meek=true;
-                            }
-                        });
+                            new PeopleDBHelper(getContext()).changePersonStatus(id,2);
                     }
                 }
-                /////
+
                 for(final String id:loc_cons)
                 {
-                    Log.e("Conn setting","current id="+id);
-                    Log.e("Conn setting","if uid find size="+myRealm.where(Contact.class).equalTo("uid",id).findAll().size());
-                    if(myRealm.where(Contact.class).equalTo("uid",id).findAll().size()==0)
+                    Log.e("LOC CONS","id="+id);
+                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
                     {
-                        ppl_ref.child("Users").child(id).child("Info").addListenerForSingleValueEvent(new ValueEventListener() {
+                        Log.e("Checked loc CONS","id="+id);
+                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm=dataSnapshot.child("phno").getValue().toString();
-                                final String name=dataSnapshot.child("name").getValue().toString();
-                                Realm myRealm= Realm.getDefaultInstance();
-                                myRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(Realm realm)
-                                    {
-                                        Contact cont=realm.where(Contact.class).equalTo("phnum",phnm).or()
-                                                            .contains("phnum",phnm.substring(3))
-                                                            .findAll().first();
-                                        if(cont==null)
-                                        {
-                                            cont=realm.createObject(Contact.class);
-                                            cont.setName(name);
-                                        }
-                                        cont.conn_level=3;
-                                        cont.in_meek=true;
-                                        cont.setUid(id);
-                                        cont.setPhnum(phnm);
-                                    }
-                                });
+                                final String phnm=dataSnapshot.getValue().toString();
+                                if(phnm!=null);
+                                    new PeopleDBHelper(getContext()).insertPerson(id,phnm,3);
+                                Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
                             }
+
                             @Override
                             public void onCancelled(DatabaseError databaseError) {
 
                             }
                         });
                     }
-                    else
+                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,3)))
                     {
-                        myRealm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(Realm realm)
-                            {
-                                Contact cont=realm.where(Contact.class).equalTo("uid",id).findFirst();
-                                cont.conn_level=3;
-                                cont.in_meek=true;
-                            }
-                        });
+                        new PeopleDBHelper(getContext()).changePersonStatus(id,3);
                     }
                 }
-                myRealm.close();
                 setConnectionList();
 
 
@@ -808,14 +713,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         else
             mviewPager.setCurrentItem(2);
 
-        TextView set_dest=(TextView) current_layout.findViewById(R.id.set_dest);
-        set_dest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view)
-            {
-                startActivityForResult(new Intent(getContext(),DestinationPlace.class),SET_DEST);
-            }
-        });
+
         mviewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -935,16 +833,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     }
     void setConnectionList()
     {
-        Realm.init(context);
-        Realm myRealm= Realm.getDefaultInstance();
-        RealmResults<Contact> contacts= myRealm.where(Contact.class).equalTo("in_meek",true).findAll();
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
-        Log.e("Setconnectionlist","going to set the thing");
-        for(Contact contact:contacts)
-        {
-            conn_list.add(contact);
-            Log.e("Setconnectionlist","list guy="+contact.getName());
-        }
+        conn_list=new PeopleDBHelper(context).getAllConnections();
 
         connectionAdapter.getData(conn_list,getContext());
         if(curr_tab==0)
@@ -959,8 +849,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 connectionAdapter.notifyDataSetChanged();
             }
         }
-       // myRealm.close();
     }
+
 
 }
 class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
@@ -989,6 +879,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
+        Log.e("CONN ADAPTER","NAME:"+conn_ppl.get(i).getName()+"   UID:"+conn_ppl.get(i).getUID());
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         view = inflater.inflate(R.layout.viewer_list_item, null);
         TextView name=(TextView) view.findViewById(R.id.name);
@@ -1034,7 +925,6 @@ class ActFeed
         while(!act_content.equals("."))
         {
             Activities newone= new Activities();
-
             newone.act_id=act_content.substring(1,act_content.substring(1).indexOf('.')+1);
             act_content=act_content.substring(act_content.substring(1).indexOf('.')+1);
             activities.add(newone);

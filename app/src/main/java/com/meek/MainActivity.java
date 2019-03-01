@@ -69,15 +69,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         dp = (CircleImageView) findViewById(R.id.dp);
         tabFragment = new TabFragment(MainActivity.this);
         /////////
-        CompressAsyncTask task = new CompressAsyncTask(this);
-        task.execute();
+      //  CompressAsyncTask task = new CompressAsyncTask(this);
+    //    task.execute();
         /////////////////
         FragmentManager tabfm = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();
         fragmentTransaction.replace(R.id.frg_container, tabFragment);
         fragmentTransaction.commit();
 
-        startService(new Intent(MainActivity.this, LocationService.class));
+      //  startService(new Intent(MainActivity.this, LocationService.class));
 
         sp = getSharedPreferences("CONTACT_SYNC", Context.MODE_PRIVATE);
         sc = sp.getString("CON_FLAG", "");
@@ -128,12 +128,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
                 String uid=mypref.getString("uid","");
                 setColor(1);
-                try {
-                    new ContactSync().syncContact("update",MainActivity.this,uid);
-                } catch (NumberParseException e) {
-                    e.printStackTrace();
-                }
-/*try {
+                //         new ContactSync().syncContact("update",MainActivity.this,uid);
+                /*try {
                     new ContactSync().syncContact("update", MainActivity.this,uid);
 
                 } catch (NumberParseException e) {

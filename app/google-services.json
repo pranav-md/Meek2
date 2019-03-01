@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1074002721565-c162ver504oj6pdud0633ildut6ubi76.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.meek",
+            "certificate_hash": "aed38ef588fb60453238cebefb94aba0c56594b9"
+          }
+        },
+        {
           "client_id": "1074002721565-9an8m3funls1uk6v7024fgtp06res11s.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

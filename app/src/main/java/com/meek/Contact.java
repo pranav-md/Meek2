@@ -6,7 +6,7 @@ import io.realm.RealmObject;
  * Created by User on 28-May-18.
  */
 
-public class Contact extends RealmObject {
+public class Contact {
     private String id, name, phnum, status, uid,dpno;
     int conn_level;
     boolean in_meek;
@@ -27,6 +27,14 @@ public class Contact extends RealmObject {
     {
         this.uid="0";
     }
+    public Contact(String uid,String name,int con_level)
+
+    {
+        this.uid=uid;
+        this.name=uid;
+        this.conn_level=con_level;
+    }
+
     public void setUid(String uid)
     {
         this.uid=uid;

@@ -6,8 +6,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationManager;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -17,6 +20,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -29,23 +33,51 @@ import com.google.android.gms.location.places.*;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.polyak.iconswitch.IconSwitch;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
 
 import io.realm.Realm;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by User on 06-Jul-18.
  */
 
 public class CreateActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks  {
+
+    private static final int LOCATION_INTERVAL = 1000;
+    private static final float LOCATION_DISTANCE = 10f;
+    public LocationManager mLocationManager = null;
+    String place_name,caption;
     private GeoDataClient mGeoDataClient;
     int CAM_CODE=1,VID_REQ=2,SET_DEST=3;
     ActivityVideo act_vid;
+    LatLng cur_location;
     ActivityImage act_img;
-
     private PlaceDetectionClient mPlaceDetectionClient;
+    String uid;
+
     Context context;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)
@@ -53,20 +85,129 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         super.onCreate(savedInstanceState);
         setContentView(R.layout.create_activity);
         context=CreateActivity.this;
+        mGeoDataClient = Places.getGeoDataClient(context, null);
+        mPlaceDetectionClient = Places.getPlaceDetectionClient(context, null);
+        locationListenSet();
+        SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
+        uid=pref.getString("uid","");
+
+        callPlaceDetectionApi();
 
         mGeoDataClient = com.google.android.gms.location.places.Places.getGeoDataClient(context, null);
         mPlaceDetectionClient = Places.getPlaceDetectionClient(context, null);
         setActivtiyTab();
     }
+    void setCaptionText(String text)
+    {
+        caption=text;
+    }
+    void uploadActivity()
+    {
+        SharedPreferences actPrefs= getSharedPreferences("ActPrefs", MODE_PRIVATE);
+        int curr_stat=actPrefs.getInt("curr_stat",11);
 
+        String storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
+        File file = new File(storageDir, "activity.crypt");
+        int size = (int) file.length();
+        final byte[] bytes = new byte[size];
+        try
+        {
+            BufferedInputStream buf = new BufferedInputStream(new FileInputStream(file));
+            buf.read(bytes, 0, bytes.length);
+            buf.close();
+        }
+        catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+                ////
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final DatabaseReference userRef = database.getReference("Activities");
+        userRef.child(uid).child("Activity_info").child("Activity_num").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(final DataSnapshot dataSnapshot)
+                    {
+                        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+                        SharedPreferences getprefs = getSharedPreferences("ActsPrefs", MODE_PRIVATE);
+                        final int curr_stat=getprefs.getInt("curr_stat",11);
+                        if(curr_stat!=25)
+                            storageReference.child("Activity/"+uid+"_"+(Integer.parseInt(dataSnapshot.getValue().toString())+1)+".crypt").putBytes(bytes).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>(){
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                                    setAttributes(Integer.parseInt(dataSnapshot.getValue().toString())+1,curr_stat);
+                                    userRef.child(uid).child("Activity_info").child("Activity_num").setValue(Integer.parseInt(dataSnapshot.getValue().toString())+1);
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception exception) {
+                                }
+                            });
+                        else
+                        {
+                                setAttributes(Integer.parseInt(dataSnapshot.getValue().toString())+1,curr_stat);
+                        }
+
+
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+    }
+
+    void setAttributes(int act_num,int curr_stat)
+    {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference userRef = database.getReference("Activities");
+        IconSwitch privacy=(IconSwitch)findViewById(R.id.privacy_status);
+        boolean p_stat=privacy.isActivated();
+        SimpleDateFormat dateFormatGmt = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
+        dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+        String getTime= dateFormatGmt.format(new Date())+"";
+
+        String map_branch;
+        int visiblity;
+        if(p_stat)
+        {
+            map_branch="personal";
+            visiblity=0;
+        }
+        else
+        {
+            visiblity=1;
+            map_branch="public";
+        }
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(cur_location.latitude);
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(cur_location.longitude);
+        userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
+
+
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(curr_stat);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(place_name);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(getTime);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(caption);
+
+    }
 
     void setActivtiyTab()
     {
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View inflatedLayout= inflater.inflate(R.layout.activity_tab, null, false);
-
-        setActFeatureButton();
+        //setActFeatureButton();
+        final Button upload=(Button)findViewById(R.id.okay);
+        upload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                uploadActivity();
+            }
+        });
         setTabsSetActivity();
+
     }
     void setActFeatureButton()
     {
@@ -75,7 +216,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         Button musicbtn=(Button)functions.findViewById(R.id.music);
 
 
-        Realm realm = Realm.getDefaultInstance();
+  /*      Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
         Drawable icon=null;
         com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
@@ -106,12 +247,14 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                     break;
 
             }
+
         if(icon!=null)
             actbtn.setBackground(icon);
         else
             actbtn.setVisibility(View.INVISIBLE);
         realm.commitTransaction();
         realm.close();
+            */
         AudioManager audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
         ;
         if(audioManager.isMusicActive()==true) {
@@ -151,14 +294,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         else
             mviewPager.setCurrentItem(2);
 
-        TextView set_dest=(TextView) findViewById(R.id.set_dest);
-        set_dest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view)
-            {
-                startActivityForResult(new Intent(context,DestinationPlace.class),SET_DEST);
-            }
-        });
+
         mviewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -278,6 +414,20 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 pla.getData(plc_list,CreateActivity.this);
                 Spinner spinner=findViewById(R.id.spinner);
                 spinner.setAdapter(pla);
+                spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                            TextView plc_view=(TextView)view.findViewById(R.id.plc_name);
+                            place_name=plc_view.getText().toString();
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> adapterView) {
+
+                    }
+                });
+
+
             }
         });
     }
@@ -300,7 +450,74 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
 
     }
 
+//////////////
 
+    void locationListenSet() {
+        initializeLocationManager();
+        CreateActivity.LocationListener[] mLocationListeners = new CreateActivity.LocationListener[]{
+                new CreateActivity.LocationListener(LocationManager.GPS_PROVIDER),
+                new CreateActivity.LocationListener(LocationManager.NETWORK_PROVIDER)
+        };
+        try {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                    mLocationListeners[1]);
+        } catch (java.lang.SecurityException ex) {
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        } catch (IllegalArgumentException ex) {
+            Log.d(TAG, "network provider does not exist, " + ex.getMessage());
+        }
+        try {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                    mLocationListeners[0]);
+        } catch (java.lang.SecurityException ex) {
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        } catch (IllegalArgumentException ex) {
+            Log.d(TAG, "gps provider does not exist " + ex.getMessage());
+        }
+
+    }
+
+    private void initializeLocationManager() {
+        Log.e(TAG, "initializeLocationManager");
+        if (mLocationManager == null) {
+            mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        }
+    }
+    public class LocationListener implements android.location.LocationListener {
+        public Location mLastLocation;
+        int i = 0;
+
+        public LocationListener(String provider) {
+            Log.e(TAG, "LocationListener " + provider);
+            mLastLocation = new Location(provider);
+        }
+
+        @Override
+        public void onLocationChanged(Location location)
+        {
+            cur_location = new LatLng(location.getLatitude(), location.getLongitude());
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Log.e(TAG, "onProviderDisabled: " + provider);
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Log.e(TAG, "onProviderEnabled: " + provider);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.e(TAG, "onStatusChanged: " + provider);
+        }
+
+
+    }
 }
 
 class ListPlace

@@ -10,8 +10,8 @@
 
     <RelativeLayout
         android:id="@+id/tabscontainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="426dp"
+        android:layout_height="597dp"
         android:layout_marginBottom="45dp">
 
     </RelativeLayout>
@@ -23,6 +23,21 @@
         android:layout_marginTop="200dp"
         android:text="TextView" />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/add_act"
+        android:layout_width="76dp"
+        android:layout_height="408dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="287dp"
+        android:layout_marginLeft="110dp"
+        android:layout_marginTop="550dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="66dp"
+        android:background="@drawable/activity"
+        android:src="@drawable/activity"
+        app:backgroundTint="@android:color/transparent" />
     <it.sephiroth.android.library.bottomnavigation.BottomNavigation
         android:id="@+id/bottom_nav"
         android:layout_width="match_parent"

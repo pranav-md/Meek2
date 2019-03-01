@@ -12,6 +12,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import com.victorminerva.widget.edittext.AutofitEdittext;
 
@@ -59,6 +60,8 @@ public class ActivityText extends Fragment {
 
             @Override
             public void afterTextChanged(Editable editable) {
+                CreateActivity act_funcall = (CreateActivity) getContext();
+                act_funcall.setCaptionText(act_edit.getText().toString());
 
             }
         });
@@ -67,3 +70,4 @@ public class ActivityText extends Fragment {
     }
 
 }
+

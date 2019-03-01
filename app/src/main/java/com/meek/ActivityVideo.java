@@ -1,5 +1,5 @@
 package com.meek;
-
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +21,8 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +38,8 @@ import android.widget.VideoView;
 
 import com.dshantanu.androidsquareslib.AndroidSquares;
 import com.googlecode.mp4parser.authoring.Edit;
+import com.iceteck.silicompressorr.SiliCompressor;
+import com.meek.Encryption.AES;
 //import com.iceteck.silicompressorr.SiliCompressor;
 
 import java.io.File;
@@ -84,6 +88,8 @@ public class ActivityVideo extends Fragment {
 
         if (requestCode == VID_REQ)                    ///received the actvity result for display the video
         {
+            new VideoCompressAsyncTask(getContext()).execute(mCurrentPhotoPath, mCurrentPhotoPath.replace("/activity.mp4",""));
+
             if (data.getIntExtra("CASE", 3) == 2)       //whether this is a case of update the left and right
             {
                 left = data.getIntExtra("LEFT", 3);
@@ -104,14 +110,14 @@ public class ActivityVideo extends Fragment {
 
     void editVideo(int cse)         ///intent for edit the video
     {
-        Intent edt_intent = new Intent(getContext(), CutVideo.class);
+     /*   Intent edt_intent = new Intent(getContext(), CutVideo.class);
         edt_intent.putExtra("PATH", mCurrentPhotoPath);
         edt_intent.putExtra("CASE", cse);
         if (cse == 2) {
             edt_intent.putExtra("LEFT", left);
             edt_intent.putExtra("RIGHT", right);
         }
-        startActivityForResult(edt_intent, VID_REQ);
+        startActivityForResult(edt_intent, VID_REQ);*/
     }
 
     void keyBoardON()               ///if keyboard is on..change the size of the layouts
@@ -148,6 +154,26 @@ public class ActivityVideo extends Fragment {
 
     void setKeyboardListener()          ///listen the keyboard changes
     {
+
+        final EditText enter_caption=(EditText)vid_view.findViewById(R.id.vid_caption);
+        enter_caption.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                CreateActivity act_funcall = (CreateActivity) getContext();
+                act_funcall.setCaptionText(enter_caption.getText().toString());
+
+            }
+        });
         //////
         final View activityRootView = vid_view.findViewById(R.id.vid_act);
         final Handler handler = new Handler();
@@ -192,6 +218,7 @@ public class ActivityVideo extends Fragment {
 
     void setVideo()         ///sets the video appropriately
     {
+        new AES().encryptActivityVideo("pmdroxx",getActivity());
         SharedPreferences getprefs = getContext().getSharedPreferences("ActsPrefs", MODE_PRIVATE);
         SharedPreferences.Editor edit_prefs = getprefs.edit();
         edit_prefs.putInt("curr_stat", 4);
@@ -205,7 +232,7 @@ public class ActivityVideo extends Fragment {
         Bitmap thumb = ThumbnailUtils.createVideoThumbnail(mCurrentPhotoPath, MediaStore.Video.Thumbnails.MINI_KIND);
         AndroidSquares thump = (AndroidSquares) vid_view.findViewById(R.id.bg_layout);
         thump.setBackground(new BitmapDrawable(getResources(), thumb));
-        act_player.setVideoURI(Uri.parse(mCurrentPhotoPath.replace("activity", "trim_activity")));
+        act_player.setVideoURI(Uri.parse(mCurrentPhotoPath));
         //  comp_player.setVideoURI(Uri.parse(mCurrentPhotoPath.replace("activity","com_activity")));
         act_player.start();
         final RelativeLayout play_layer = (RelativeLayout) vid_view.findViewById(R.id.play_layer);
@@ -250,6 +277,7 @@ public class ActivityVideo extends Fragment {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.FROYO)
     void setFront()             ////setting the start-up screen of the activity appropriately
     {
         SharedPreferences actPrefs = getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
@@ -295,7 +323,7 @@ public class ActivityVideo extends Fragment {
             cameraIntent.putExtra(MediaStore.EXTRA_DURATION_LIMIT,20);
 
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-            startActivityForResult(cameraIntent, VID_EDT);
+            startActivityForResult(cameraIntent, VID_REQ);
         }
     }
 
@@ -308,13 +336,70 @@ public class ActivityVideo extends Fragment {
         File image = new File(storageDir,
                 imageFileName + /* prefix */
                         ".mp4" /* suffix */
-                      /* directory */
+                /* directory */
         );
 
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
         return image;
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+    class VideoCompressAsyncTask extends AsyncTask<String, String, String> {
+
+        Context mContext;
+        ProgressDialog p_dialog;
+
+
+        public VideoCompressAsyncTask(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            p_dialog = new ProgressDialog(mContext);
+            p_dialog.setMessage("Its loading....");
+            p_dialog.show();
+            p_dialog.setCancelable(false);
+
+        }
+
+        @Override
+        protected String doInBackground(String... paths) {
+            String filePath = null;
+            try {
+                Log.e("Silicompressor", "Compression started");
+                filePath = SiliCompressor.with(mContext).compressVideo(paths[0], paths[1]);
+                Log.e("Silicompressor", "Compression finished");
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            return filePath;
+
+        }
+
+
+        @Override
+        protected void onPostExecute(String compressedFilePath) {
+            super.onPostExecute(compressedFilePath);
+            File videoFile = new File(compressedFilePath);
+            float length = videoFile.length() / 1024f; // Size in KB
+            String value;
+            if (length >= 1024)
+                value = length / 1024f + " MB";
+            else
+                value = length + " KB";
+            videoFile.renameTo(new File(compressedFilePath.replace(compressedFilePath.substring(compressedFilePath.indexOf("VIDEO"),compressedFilePath.indexOf(".mp4")),"activity")));
+            p_dialog.dismiss();
+            Log.i("Silicompressor", "Path: " + compressedFilePath);
+            setVideo();
+        }
+    }
+
+
+
+
 
 
 }

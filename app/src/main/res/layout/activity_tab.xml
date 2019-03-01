@@ -12,7 +12,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 comment -->
-    <LinearLayout
+
+        <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -26,24 +27,28 @@ comment -->
             android:textAlignment="center"
             android:textSize="20sp" />
 
-        <ListView
-            android:id="@+id/activity_feed"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </LinearLayout>
+            <ListView
+                android:id="@+id/activity_feed"
+                android:layout_width="match_parent"
+                android:layout_height="427dp" />
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/add_act"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginBottom="17dp"
-        android:layout_marginEnd="27dp"
-        android:background="@drawable/activity"
-        android:paddingBottom="100dp"
-        android:src="@drawable/activity"
-        app:backgroundTint="@android:color/transparent" />
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/add_act"
+                android:layout_width="114dp"
+                android:layout_height="69dp"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="287dp"
+                android:layout_marginLeft="100dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="66dp"
+                android:background="@drawable/activity"
+                android:src="@drawable/activity"
+                app:backgroundTint="@android:color/transparent" />
+
+        </LinearLayout>
 
 
-</RelativeLayout>
+
+    </RelativeLayout>

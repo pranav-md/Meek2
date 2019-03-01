@@ -1,6 +1,7 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,12 +14,15 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.Image;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.ViewDragHelper;
@@ -26,6 +30,8 @@ import android.support.v8.renderscript.Allocation;
 import android.support.v8.renderscript.Element;
 import android.support.v8.renderscript.RenderScript;
 import android.support.v8.renderscript.ScriptIntrinsicBlur;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -42,13 +48,16 @@ import android.widget.TextView;
 
 import com.dshantanu.androidsquareslib.AndroidSquares;
 import com.google.android.gms.vision.Frame;
+import com.iceteck.silicompressorr.SiliCompressor;
 import com.jsibbold.zoomage.ZoomageView;
+import com.meek.Encryption.AES;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static android.content.ContentValues.TAG;
 import static android.content.Context.MODE_PRIVATE;
@@ -59,6 +68,7 @@ import static android.content.Context.MODE_PRIVATE;
  */
 
 public class ActivityImage extends Fragment {
+
     String mCurrentPhotoPath;
     int CAM_CODE = 1;
     private static final float BLUR_RADIUS = 25f;
@@ -116,6 +126,25 @@ public class ActivityImage extends Fragment {
     {
         LinearLayout i_act=img_view.findViewById(R.id.img_act);
         //////
+        final EditText enter_caption=(EditText)img_view.findViewById(R.id.img_caption);
+        enter_caption.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                CreateActivity act_funcall = (CreateActivity) getContext();
+                act_funcall.setCaptionText(enter_caption.getText().toString());
+
+            }
+        });
         final View activityRootView = img_view.findViewById(R.id.img_act);
         final Handler handler = new Handler();
         Thread t = new Thread(new Runnable() {
@@ -217,6 +246,8 @@ public class ActivityImage extends Fragment {
 
     void setImage()
     {
+        new AES().encryptActivityImage("pmdroxx",getActivity());
+
         RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
         tap_open.setVisibility(View.INVISIBLE);
         ImageView retake=(ImageView)img_view.findViewById(R.id.retake);
@@ -276,9 +307,11 @@ public class ActivityImage extends Fragment {
         final SharedPreferences.Editor actPrefEdit=actPrefs.edit();
         actPrefEdit.putInt("curr_stat",9);
         actPrefEdit.commit();
+        new ActivityImage.ImageCompressAsyncTask(getContext()).execute(mCurrentPhotoPath, mCurrentPhotoPath.replace("/activity.png",""));
         if(requestCode==CAM_CODE&& resultCode == getActivity().RESULT_OK)
         {
-            setImage();
+          //  new ActivityImage.ImageCompressAsyncTask(getContext()).execute(mCurrentPhotoPath, mCurrentPhotoPath);
+
         }
     }
 
@@ -312,5 +345,57 @@ public class ActivityImage extends Fragment {
 
         return mut_otBitmap;
     }
+    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+    class ImageCompressAsyncTask extends AsyncTask<String, String, String> {
+
+        Context mContext;
+        ProgressDialog p_dialog;
+
+
+        public ImageCompressAsyncTask(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            p_dialog = new ProgressDialog(mContext);
+            p_dialog.setMessage("Its loading....");
+            p_dialog.show();
+            p_dialog.setCancelable(false);
+
+        }
+
+        @Override
+        protected String doInBackground(String... paths) {
+            String filePath = null;
+            Log.e("Silicompressor", "Compression started");
+            filePath = SiliCompressor.with(mContext).compress(paths[0], new File(paths[1]));
+
+            Log.e("Silicompressor", "Compression finished");
+            return filePath;
+
+        }
+
+
+        @Override
+        protected void onPostExecute(String compressedFilePath) {
+            super.onPostExecute(compressedFilePath);
+            File videoFile = new File(compressedFilePath);
+            float length = videoFile.length() / 1024f; // Size in KB
+            String value;
+            if (length >= 1024)
+                value = length / 1024f + " MB";
+            else
+                value = length + " KB";
+            videoFile.renameTo(new File(compressedFilePath.replace(compressedFilePath.substring(compressedFilePath.indexOf("IMG"),compressedFilePath.indexOf(".jpg")+4),"activity.png")));
+            p_dialog.dismiss();
+            Log.i("Silicompressor", "Path: " + compressedFilePath);
+            setImage();
+        }
+    }
+
+
+
 
 }

@@ -43,7 +43,7 @@ public class DpDownloadService extends Service {
         dp_dest = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
 
 
-        downloadDPs();
+        //downloadDPs();
     }
 
     @Nullable
@@ -51,7 +51,7 @@ public class DpDownloadService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
+/*
     void downloadDPs()
     {
         Realm.init(this);
@@ -137,5 +137,5 @@ public class DpDownloadService extends Service {
             return true;
         else
             return false;
-    }
+    }*/
 }

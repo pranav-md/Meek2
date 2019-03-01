@@ -52,7 +52,7 @@
             android:textSize="18sp" />
 
         <com.polyak.iconswitch.IconSwitch
-            android:id="@+id/icon_switch"
+            android:id="@+id/privacy_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:isw_icon_left="@drawable/people"

@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
@@ -42,6 +44,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.meek.AccountManage.AccountSetup;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +57,7 @@ import static android.content.ContentValues.TAG;
 /**
  * Created by User on 19-Dec-17.
  */
-
+@SuppressWarnings("unchecked")
 public class
 AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
@@ -284,6 +288,16 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         String uid=pref.getString("uid", "");
         if (!pref.getString("uid", "").equals("")) {
+
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                //    new ContactSync().syncContact(AuthenticationActivity.this,pref.getString("uid",""));
+                }
+            };
+            Thread mythread = new Thread(runnable);
+            mythread.start();
+
             startActivity(new Intent(AuthenticationActivity.this, MainActivity.class));
             finish();
         }
@@ -294,6 +308,19 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
             @Override
             public void onClick(View view) {
                 verifyNumber();
+                /*final Dialog dialog = new Dialog(AuthenticationActivity.this);
+                dialog.setContentView(R.layout.enter_otp_dialog);
+                dialog.show();
+                Button enter_otp=(Button)dialog.findViewById(R.id.enter_otp);
+                enter_otp.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        OtpView otpView;
+                        otpView = findViewById(R.id.otp_view);
+                        String get_otp= otpView.getOTP();
+                        verifyPhoneNumberWithCode(mVerificationCode,get_otp);
+                    }
+                });*/
             }
         });
 
@@ -384,11 +411,11 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                                         {
                                             Log.e("AUTH","inside ds!=null");
                                             String uid=dataSnapshot.child("uid").getValue().toString();
-                                            String enc_key=dataSnapshot.child("enc_key").getValue().toString();
+                                          //  String enc_key=dataSnapshot.child("enc_key").getValue().toString();
                                             SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                                             SharedPreferences.Editor uidpref=pref.edit();
                                             uidpref.putString("uid", uid);
-                                            uidpref.putString("enc_key", enc_key);
+                                           // uidpref.putString("enc_key", enc_key);
                                             uidpref.commit();
                                             nextActivity();
                                         }
@@ -465,12 +492,13 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
     void nextActivity()
     {
         authwait.dismiss();
-        startActivity(new Intent(AuthenticationActivity.this,MainActivity.class));
+        startActivity(new Intent(AuthenticationActivity.this,AccountSetup.class));
         finish();
     }
 
 
-    private void startPhoneNumberVerification(String phoneNumber) {
+    private void startPhoneNumberVerification(String phoneNumber)
+    {
         // [START start_phone_auth]
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
                 phoneNumber,        // Phone number to verify

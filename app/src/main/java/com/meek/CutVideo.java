@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.github.tcking.giraffecompressor.GiraffeCompressor;
 import com.google.android.gms.nearby.connection.Payload;
+import com.iceteck.silicompressorr.SiliCompressor;
 //import com.iceteck.silicompressorr.SiliCompressor;
 //import com.iceteck.silicompressorr.videocompression.MediaController;
 
@@ -78,7 +79,7 @@ public class CutVideo extends AppCompatActivity {
                 intent.putExtra("CASE",cse);
                 setResult(2,intent);
 
-                new VideoCompressAsyncTask(CutVideo.this).execute(to.getPath(), to.getPath().replace("trim_uncom_activity.mp4","trim_com_activity"));
+                new VideoCompressAsyncTask(CutVideo.this).execute(to.getPath(), to.getPath().replace("/trim_uncom_activity.mp4",""));
 
 
             }
@@ -93,38 +94,43 @@ public class CutVideo extends AppCompatActivity {
             }
         });
     }
-void stopThisThing()
-{
-    finish();
-}
+    void stopThisThing()
+    {
+        finish();
+    }
 
-   @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-   class VideoCompressAsyncTask extends AsyncTask<String, String, String> {
+    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+    class VideoCompressAsyncTask extends AsyncTask<String, String, String> {
 
         Context mContext;
+        ProgressDialog p_dialog;
 
-        public VideoCompressAsyncTask(Context context){
+
+        public VideoCompressAsyncTask(Context context) {
             mContext = context;
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            p_dialog = new ProgressDialog(mContext);
+            p_dialog.setMessage("Its loading....");
+            p_dialog.show();
+            p_dialog.setCancelable(false);
 
         }
 
         @Override
         protected String doInBackground(String... paths) {
             String filePath = null;
-   /*         try {
-      //          MediaController.getInstance().convertVideo(paths[0]);
-      //          filePath = SiliCompressor.with(mContext).compressVideo(paths[0], paths[1]);
-               // File newFile=new File(filePath);
-              //  newFile.renameTo(new File(paths[1]+"\trim_activity.mp4"));
+            try {
+
+                filePath = SiliCompressor.with(mContext).compressVideo(paths[0], paths[1]);
+
             } catch (URISyntaxException e) {
                 e.printStackTrace();
-            }*/
-            return  filePath;
+            }
+            return filePath;
 
         }
 
@@ -132,17 +138,16 @@ void stopThisThing()
         @Override
         protected void onPostExecute(String compressedFilePath) {
             super.onPostExecute(compressedFilePath);
-            File imageFile = new File(compressedFilePath);
-            float length = imageFile.length() / 1024f; // Size in KB
+            File videoFile = new File(compressedFilePath);
+            float length = videoFile.length() / 1024f; // Size in KB
             String value;
-            if(length >= 1024)
-                value = length/1024f+" MB";
+            if (length >= 1024)
+                value = length / 1024f + " MB";
             else
-                value = length+" KB";
-
-            Log.i("Silicompressor", "Path: "+compressedFilePath);
-            stopThisThing();
-            finish();
+                value = length + " KB";
+            videoFile.renameTo(new File(compressedFilePath.replace(compressedFilePath.substring(compressedFilePath.indexOf("VIDEO"),compressedFilePath.indexOf(".mp4")),"ACTIVITY")));
+            p_dialog.dismiss();
+            Log.i("Silicompressor", "Path: " + compressedFilePath);
         }
     }
 }

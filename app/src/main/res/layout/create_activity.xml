@@ -29,14 +29,7 @@
                 android:id="@+id/dest_set"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1">
-
-                <include
-                    layout="@layout/set_travelling"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-            </RelativeLayout>
+                android:layout_weight="1"/>
 
             <Spinner
                 android:id="@+id/spinner"
