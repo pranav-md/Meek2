@@ -87,7 +87,7 @@ public class MyActivities extends AppCompatActivity {
             activitiesPageAdapter.notifyDataSetChanged();
         changed=true;
     }
-    void setDate(Date date)
+    public void setDate(Date date)
     {
         curr_date=date;
         setDateBar();

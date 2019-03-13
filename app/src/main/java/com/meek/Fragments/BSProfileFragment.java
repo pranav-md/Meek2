@@ -8,6 +8,8 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -37,6 +39,9 @@ public class BSProfileFragment extends Fragment
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.bs_profile, container, false);
+        TextView name=(TextView)view.findViewById(R.id.bs_name);
+        Toast.makeText(getContext(),"UID="+mapPeople.uid,Toast.LENGTH_LONG).show();
+        name.setText(mapPeople.uid);
 
         setData();
 
@@ -48,7 +53,7 @@ public class BSProfileFragment extends Fragment
     {
         DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
 
-        ppl_ref.child("Users").child(mapPeople.uid).child("Details1").addListenerForSingleValueEvent(new ValueEventListener() {
+      /*  ppl_ref.child("Users").child(mapPeople.uid).child("Details1").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
@@ -64,6 +69,6 @@ public class BSProfileFragment extends Fragment
             }
         });
 
-
+*/
     }
 }

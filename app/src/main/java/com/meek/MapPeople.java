@@ -12,7 +12,8 @@ import java.util.ArrayList;
 
 public class MapPeople
 {
-    String uid,name;
+    public String uid;
+    String name;
     LatLng latLng;
     ValueEventListener loc_listener;
     int color,num_activities;

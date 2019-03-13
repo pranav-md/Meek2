@@ -13,6 +13,7 @@ public class PeopleObj
     private String name,hashed_phnum;
     private String enc_key=null;
     Double lat,lng;
+    int conn_level;
     boolean loc_access=false;
 
     public PeopleObj() {
@@ -20,17 +21,14 @@ public class PeopleObj
 
     }
 
-    public PeopleObj(int uid, String name, String hashed_phnum, String enc_key, Double lat, Double lng, int loc_access) {
+    public PeopleObj(int uid, String name, String hashed_phnum, String enc_key, Double lat, Double lng) {
         this.uid = uid;
         this.name = name;
         this.hashed_phnum = hashed_phnum;
         this.enc_key = enc_key;
         this.lat = lat;
         this.lng = lng;
-        if(loc_access==1)
-            this.loc_access=true;
-        else
-            this.loc_access = false;
+
     }
 
     public String getName() {

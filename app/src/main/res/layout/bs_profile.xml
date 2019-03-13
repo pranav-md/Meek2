@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/Blue_low"
     android:gravity="bottom"
     android:orientation="horizontal">
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/my_prof_dp"
-        app:civ_border_color="#FF000000"
-        app:civ_border_width="2dp"
         android:layout_width="wrap_content"
         android:layout_height="120dp"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:src="@drawable/defaultdp" />
+        android:src="@drawable/defaultdp"
+        app:civ_border_color="#FF000000"
+        app:civ_border_width="2dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,7 +25,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/textView5"
+            android:id="@+id/bs_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
@@ -38,10 +39,10 @@
 
             <ImageView
                 android:id="@+id/imageView4"
-                app:srcCompat="@drawable/location"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                app:srcCompat="@drawable/location" />
 
             <TextView
                 android:id="@+id/textView6"
@@ -57,4 +58,4 @@
             android:layout_height="wrap_content"
             android:text="TextView" />
     </LinearLayout>
-</LinearLayout>
+</RelativeLayout>

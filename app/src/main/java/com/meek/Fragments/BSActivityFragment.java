@@ -30,7 +30,7 @@ public class BSActivityFragment extends Fragment
     BSActivityFragment()
     {}
     @SuppressLint("ValidFragment")
-    BSActivityFragment(String uid,String act_id)
+    public BSActivityFragment(String uid, String act_id)
     {
         this.act_id=act_id;
         this.uid=uid;

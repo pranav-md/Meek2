@@ -4,11 +4,13 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Color;
 import android.provider.ContactsContract;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.meek.Contact;
+import com.meek.MainActivity;
 
 import java.util.ArrayList;
 
@@ -85,6 +87,14 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         // close db connection
         db.close();
     }
+    public Cursor getLocationPplData()
+    {
+        String query = "SELECT " + UID+" , " + NME+" , " + LT+ " , " + LG+ " FROM "+ TABLE_NAME  +" WHERE "+ CON_LEVEL+ " =?" ;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, new String[]{"2"});
+        return cursor;
+    }
+
     public void changePersonStatus(String uid,int con_level)
     {
         // get writable database as we want to write data
@@ -125,6 +135,22 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         else
             return false;
     }
+
+    public void updateLatLng(LatLng latLng, String uid)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        PeopleObj pOBj=getNote(uid);
+        //values.put(UID, uid);
+        values.put(LT,latLng.latitude);
+        values.put(LT,latLng.longitude);
+
+        db.update(TABLE_NAME, values, UID + " = ?",
+                new String[]{String.valueOf(uid)});
+
+    }
+
     public ArrayList<Contact> getAllConnections()
     {
         String query = "SELECT " + UID+" , " + NME+" , " + CON_LEVEL+ " FROM "+ TABLE_NAME ;
@@ -132,13 +158,15 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(query, null);
         ArrayList<Contact> conPPL=new ArrayList<Contact>();
         cursor.moveToFirst();
-        conPPL.add(new Contact(cursor.getString(0),cursor.getString(1),Integer.parseInt(cursor.getString(2)+"")));
         if(cursor.getCount()!=0)
-            while (cursor.moveToNext())
-            {
-                Log.e("GET ALL CONNS",cursor.getString(0)+", "+cursor.getString(1)+", "+cursor.getString(2));
-                conPPL.add(new Contact(cursor.getString(0),cursor.getString(1),Integer.parseInt(cursor.getString(2)+"")));
+        {
+            conPPL.add(new Contact(cursor.getString(0),cursor.getString(1),Integer.parseInt(cursor.getString(2)+"")));
+            while (cursor.moveToNext()) {
+                Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
+                conPPL.add(new Contact(cursor.getString(0), cursor.getString(1), Integer.parseInt(cursor.getString(2) + "")));
+
             }
+        }
         return conPPL;
     }
     public void checkPnumHash(String h_num)
@@ -172,7 +200,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
-        PeopleObj pOBj=getNote(uid);
+        PeopleObj pOBj=getNote(uid+"");
         //values.put(UID, uid);
         values.put(E_KY,e_key);
         //values.put(NME,pOBj.getName());
@@ -194,7 +222,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         db.update(TABLE_NAME, values, UID + " = ?",
                 new String[]{String.valueOf(uid)});
     }
-    public PeopleObj getNote(long id) {
+    public PeopleObj getNote(String id) {
         // get readable database as we are not inserting anything
         SQLiteDatabase db = this.getReadableDatabase();
 
@@ -213,8 +241,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
                 cursor.getString(cursor.getColumnIndex(E_KY)),
                 cursor.getString(cursor.getColumnIndex(HSHED_PNM)),
                 cursor.getDouble(cursor.getColumnIndex(LT)),
-                cursor.getDouble(cursor.getColumnIndex(LG)),
-                cursor.getInt(cursor.getColumnIndex(LOC_AC)));
+                cursor.getDouble(cursor.getColumnIndex(LG)));
 
         // close the db connection
         cursor.close();

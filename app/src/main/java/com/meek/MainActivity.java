@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -28,15 +30,18 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.Fragments.MyProfileFrag;
 import com.meek.Service.ActivityService;
-import com.meek.Service.LocationService;
+//import com.meek.Service.LocationService;
 
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+
+import static android.content.ContentValues.TAG;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,AdapterView.OnItemSelectedListener, AdapterView.OnItemLongClickListener, View.OnLongClickListener,GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -49,7 +54,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     SharedPreferences sp;
     TabFragment tabFragment;
     CircleImageView dp;
-
+    private static final int LOCATION_INTERVAL = 1000;
+    private static final float LOCATION_DISTANCE = 10f;
+    public LocationManager mLocationManager = null;
+    MapsFragment map_fragment=null;
+    LatLng cur_location;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();
         fragmentTransaction.replace(R.id.frg_container, tabFragment);
         fragmentTransaction.commit();
-
+        locationListenSet();
       //  startService(new Intent(MainActivity.this, LocationService.class));
 
         sp = getSharedPreferences("CONTACT_SYNC", Context.MODE_PRIVATE);
@@ -95,8 +104,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View v) {
                 map_tab_flg = !map_tab_flg;
                 if (map_tab_flg) {
+                    if(map_fragment==null)
+                        map_fragment=new MapsFragment();
                     getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
-                            .replace(R.id.frg_container, new MapsFragment())
+                            .replace(R.id.frg_container, map_fragment)
                             .commit();
                 } else {
                     tabFragment=new TabFragment(MainActivity.this);
@@ -245,6 +256,79 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         }
+    }
+
+    ///////location listener
+    void locationListenSet() {
+        initializeLocationManager();
+        MainActivity.LocationListener[] mLocationListeners = new MainActivity.LocationListener[]{
+                new MainActivity.LocationListener(LocationManager.GPS_PROVIDER),
+                new MainActivity.LocationListener(LocationManager.NETWORK_PROVIDER)
+        };
+        try {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                    mLocationListeners[1]);
+        } catch (java.lang.SecurityException ex) {
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        } catch (IllegalArgumentException ex) {
+            Log.d(TAG, "network provider does not exist, " + ex.getMessage());
+        }
+        try {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                    mLocationListeners[0]);
+        } catch (java.lang.SecurityException ex) {
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        } catch (IllegalArgumentException ex) {
+            Log.d(TAG, "gps provider does not exist " + ex.getMessage());
+        }
+
+    }
+
+    private void initializeLocationManager() {
+        Log.e(TAG, "initializeLocationManager");
+        if (mLocationManager == null) {
+            mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        }
+    }
+    public class LocationListener implements android.location.LocationListener {
+        public Location mLastLocation;
+        int i = 0;
+
+        public LocationListener(String provider) {
+            Log.e(TAG, "LocationListener " + provider);
+            mLastLocation = new Location(provider);
+
+        }
+
+        @Override
+        public void onLocationChanged(Location location)
+        {
+            cur_location = new LatLng(location.getLatitude(), location.getLongitude());
+            if (map_tab_flg ==true)
+            {
+                map_fragment.setUserMarker();
+            }
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Log.e(TAG, "onProviderDisabled: " + provider);
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Log.e(TAG, "onProviderEnabled: " + provider);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.e(TAG, "onStatusChanged: " + provider);
+        }
+
+
     }
 
 }

@@ -2,6 +2,7 @@ package com.meek;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -26,6 +27,8 @@ import android.widget.AdapterView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -45,6 +48,7 @@ import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
+import com.meek.Database.PeopleDBHelper;
 import com.meek.Fragments.BSProfileFragment;
 import com.wajahatkarim3.easyflipview.EasyFlipView;
 
@@ -55,7 +59,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import io.realm.Realm;
 
 import static android.content.ContentValues.TAG;
 import static android.content.Context.MODE_PRIVATE;
@@ -85,7 +88,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     EasyFlipView flip_bs;
     View bottomSheet,view;
     ViewPager profile_pg,Activities_pg;
-    boolean bs,bs_act,bs_prof;
+    boolean bs,bs_act,bs_prof,user_marker_lock=false,loc_db_mkr_lock=false;
     TileOverlay mOverlay;
     private static final int[] ALT_HEATMAP_GRADIENT_COLORS = {
 
@@ -124,7 +127,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
         ppl_marker=new ArrayList<Marker>();
-        locationListenSet();
+    //  locationListenSet();
         mapPeople=new ArrayList<MapPeople>();
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         bs_prof=false;
@@ -193,108 +196,288 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-            mMap=googleMap;
-            setUserMarker();
-            getMeekLocPpl();
-            mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
-                @Override
-                public void onCameraChange(CameraPosition cameraPosition) {
-                    Toast.makeText(getContext(),"Camera postn= "+cameraPosition,Toast.LENGTH_LONG).show();
-                    if(bs_prof||bs_act) {
-                        if (cameraPosition.zoom > 12) {
-                            actMkrVisble(true);
-                        }
-                        else
-                        {
-                            actMkrVisble(false);
-                        }
+        mMap=googleMap;
+        setUserMarker();
+        setMapMarkerListen();
+        Cursor locCurData=new PeopleDBHelper(getContext()).getLocationPplData();
+        setDbPplMarker(locCurData);
+
+
+        //  getMeekLocPpl();
+        mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(CameraPosition cameraPosition) {
+                Toast.makeText(getContext(),"Camera postn= "+cameraPosition,Toast.LENGTH_LONG).show();
+                if(bs_prof||bs_act) {
+                    Log.e("ON CAM CHANGe","BS-prof or bs act were true");
+                    if (cameraPosition.zoom > 12) {
+                        actMkrVisble(true);
                     }
-                    if(ppl_marker!=null)
+                    else
+                    {
+                        actMkrVisble(false);
+                    }
+                }
+                /*
+                if(ppl_marker!=null)
                     for(Marker mkr:ppl_marker)
                     {
                         View mrker = ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.activty_marker, null);
-                       // ViewGroup.LayoutParams mkrparams=mrker.getLayoutParams();
-                        mrker.getLayoutParams().height= (int)(50*cameraPosition.zoom/15);
-                        mrker.getLayoutParams().width= (int)(50*cameraPosition.zoom/15);
-                        //mrker.setLayoutParams(mkrparams);
+                        ViewGroup.LayoutParams mkrparams=mrker.getLayoutParams();
+                      //  mrker.getLayoutParams().height= ;
+                     //   mrker.getLayoutParams().width= (int)(50*cameraPosition.zoom/15);
+
+                        if (mkrparams != null) {
+                            mkrparams.width= (int)(50*cameraPosition.zoom/15);
+                            mkrparams.height = (int)(50*cameraPosition.zoom/15);
+                        } else
+                            mkrparams = new ViewGroup.LayoutParams((int)(50*cameraPosition.zoom/15), (int)(50*cameraPosition.zoom/15));
+
+                        mrker.setLayoutParams(mkrparams);
                         mkr.setIcon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(),mrker)));
                     }
-                }
-            });
+                    */
+            }
+        });
 
-            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker)
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker)
+            {
+                if(marker.getSnippet().equals("1"))
                 {
-                    if(marker.getSnippet().equals("1"))
+                    cur_marker=marker;
+                    if(bs==false)
                     {
-                        cur_marker=marker;
-                        if(bs==false)
-                        {
-                            bs=true;
-                            bs_act=false;
-                            bs_prof = true;
-                            showProfileBottomSheet(marker.getTitle(),(int)marker.getTag());
-                            removeOtherPPLMarkers((int)marker.getTag());
-                            getActData(marker.getTitle(),(int)marker.getTag());
-                        }
-                        else if(bs_act==true)
-                        {
-                            bs_prof=true;
-                            bs_act=false;
-                            Activities_pg.setCurrentItem((int)marker.getTag());
-                            flip_bs.flipTheView();
-                        }
-                        else if(bs_prof==true)
-                        {
-                            profile_pg.setCurrentItem((int)marker.getTag());
-                         ////change position
-
-                        }
-                    }
-                    else if(marker.getSnippet().equals("2"))
-                    {
-                        if(bs_prof==true)
-                        {
-                            bs_act=true;
-                            bs_prof = false;
-                            flip_bs.flipTheView();
-                            Activities_pg.setCurrentItem((int)marker.getTag());
-                        }
+                        bs=true;
+                        bs_act=false;
+                        bs_prof = true;
+                        showProfileBottomSheet(marker.getTitle(),(int)marker.getTag());
+                        removeOtherPPLMarkers((int)marker.getTag());
+                        if(marker.getTitle().equals(uid))
+                            getMyActData();
                         else
-                        {
-                            Activities_pg.setCurrentItem((int)marker.getTag());
-                        }
+                            getActData(marker.getTitle(),(int)marker.getTag());
                     }
+                    else if(bs_act==true)
+                    {
+                        bs_prof=true;
+                        bs_act=false;
+                        Activities_pg.setCurrentItem((int)marker.getTag());
+                        flip_bs.flipTheView();
+                    }
+                    else if(bs_prof==true)
+                    {
+                        profile_pg.setCurrentItem((int)marker.getTag());
+                        ////change position
 
-
-                    return true;
+                    }
                 }
-            });
+                else if(marker.getSnippet().equals("2"))
+                {
+                    if(bs_prof==true)
+                    {
+                        bs_act=true;
+                        bs_prof = false;
+                        flip_bs.flipTheView();
+                        Activities_pg.setCurrentItem((int)marker.getTag());
+                    }
+                    else
+                    {
+                        Activities_pg.setCurrentItem((int)marker.getTag());
+                    }
+                }
+                return true;
+            }
+        });
+    }
+
+    void setMapMarkerListen()
+    {
+        //Log.e("USER ID SHOW","")
+        DatabaseReference loc_data_ref = FirebaseDatabase.getInstance().getReference();
+        loc_data_ref.child("Users").child(uid).child("Connections").child("location_meek").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                while(loc_db_mkr_lock==false);
+                String locPpl=dataSnapshot.getValue().toString();
+                ArrayList<String> locPPLS= extractor(locPpl);
+                DatabaseReference usr_loc_ref = FirebaseDatabase.getInstance().getReference();
+                for(String loc_uid:locPPLS)
+                {
+                    final MapPeople newone=new MapPeople();
+                    newone.uid=loc_uid;
+                    newone.loc_listener=usr_loc_ref.child("Users").
+                            child(newone.uid).
+                            child("Details1").addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            newone.uid=dataSnapshot.child("uid").getValue().toString();
+                            newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("lat").getValue().toString())
+                                                    ,Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
+                            newone.color=Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
+
+                            new PeopleDBHelper(getContext()).updateLatLng(newone.latLng,newone.uid);
+                            if(current_ppl.contains(":"+newone.uid+":"))
+                            for(int i=0;i<mapPeople.size();++i)
+                            {
+                                if(mapPeople.get(i).uid==newone.uid)
+                                {
+                                    mapPeople.get(i).latLng = newone.latLng;
+                                    mapPeople.get(i).color = newone.color;
+                                    setMarker(newone.latLng, i, newone.uid, "dp tobe set", true);
+                                }
+                            }
+                            else
+                            {
+                                mapPeople.add(newone);
+                                ppl_page_adapter.setData(mapPeople);
+                                ppl_page_adapter.notifyDataSetChanged();
+                                current_ppl += newone.uid + ":";
+                                setMarker(newone.latLng,mapPeople.size()-1,newone.uid,"dp tobe set",false);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    void setDbPplMarker(Cursor loc_cur)       //To set the markers of people in DB locally
+    {
+        while (user_marker_lock==false);
+        loc_cur.moveToFirst();
+        if(loc_cur.getCount()!=0)
+        {
+            MapPeople newppl=new MapPeople();
+            newppl.uid=loc_cur.getString(0);
+            newppl.name=loc_cur.getString(1);
+            Log.e("THE SQLITEDB DATA","uid"+loc_cur.getString(0)
+                    +"lat="+loc_cur.getString(loc_cur.getColumnIndex("LAT"))
+                        +"lng="+loc_cur.getString(loc_cur.getColumnIndex("LNG")));
+            newppl.latLng=new LatLng(Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LAT"))),Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LNG"))));
+            mapPeople.add(newppl);
+            setMarker(newppl.latLng,mapPeople.size()-1,newppl.uid,"hahahah",false);
+
+            while (loc_cur.moveToNext())
+            {
+                newppl=new MapPeople();
+                newppl.uid=loc_cur.getString(0);
+                newppl.name=loc_cur.getString(1);
+                newppl.latLng=new LatLng(Double.parseDouble(loc_cur.getString(2)),Double.parseDouble(loc_cur.getString(3)));
+                mapPeople.add(newppl);
+                setMarker(newppl.latLng,mapPeople.size()-1,newppl.uid,"hahahah",false);
+                ppl_page_adapter.setData(mapPeople);
+                ppl_page_adapter.notifyDataSetChanged();
+            }
+        }
+        loc_db_mkr_lock=true;
     }
 
     void setUserMarker()
     {
         Log.e("HAHAH", "setusermarker ");
-        current_ppl+=uid+":";
-        Realm.init(getContext());
-        final Realm myRealm= Realm.getDefaultInstance();
-        final MyDetails myDetails=myRealm.where(MyDetails.class).findFirst();
+        MainActivity mainActivity=(MainActivity)getContext();
+        LatLng cur_location=mainActivity.cur_location;
         MapPeople newme=new MapPeople();
-        newme.uid=uid;
-        if(myDetails!=null)
+
+        newme.latLng=cur_location;
+        if(!current_ppl.contains(":"+uid+":")&&cur_location!=null)
         {
-            LatLng ll = new LatLng(Double.parseDouble(myDetails.getLat()), Double.parseDouble(myDetails.getLng()));
-            newme.latLng=ll;
-            mapPeople.add(new MapPeople());
-            mapPeople.set(0,newme);
-            setMarker(ll,0,uid,".Displaypic/pic");
+            Log.e("NEW USER MARKER","PLOTTING THE NEW USER"+uid);
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(cur_location, 10));
+            current_ppl+=uid+":";
+            newme.uid=uid;
+            mapPeople.add(0,newme);
+            if(cur_location!=null)
+                setMarker(cur_location,0,uid,".Displaypic/pic",false);
+            user_marker_lock=true;
             ppl_page_adapter=new ProfilePageAdapter(getChildFragmentManager());
             ppl_page_adapter.setData(mapPeople);
             profile_pg.setAdapter(ppl_page_adapter);
+            profile_pg.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                @Override
+                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+                }
+
+                @Override
+                public void onPageSelected(int position) {
+                    profile_pg.setCurrentItem(position);
+                    CameraUpdate location = CameraUpdateFactory.newLatLngZoom(mapPeople.get(position).latLng, 20);
+                    mMap.animateCamera(location);
+                }
+
+                @Override
+                public void onPageScrollStateChanged(int state) {
+
+                }
+            });
+
         }
         else
-            Toast.makeText(getContext(),"wait pls",Toast.LENGTH_LONG).show();
+        {
+            Log.e("NEW USER MARKER","UPDATING THE OLD USER"+uid);
+            if (cur_location != null)
+                setMarker(cur_location, 0, uid, ".Displaypic/pic", true);
+        }
+
+    }
+    void getMyActData()
+    {
+        cur_p_pos=0;
+        final int pos=1;
+        act_marker=new ArrayList<Marker>();
+        final List<WeightedLatLng> list=new ArrayList<WeightedLatLng>();
+        final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
+        DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
+        db_ref.child("Activities").child(uid).child("mapview").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                boolean adapt_bit=false;
+                for(DataSnapshot modes:dataSnapshot.getChildren())
+                for (DataSnapshot ds : modes.getChildren())
+                {
+                    Activities newone=new Activities();
+                    newone.act_id=ds.getKey().toString();
+                    newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
+                    list.add(new WeightedLatLng(newone.latLng,2));
+                    newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
+                    mapPeople.get(pos).activities.add(newone);
+                    setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
+                    if(adapt_bit==false)
+                    {
+                        adapt_bit=true;
+                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                        Activities_pg.setAdapter(activitiesPageAdapter);
+                    }
+                    else
+                    {
+                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                        activitiesPageAdapter.notifyDataSetChanged();
+                    }
+                }
+                addHeatMap(list);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
 
@@ -342,10 +525,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     }
 
 
-    void setMarker(LatLng latLng,int pos,String uid,String filepoint)
+    void setMarker(LatLng latLng,int pos,String id,String filepoint,boolean update)
     {
         Toast.makeText(getContext(),"Set marker?",Toast.LENGTH_LONG).show();
-
         View mrker = ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.marker, null);
         final CircleImageView rdp = (CircleImageView) mrker.findViewById(R.id.imageView1);
         String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/"+filepoint+".jpg";
@@ -360,15 +542,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             rdp.setImageBitmap(icon);
             e.printStackTrace();
         }
-        Log.v("Marker status","mkr pos="+pos+"  uid="+uid);
-        if(ppl_marker.size()>pos+1)
+        Log.e("Marker status","mkr pos="+pos+"  uid="+id);
+       if(update==true)
         {
             Marker mkr=ppl_marker.get(pos);
-           // mkr.remove();
+            // mkr.remove();
             new AnimationUtil().animateMarkerTo(mkr,latLng);
-         //   mkr.setTag(pos);
-         //   ppl_marker.set(pos,mkr);
-
+            //   mkr.setTag(pos);
+            ppl_marker.set(pos,mkr);
         }
         else
         {
@@ -377,9 +558,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             mkr.setTag(pos);
             ppl_marker.add(mkr);
         }
-
     }
-    void getMeekLocPpl()
+
+
+  /* void getMeekLocPpl()
     {
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Users").child(uid).child("meek_loc_ppl").addValueEventListener(new ValueEventListener() {
@@ -394,7 +576,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
             }
         });
-    }
+    }*/
 
     void crossChecker(String all_ppl)
     {
@@ -410,8 +592,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                 final MapPeople newone=new MapPeople();
                 newone.uid=al_pl.get(i);
                 newone.loc_listener=ppl_ref.child("Users").
-                                            child(newone.uid).
-                                            child("Details1").addValueEventListener(new ValueEventListener() {
+                        child(newone.uid).
+                        child("Details1").addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
@@ -421,10 +603,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         {
                             mapPeople.add(newone);
                             current_ppl += newone.uid + ";";
-                            ppl_page_adapter.setData(mapPeople);
-                            ppl_page_adapter.notifyDataSetChanged();
-                            setMarker(newone.latLng,mapPeople.size()-1,newone.uid,"dp tobe set");
-
+                            setMarker(newone.latLng,mapPeople.size()-1,newone.uid,"dp tobe set",false);
                         }
                         else
                         {
@@ -434,10 +613,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                                 {
                                     mapPeople.get(i).latLng=newone.latLng;
                                     mapPeople.get(i).color=newone.color;
-                                    setMarker(newone.latLng,i,newone.uid,"dp tobe set");
+                                    setMarker(newone.latLng,i,newone.uid,"dp tobe set",true);
                                 }
                             }
                         }
+                        ppl_page_adapter.setData(mapPeople);
+                        ppl_page_adapter.notifyDataSetChanged();
                     }
 
                     @Override
@@ -449,24 +630,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         }
         ///
         if(cr_pl.size()!=0)
-        for(int i=0;i<cr_pl.size();++i)
-        {
-            if(!all_ppl.contains(cr_pl.get(i)))
+            for(int i=0;i<cr_pl.size();++i)
             {
-                for(int j=0;j<mapPeople.size();++j)
+                if(!all_ppl.contains(cr_pl.get(i)))
                 {
-                    if(mapPeople.get(j).equals(cr_pl.get(i)))
+                    for(int j=0;j<mapPeople.size();++j)
                     {
-                        mapPeople.remove(j);
-                        ppl_marker.get(j).remove();
-                        ppl_marker.remove(j);
-                        current_ppl.replace(":"+cr_pl.get(i),"");
-                        ppl_page_adapter.setData(mapPeople);
-                        ppl_page_adapter.notifyDataSetChanged();
+                        if(mapPeople.get(j).equals(cr_pl.get(i)))
+                        {
+                            mapPeople.remove(j);
+                            ppl_marker.get(j).remove();
+                            ppl_marker.remove(j);
+                            current_ppl.replace(":"+cr_pl.get(i),"");
+                            ppl_page_adapter.setData(mapPeople);
+                            ppl_page_adapter.notifyDataSetChanged();
+                        }
                     }
                 }
             }
-        }
     }
 
     ArrayList<String> extractor(String all_uid)
@@ -540,26 +721,27 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     }
     void actMkrVisble(boolean show)
     {
+        Log.e("ACT MKR VISIBLE","NOW GOT INSIDE THE ACTMKRVISIBLE FUNCTION");
         if(act_marker!=null)
-        if(!act_marker.get(act_marker.size()-1).isVisible()&&show)
-        {
-            mOverlay.setVisible(false);
-            for(Marker mkr:act_marker)
+            if(!act_marker.get(act_marker.size()-1).isVisible()&&show)
             {
-                mkr.setVisible(show);
-            }
-        }
-        else if(show==false)
-        {
-            if(act_marker.get(0).isVisible())
-            {
-                mOverlay.setVisible(true);
+                mOverlay.setVisible(false);
                 for(Marker mkr:act_marker)
                 {
                     mkr.setVisible(show);
                 }
             }
-        }
+            else if(show==false)
+            {
+                if(act_marker.get(0).isVisible())
+                {
+                    mOverlay.setVisible(true);
+                    for(Marker mkr:act_marker)
+                    {
+                        mkr.setVisible(show);
+                    }
+                }
+            }
     }
     void removeActivitiesMarkers()
     {
@@ -580,7 +762,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                 .weightedData(list)
                 .build();
         mProvider.setGradient(ALT_HEATMAP_GRADIENT);
-       // mProvider.setRadius(5);
+        // mProvider.setRadius(5);
         // Add a tile overlay to the map, using the heat map tile provider.
         mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
     }
@@ -635,8 +817,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             cur_location = new LatLng(location.getLatitude(), location.getLongitude());
             if (mMap != null)
             {
-                mapPeople.get(0).latLng=new LatLng(location.getLatitude(),location.getLongitude());
-                setMarker(cur_location,0,uid,".Displaypic/pic");
+//                mapPeople.get(0).latLng=new LatLng(location.getLatitude(),location.getLongitude());
+//                setMarker(cur_location,0,uid,".Displaypic/pic");
             }
         }
 
