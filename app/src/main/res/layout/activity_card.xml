@@ -104,17 +104,19 @@
                 android:layout_height="150dp">
 
                 <ImageView
-                    android:id="@+id/imageView5"
+                    android:id="@+id/img_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     card_view:srcCompat="@android:color/transparent" />
+
                 <VideoView
-                    android:id="@+id/player"
+                    android:id="@+id/vid_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_centerHorizontal="true" />
+                    android:layout_centerInParent="true" />
+
                 <me.grantland.widget.AutofitTextView
+                    android:id="@+id/text_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:maxLines="2"

@@ -24,8 +24,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -39,22 +42,32 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
 import com.meek.Database.PeopleDBHelper;
+import com.meek.Encryption.AES;
 import com.meek.Fragments.BSProfileFragment;
 import com.wajahatkarim3.easyflipview.EasyFlipView;
+
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,9 +133,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     {
         view = inflater.inflate(R.layout.mapfrag, container, false);
         bottomSheetSetup();
-        profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
-        Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
-        flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
+       // profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
+      //  Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
+       // flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
         flip_bs.setFlipDuration(200);
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
@@ -154,6 +167,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     bs_prof=true;
                     mBottomSheetBehavior1.setPeekHeight(0);
                     mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+                    TextView name=(TextView)view.findViewById(R.id.bs_name);
+                    TextView place=(TextView)view.findViewById(R.id.bs_place);
+                    TextView time=(TextView)view.findViewById(R.id.bs_time);
+
+                    name.setText(mapPeople.get(cur_p_pos).name);
+                    place.setText(mapPeople.get(cur_p_pos).color);
+                    time.setText(mapPeople.get(cur_p_pos).latLng+"");;
                 }
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     ///all the activity markers should get dissapperared
@@ -244,6 +265,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             @Override
             public boolean onMarkerClick(Marker marker)
             {
+
+                cur_p_pos=(int)marker.getTag();
+
                 if(marker.getSnippet().equals("1"))
                 {
                     cur_marker=marker;
@@ -265,6 +289,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         bs_act=false;
                         Activities_pg.setCurrentItem((int)marker.getTag());
                         flip_bs.flipTheView();
+                        setActivityCardData((int)marker.getTag());
                     }
                     else if(bs_prof==true)
                     {
@@ -688,8 +713,68 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     void showProfileBottomSheet(String uid,int pos)
     {
         mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
-        profile_pg.setCurrentItem(pos);
     }
+    void setActivityCardData(final int a_pos)
+    {
+        DatabaseReference act_data_ref = FirebaseDatabase.getInstance().getReference();
+        act_data_ref.child("Activities").child(cur_p_pos+"").child("All_Activities").child(a_pos+"").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                final String act_type=dataSnapshot.child("act_type").getValue().toString();
+                String act_date=dataSnapshot.child("act_date").getValue().toString();
+                String act_visibility=dataSnapshot.child("act_visibility").getValue().toString();
+                String act_current_place=dataSnapshot.child("act_current_place").getValue().toString();
+                String act_text=dataSnapshot.child("act_text").getValue().toString();
+
+                if(Integer.parseInt(act_type)<3)
+                {
+                    final FirebaseStorage storage = FirebaseStorage.getInstance();
+                    StorageReference storageRef = storage.getReference();
+                    final String file_name=mapPeople.get(cur_p_pos).uid+"_"+mapPeople.get(cur_p_pos).activities.get(a_pos).act_id+".crypt";
+                    storageRef=storageRef.child("Activity/"+file_name);
+                    try {
+                        final File localFile = File.createTempFile(file_name, "crypt");
+                        storageRef.getFile(localFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
+                            {
+                                String storageDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
+                                copyFileOrDirectory(localFile.getAbsolutePath(),storageDir);
+                                if(act_type.equals("1"))
+                                {
+                                    setVideoView();
+                                    decryptAndSet(storageDir,file_name,".mp4");
+                                }
+                                else
+                                {
+                                    setImageView();
+                                    decryptAndSet(storageDir,file_name,".png");
+
+
+                                }
+
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+
+
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+
+    }
+
     void setActivitiesMarker(int p_pos,int a_pos)
     {
         View mrker = ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.activty_marker, null);
@@ -869,6 +954,95 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         @Override
         public int getCount() {
             return map_ppl.size();
+        }
+    }
+
+    void copyFileOrDirectory(String srcDir, String dstDir) {
+
+        try {
+            File src = new File(srcDir);
+            File dst = new File(dstDir, src.getName());
+
+            if (src.isDirectory()) {
+
+                String files[] = src.list();
+                int filesLength = files.length;
+                for (int i = 0; i < filesLength; i++) {
+                    String src1 = (new File(src, files[i]).getPath());
+                    String dst1 = dst.getPath();
+                    copyFileOrDirectory(src1, dst1);
+
+                }
+            } else {
+                copyFile(src, dst);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void copyFile(File sourceFile, File destFile) throws IOException {
+        if (!destFile.getParentFile().exists())
+            destFile.getParentFile().mkdirs();
+
+        if (!destFile.exists()) {
+            destFile.createNewFile();
+        }
+
+        FileChannel source = null;
+        FileChannel destination = null;
+
+        try {
+            source = new FileInputStream(sourceFile).getChannel();
+            destination = new FileOutputStream(destFile).getChannel();
+            destination.transferFrom(source, 0, source.size());
+        } finally {
+            if (source != null) {
+                source.close();
+            }
+            if (destination != null) {
+                destination.close();
+            }
+        }
+    }
+
+    void setVideoView()
+    {
+            view.findViewById(R.id.activity_view).findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
+            view.findViewById(R.id.activity_view).findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
+
+    }
+    void setImageView()
+    {
+        view.findViewById(R.id.activity_view).findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.activity_view).findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
+    }
+    void setTextView()
+    {
+        view.findViewById(R.id.activity_view).findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
+        view.findViewById(R.id.activity_view).findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
+    }
+    void decryptAndSet(String storageDir,String filename,String extension)
+    {
+        AES decrypt=new AES();
+        File actFile = new  File(storageDir+"/"+filename+extension);
+
+        if(extension.equals(".png"))
+        {
+            decrypt.decryptActivityImage("pmdrox",storageDir,filename);
+
+            if(actFile.exists())
+            {
+                Bitmap myBitmap = BitmapFactory.decodeFile(actFile.getAbsolutePath());
+                ImageView act_img = (ImageView) view.findViewById(R.id.activity_view).findViewById(R.id.img_view);
+                act_img.setImageBitmap(myBitmap);
+            }
+        }
+        else
+        {
+            decrypt.decryptActivityVideo("pmdrox",storageDir,filename);
+            VideoView act_vid = (VideoView)view.findViewById(R.id.activity_view).findViewById(R.id.vid_view);
+            act_vid.setVideoPath(actFile.getPath());
         }
     }
 

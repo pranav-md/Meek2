@@ -32,17 +32,19 @@
             app:flipType="horizontal"
             app:layout_anchorGravity="bottom">
 
-            <!-- Back Layout Goes Here -->
-            <include
-                android:id="@+id/activity_fp_view"
-                layout="@layout/bottomsheet" />
+            Back Layout Goes Here -->
 
-            <!-- Front Layout Goes Here -->
             <include
-                android:id="@+id/profile_fp_view"
-                layout="@layout/bottomsheet" />
+                android:id="@+id/activity_view"
+                layout="@layout/activity_card" />
+
+            <include
+                android:id="@+id/profile_view"
+                layout="@layout/bs_profile" />
+
+
         </com.wajahatkarim3.easyflipview.EasyFlipView>
 
-    </LinearLayout>
+      </LinearLayout>
 
-    </android.support.design.widget.CoordinatorLayout>
+      </android.support.design.widget.CoordinatorLayout>

@@ -190,7 +190,7 @@ public class AES {
         return null;
     }
 
-    public void decryptActivityImage(String secret)
+    public void decryptActivityImage(String secret,String filepath,String filename)
     {
         setKey(secret);
         Cipher cipher = null;
@@ -200,9 +200,10 @@ public class AES {
             cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
             // file to be encrypted
-            inFile = new FileInputStream("dec_activity.crypt");
+            inFile = new FileInputStream(filepath+"/"+filename+".crypt");
             // encrypted file
-            outFile = new FileOutputStream("activity.png");
+
+            outFile = new FileOutputStream(filepath+"/"+filename+".png");
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -240,7 +241,7 @@ public class AES {
         }
     }
 
-    public void decryptActivityVideo(String secret) throws FileNotFoundException {
+    public void decryptActivityVideo(String secret,String filepath,String filename)  {
         setKey(secret);
         Cipher cipher = null;
         try {
@@ -255,10 +256,17 @@ public class AES {
         } catch (InvalidKeyException e) {
             e.printStackTrace();
         }
-        // file to be encrypted
-        FileInputStream inFile = new FileInputStream("dec_activity.crypt");
+
+        // file to be decrypted
+        FileInputStream inFile = null;
+        FileOutputStream outFile = null;
+        try {
+            inFile = new FileInputStream(filepath+"/"+filename+".crypt");
+            outFile = outFile = new FileOutputStream(filepath+"/"+filename+".mp4");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         // encrypted file
-        FileOutputStream outFile = new FileOutputStream("activity.mp4");
 
         byte[] input = new byte[64];
         int bytesRead;
