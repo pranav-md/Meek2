@@ -9,10 +9,12 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +24,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -44,6 +47,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.meek.Encryption.AES;
 import com.polyak.iconswitch.IconSwitch;
 
 import java.io.BufferedInputStream;
@@ -69,12 +73,13 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
     public LocationManager mLocationManager = null;
-    String place_name,caption;
+    String place_name,caption,lat,lng;
     private GeoDataClient mGeoDataClient;
     int CAM_CODE=1,VID_REQ=2,SET_DEST=3;
     ActivityVideo act_vid;
     LatLng cur_location;
     ActivityImage act_img;
+    String type="3";
     private PlaceDetectionClient mPlaceDetectionClient;
     String uid;
 
@@ -87,10 +92,10 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         context=CreateActivity.this;
         mGeoDataClient = Places.getGeoDataClient(context, null);
         mPlaceDetectionClient = Places.getPlaceDetectionClient(context, null);
-        locationListenSet();
         SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
         uid=pref.getString("uid","");
-
+        lat=pref.getString("lat","");
+        lng=pref.getString("lng","");
         callPlaceDetectionApi();
 
         mGeoDataClient = com.google.android.gms.location.places.Places.getGeoDataClient(context, null);
@@ -128,14 +133,16 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         final DatabaseReference userRef = database.getReference("Activities");
         userRef.child(uid).child("Activity_info").child("Activity_num").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.O)
                     @Override
                     public void onDataChange(final DataSnapshot dataSnapshot)
                     {
                         StorageReference storageReference = FirebaseStorage.getInstance().getReference();
                         SharedPreferences getprefs = getSharedPreferences("ActsPrefs", MODE_PRIVATE);
                         final int curr_stat=getprefs.getInt("curr_stat",11);
-                        if(curr_stat!=25)
+                        if(Integer.parseInt(type)<3)
                             storageReference.child("Activity/"+uid+"_"+(Integer.parseInt(dataSnapshot.getValue().toString())+1)+".crypt").putBytes(bytes).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>(){
+                                @RequiresApi(api = Build.VERSION_CODES.O)
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
@@ -161,12 +168,14 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 });
     }
 
-    void setAttributes(int act_num,int curr_stat)
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    void setAttributes(int act_num, int curr_stat)
     {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference userRef = database.getReference("Activities");
         IconSwitch privacy=(IconSwitch)findViewById(R.id.privacy_status);
         boolean p_stat=privacy.isActivated();
+        //EditText caption=(EditText)findViewById(R.id.img_caption);
         SimpleDateFormat dateFormatGmt = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
         dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
         String getTime= dateFormatGmt.format(new Date())+"";
@@ -183,17 +192,15 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
             visiblity=1;
             map_branch="public";
         }
-        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(cur_location.latitude);
-        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(cur_location.longitude);
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(lat);
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(lng);
         userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
 
-
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(curr_stat);
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(place_name);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(type);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,"pmdrox"));
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(getTime);
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(caption);
-
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,"pmdrox"));
     }
 
     void setActivtiyTab()
@@ -314,14 +321,15 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which)
                         {
-                            case DialogInterface.BUTTON_POSITIVE: if(position==0)
-                                actPrefEdit.putInt("curr_stat",2);
-                            else if(position==1)
-                                actPrefEdit.putInt("curr_stat",3);
-                            else if(position==2)
-                                actPrefEdit.putInt("curr_stat",5);
-                                actPrefEdit.commit();
-                                break;
+                            case DialogInterface.BUTTON_POSITIVE:  type=(position+1)+"";
+                                                                   if(position==0)
+                                                                        actPrefEdit.putInt("curr_stat",2);
+                                                                   else if(position==1)
+                                                                        actPrefEdit.putInt("curr_stat",3);
+                                                                   else if(position==2)
+                                                                        actPrefEdit.putInt("curr_stat",5);
+                                                                   actPrefEdit.commit();
+                                                                   break;
 
                             case DialogInterface.BUTTON_NEGATIVE:  if(curr_stat%2==0)
                                 mviewPager.setCurrentItem(0);
@@ -352,6 +360,10 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 if(!actvty.equals(""))
                     builder.setMessage("Want to discard the "+actvty+"?").setPositiveButton("Yes", dialogClickListener)
                             .setNegativeButton("No", dialogClickListener).show();
+                else
+                    type=(position+1)+"";
+
+
             }
 
             @Override
@@ -446,75 +458,6 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-
-    }
-
-//////////////
-
-    void locationListenSet() {
-        initializeLocationManager();
-        CreateActivity.LocationListener[] mLocationListeners = new CreateActivity.LocationListener[]{
-                new CreateActivity.LocationListener(LocationManager.GPS_PROVIDER),
-                new CreateActivity.LocationListener(LocationManager.NETWORK_PROVIDER)
-        };
-        try {
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
-                    mLocationListeners[1]);
-        } catch (java.lang.SecurityException ex) {
-            Log.i(TAG, "fail to request location update, ignore", ex);
-        } catch (IllegalArgumentException ex) {
-            Log.d(TAG, "network provider does not exist, " + ex.getMessage());
-        }
-        try {
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
-                    mLocationListeners[0]);
-        } catch (java.lang.SecurityException ex) {
-            Log.i(TAG, "fail to request location update, ignore", ex);
-        } catch (IllegalArgumentException ex) {
-            Log.d(TAG, "gps provider does not exist " + ex.getMessage());
-        }
-
-    }
-
-    private void initializeLocationManager() {
-        Log.e(TAG, "initializeLocationManager");
-        if (mLocationManager == null) {
-            mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        }
-    }
-    public class LocationListener implements android.location.LocationListener {
-        public Location mLastLocation;
-        int i = 0;
-
-        public LocationListener(String provider) {
-            Log.e(TAG, "LocationListener " + provider);
-            mLastLocation = new Location(provider);
-        }
-
-        @Override
-        public void onLocationChanged(Location location)
-        {
-            cur_location = new LatLng(location.getLatitude(), location.getLongitude());
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            Log.e(TAG, "onProviderDisabled: " + provider);
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            Log.e(TAG, "onProviderEnabled: " + provider);
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.e(TAG, "onStatusChanged: " + provider);
-        }
 
 
     }

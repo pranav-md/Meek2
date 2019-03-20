@@ -305,6 +305,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         public void onLocationChanged(Location location)
         {
+            SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
+            SharedPreferences.Editor edit_pref=pref.edit();
+
+            edit_pref.putString("lat",location.getLatitude()+"");
+            edit_pref.putString("lat",location.getLongitude()+"");
+            edit_pref.commit();
+
             cur_location = new LatLng(location.getLatitude(), location.getLongitude());
             if (map_tab_flg ==true)
             {

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.RequiresApi;
+import android.util.Base64;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,7 +14,6 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Scanner;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -42,7 +42,6 @@ public class AES {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public String encrypt(String strToEncrypt, String secret)
     {
         try
@@ -50,7 +49,7 @@ public class AES {
             setKey(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+            return android.util.Base64.encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")), android.util.Base64.DEFAULT);
         }
         catch (Exception e)
         {
@@ -181,7 +180,7 @@ public class AES {
             setKey(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+            return new String(cipher.doFinal(android.util.Base64.decode(strToDecrypt, Base64.DEFAULT)));
         }
         catch (Exception e)
         {

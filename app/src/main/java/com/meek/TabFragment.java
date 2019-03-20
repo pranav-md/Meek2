@@ -82,8 +82,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.realm.Realm;
-import io.realm.RealmResults;
+
 import it.sephiroth.android.library.bottomnavigation.BottomNavigation;
 import se.emilsjolander.stickylistheaders.StickyListHeadersAdapter;
 import se.emilsjolander.stickylistheaders.StickyListHeadersListView;
@@ -106,11 +105,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
 
     ActivityVideo act_vid;
-    ListView act_feed_list;
+    ListView act_nonseen_list,act_seen_list;
     ActivityImage act_img;
-    ArrayList<ActFeed> actFeeds;
-    ActFeedAdapter actFeedAdapter=null;
-    boolean adapted=false;
+    ArrayList<ActFeed> act_seen_feed,act_non_feed;
+    ActFeedAdapter actSeenAdapter=null,actUnSeenAdapter=null;
+    boolean seen_adapted=false,unseen_adapted=false;
     private static final int GOOGLE_API_CLIENT_ID = 0;
     Context context;
     ImagePicker imagePicker;
@@ -159,8 +158,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         final BottomNavigation check_sel=btm_nav;
         btm_nav.setSelectedIndex(2,true);
         btnView=view;
-       plcs=(TextView)view.findViewById(R.id.placess);
-       context=getContext();
+        plcs=(TextView)view.findViewById(R.id.placess);
+        context=getContext();
         tabcontainer=view.findViewById(R.id.tabscontainer);
         // Construct a GeoDataClient.
         mGeoDataClient = Places.getGeoDataClient(getActivity(), null);
@@ -200,7 +199,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             }
         });
         callPlaceDetectionApi();
-              return view;
+        return view;
     }
 
     private void callPlaceDetectionApi() throws SecurityException {
@@ -258,10 +257,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 startActivity(new Intent(getContext(),CreateActivity.class));
             }
         });
-      //  setActFeatureButton();
-     //   setTabsSetActivity();
+        //  setActFeatureButton();
+        //   setTabsSetActivity();
 
-        setUsersActivity(inflatedLayout);
+        //  setUsersActivity(inflatedLayout);
     }
     void setActFeatureButton()
     {
@@ -270,7 +269,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         Button actbtn=(Button)functions.findViewById(R.id.activity);
         Button musicbtn=(Button)functions.findViewById(R.id.music);
 
-        Realm realm = Realm.getDefaultInstance();
+/*        Realm realm = Realm.getDefaultInstance();
         Realm.init(context);
         realm.beginTransaction();
         Drawable icon=null;
@@ -306,29 +305,29 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 actbtn.setBackground(icon);
             else
                 actbtn.setVisibility(View.INVISIBLE);
-        realm.commitTransaction();
-        realm.close();
+            */
         AudioManager audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
         ;
         if(audioManager.isMusicActive()==true) {
             actbtn.setVisibility(View.VISIBLE);
-         //   audiotext.setText("Playing  "+ audioManager.getParameters(""));
+            //   audiotext.setText("Playing  "+ audioManager.getParameters(""));
         }
         else
             actbtn.setVisibility(View.INVISIBLE);
 
         // else
-            //audiotext.setText("Not playing");
+        //audiotext.setText("Not playing");
 
     }
 
-    void setUsersActivity(View inf_layout)
-    {
-        act_feed_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
-        actFeedAdapter=new ActFeedAdapter();
-        feedListen();
-    }
-
+    /*  void setUsersActivity(View inf_layout)
+      {
+          act_seen_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
+          act_nonseen_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
+          actFeedAdapter=new ActFeedAdapter();
+          feedListen();
+      }
+  */
     void feedListen()
     {
         DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
@@ -337,10 +336,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
-                String actfeedstr=dataSnapshot.getValue().toString();
+                String act_yet_to_seen=dataSnapshot.child("activity_yet_to_seen").getValue().toString();
+                String act_seen=dataSnapshot.child("activity_seen").getValue().toString();
                 int num_act=0;
-                actFeeds=new ArrayList<ActFeed>();
-                adaptActFeed(actfeedstr);
+                act_non_feed=new ArrayList<ActFeed>();
+                act_seen_feed=new ArrayList<ActFeed>();
+                adaptActFeed(act_yet_to_seen,false);
+                adaptActFeed(act_seen,true);
             }
 
             @Override
@@ -404,7 +406,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             dest_set.addView(inflatedLayout);
         }
     }
-    void adaptActFeed(String actFeed)
+    void adaptActFeed(String actFeed,boolean seen)
     {
         while(!actFeed.equals(":"))
         {
@@ -412,18 +414,36 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             String act_content=actFeed.substring(1,actFeed.substring(1).indexOf(':')+1);
             actFeed=actFeed.substring(actFeed.substring(1).indexOf(':')+1);
             Log.v("Adapt Act","act_uid="+a_uid+"  act_content="+act_content);
-            actFeeds.add(new ActFeed("."+act_content+".",a_uid));
+            if(seen)
+                act_seen_feed.add(new ActFeed("."+act_content+".",a_uid,seen));
+            else
+                act_non_feed.add(new ActFeed("."+act_content+".",a_uid,seen));
         }
-        actFeedAdapter.getData(actFeeds,getContext(),getChildFragmentManager());
-
-        if(adapted==true)
+        actSeenAdapter.getData(act_seen_feed,getContext(),getChildFragmentManager());
+        actUnSeenAdapter.getData(act_non_feed,getContext(),getChildFragmentManager());
+        if(seen)
         {
-            actFeedAdapter.notifyDataSetChanged();
+            if(seen_adapted)
+            {
+                actSeenAdapter.notifyDataSetChanged();
+            }
+            else
+            {
+                seen_adapted=true;
+                act_seen_list.setAdapter(actSeenAdapter);
+            }
         }
         else
         {
-            adapted=true;
-            act_feed_list.setAdapter(actFeedAdapter);
+            if(unseen_adapted)
+            {
+                actUnSeenAdapter.notifyDataSetChanged();
+            }
+            else
+            {
+                unseen_adapted=true;
+                act_nonseen_list.setAdapter(actUnSeenAdapter);
+            }
         }
     }
 
@@ -449,29 +469,29 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
         if(msg_listener==null)
             msg_listener=msg_ref.child("Users").child(uid).child("Message_counter").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot)
-            {
-                msg_load.setVisibility(View.VISIBLE);
-                tot_msg_ppl =0;
-                shown_md_num=0;
-                msgPPLS=new ArrayList<MsgPPL>();
-                dg_msgs=dataSnapshot.getValue().toString();
-                for( int i=0; i<dg_msgs.length(); i++ ) {
-                    if (dg_msgs.charAt(i) == ':') {
-                        tot_msg_ppl++;
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot)
+                {
+                    msg_load.setVisibility(View.VISIBLE);
+                    tot_msg_ppl =0;
+                    shown_md_num=0;
+                    msgPPLS=new ArrayList<MsgPPL>();
+                    dg_msgs=dataSnapshot.getValue().toString();
+                    for( int i=0; i<dg_msgs.length(); i++ ) {
+                        if (dg_msgs.charAt(i) == ':') {
+                            tot_msg_ppl++;
+                        }
                     }
+                    --tot_msg_ppl;
+                    adaptMsgs();
+
                 }
-                --tot_msg_ppl;
-                adaptMsgs();
 
-            }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
+                }
+            });
         else
         {
             mg_dg_adapter.getData(msgPPLS);
@@ -481,10 +501,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
 
         /// Declare an array list...assign the data of the messages of list one by one
-                            /// such a way that, for each uid-> check offline realm data for the name and dp
-                            ///if found save to the arraylist... if not found, query to firebase download the dp and save internal and to realm
-                            //// query to download the messages and include last 1 of them in the arraylist
-            /// repeat until the first six and store the last list item  ///
+        /// such a way that, for each uid-> check offline realm data for the name and dp
+        ///if found save to the arraylist... if not found, query to firebase download the dp and save internal and to realm
+        //// query to download the messages and include last 1 of them in the arraylist
+        /// repeat until the first six and store the last list item  ///
 
         ///adapt and shoow... if the listner worked as listener, do the same thing and notifydatachange
 
@@ -555,7 +575,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 for(final String id:meek_cons)
                 {
                     Log.e("MEEK CONS","id="+id);
-                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    if(!(new PeopleDBHelper(context).checkUID(id)))
                     {
                         Log.e("Conn meek_con setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -589,7 +609,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,phnm,2);
+                                new PeopleDBHelper(getContext()).insertPerson(id,phnm,2);
                             }
 
                             @Override
@@ -600,7 +620,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     }
                     else if(!(new PeopleDBHelper(getContext()).checkUID(id,2)))
                     {
-                            new PeopleDBHelper(getContext()).changePersonStatus(id,2);
+                        new PeopleDBHelper(getContext()).changePersonStatus(id,2);
                     }
                 }
 
@@ -615,8 +635,9 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,phnm,3);
+                                new PeopleDBHelper(getContext()).insertPerson(id,phnm,3);
                                 Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
+                                setConnectionList();
                             }
 
                             @Override
@@ -629,6 +650,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     {
                         new PeopleDBHelper(getContext()).changePersonStatus(id,3);
                     }
+                    setConnectionList();
                 }
                 setConnectionList();
 
@@ -650,8 +672,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         String storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
         File image = new File(storageDir,
                 imageFileName+ /* prefix */
-                ext /* suffix */
-                      /* directory */
+                        ext /* suffix */
+                /* directory */
         );
 
         // Save a file: path for use with ACTION_VIEW intents
@@ -687,131 +709,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
 
     }*/
-    void setTabsSetActivity()
-    {
-        Log.v("Tab daa", "tab is set YOO");
-        SharedPreferences actPrefs= getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
-        int curr_stat=actPrefs.getInt("curr_stat",11);
-        final NonSwipeableActivityTabs mviewPager = (NonSwipeableActivityTabs) current_layout.findViewById(R.id.tab_container);
-        ActivityTabAdapter activityTabAdapter = new ActivityTabAdapter(getChildFragmentManager());
-        act_vid=new ActivityVideo();
-        act_img=new ActivityImage();
-        final ActivityText act_txt=new ActivityText();
-
-        activityTabAdapter.addFragment(act_vid, "Video");
-        activityTabAdapter.addFragment(act_img, "Image");
-        activityTabAdapter.addFragment(act_txt, "Text");
-
-        mviewPager.setAdapter(activityTabAdapter);
-        final TabLayout tabLayout = (TabLayout) current_layout.findViewById(R.id.tabs);
-        tabLayout.setupWithViewPager(mviewPager);
-
-        if(curr_stat%2==0)
-            mviewPager.setCurrentItem(0);
-        else if(curr_stat%3==0)
-            mviewPager.setCurrentItem(1);
-        else
-            mviewPager.setCurrentItem(2);
 
 
-        mviewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-            }
-
-            @Override
-            public void onPageSelected(final int position) {
-
-                Log.v("Page changed","Current page="+position);
-
-                final SharedPreferences actPrefs= getContext().getSharedPreferences("ActPrefs", MODE_PRIVATE);
-                final int curr_stat=actPrefs.getInt("curr_stat",11);
-                final SharedPreferences.Editor actPrefEdit=actPrefs.edit();
-                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which)
-                        {
-                            case DialogInterface.BUTTON_POSITIVE: if(position==0)
-                                                                    actPrefEdit.putInt("curr_stat",2);
-                                                                  else if(position==1)
-                                                                    actPrefEdit.putInt("curr_stat",3);
-                                                                  else if(position==2)
-                                                                    actPrefEdit.putInt("curr_stat",5);
-                                                                  actPrefEdit.commit();
-                                                                  break;
-
-                            case DialogInterface.BUTTON_NEGATIVE:  if(curr_stat%2==0)
-                                                                       mviewPager.setCurrentItem(0);
-                                                                    else if(curr_stat%3==0)
-                                                                       mviewPager.setCurrentItem(1);
-                                                                    else if(curr_stat%5==0)
-                                                                       mviewPager.setCurrentItem(2);
-                                                                    break;
-                        }
-                    }
-                };
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                String actvty = "";
-
-                if(curr_stat==4&&position!=0)
-                {
-                    actvty="video";
-                }
-                else if(curr_stat==9&&position!=1)
-                {
-                    actvty="image";
-                }
-                else if(curr_stat==25&&position!=2)
-                {
-                    actvty="text";
-                }
-                if(!actvty.equals(""))
-                    builder.setMessage("Want to discard the "+actvty+"?").setPositiveButton("Yes", dialogClickListener)
-                            .setNegativeButton("No", dialogClickListener).show();
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-
-/*
-            @Override
-            public void onViewAttachedToWindow(final View view) {
-
-                Log.v("Page changed","Current page="+view.getTag());
-
-            }
-
-            @Override
-            public void onViewDetachedFromWindow(View view) {
-
-            }
-            */
-        });
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-
-            }
-        });
-
-    }
-
-    ArrayList<String> extractor(String all_uid)
+    static ArrayList<String> extractor(String all_uid)
     {
         ArrayList<String> uids=new ArrayList<String>() ;
         int numMeek = 0,i;
@@ -840,14 +741,14 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         if(curr_tab==0)
         {
             if(con_list!=null)
-            if(con_list.getAdapter()==null)
-            {
-                con_list.setAdapter(connectionAdapter);
-            }
-            else
-            {
-                connectionAdapter.notifyDataSetChanged();
-            }
+                if(con_list.getAdapter()==null)
+                {
+                    con_list.setAdapter(connectionAdapter);
+                }
+                else
+                {
+                    connectionAdapter.notifyDataSetChanged();
+                }
         }
     }
 
@@ -896,11 +797,11 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         switch(conn_ppl.get(position).conn_level)
         {
             case 3: name.setText("Location access");
-                    break;
+                break;
             case 2: name.setText("Activity access");
-                    break;
+                break;
             case 1: name.setText("Connected in meek");
-                    break;
+                break;
         }
         return view;
     }
@@ -917,7 +818,7 @@ class ActFeed
     String a_uid;
     ArrayList<Activities> activities;
 
-    ActFeed(String act_content,String a_uid)
+    ActFeed(String act_content,String a_uid,boolean seen)
     {
         activities=new ArrayList<Activities>();
         this.a_uid=a_uid;
@@ -929,9 +830,8 @@ class ActFeed
             act_content=act_content.substring(act_content.substring(1).indexOf('.')+1);
             activities.add(newone);
         }
-
         //getName();
-
     }
 
 }
+

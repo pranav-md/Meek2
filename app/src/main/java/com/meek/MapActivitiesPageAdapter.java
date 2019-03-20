@@ -22,7 +22,8 @@ class MapActivitiesPageAdapter extends FragmentPagerAdapter
         this.u_uid=u_uid;
     }
     @Override
-    public Fragment getItem(int position) {
+    public Fragment getItem(int position)
+    {
         BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,activities.get(position).act_id);
         return bsActivitiesFragment;
     }
@@ -32,7 +33,8 @@ class MapActivitiesPageAdapter extends FragmentPagerAdapter
     }
 
     @Override
-    public int getCount() {
+    public int getCount()
+    {
         return activities.size();
     }
 }

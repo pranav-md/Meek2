@@ -72,6 +72,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.supercharge.shimmerlayout.ShimmerLayout;
 
 import static android.content.ContentValues.TAG;
 import static android.content.Context.MODE_PRIVATE;
@@ -133,14 +134,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     {
         view = inflater.inflate(R.layout.mapfrag, container, false);
         bottomSheetSetup();
-       // profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
-      //  Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
-       // flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
+        // profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
+        //  Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
+        // flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
         flip_bs.setFlipDuration(200);
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
         ppl_marker=new ArrayList<Marker>();
-    //  locationListenSet();
+        //  locationListenSet();
         mapPeople=new ArrayList<MapPeople>();
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         bs_prof=false;
@@ -247,13 +248,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         ViewGroup.LayoutParams mkrparams=mrker.getLayoutParams();
                       //  mrker.getLayoutParams().height= ;
                      //   mrker.getLayoutParams().width= (int)(50*cameraPosition.zoom/15);
-
                         if (mkrparams != null) {
                             mkrparams.width= (int)(50*cameraPosition.zoom/15);
                             mkrparams.height = (int)(50*cameraPosition.zoom/15);
                         } else
                             mkrparams = new ViewGroup.LayoutParams((int)(50*cameraPosition.zoom/15), (int)(50*cameraPosition.zoom/15));
-
                         mrker.setLayoutParams(mkrparams);
                         mkr.setIcon(BitmapDescriptorFactory.fromBitmap(createDrawableFromView(getContext(),mrker)));
                     }
@@ -339,20 +338,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             newone.uid=dataSnapshot.child("uid").getValue().toString();
                             newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("lat").getValue().toString())
-                                                    ,Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
+                                    ,Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
                             newone.color=Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
 
                             new PeopleDBHelper(getContext()).updateLatLng(newone.latLng,newone.uid);
                             if(current_ppl.contains(":"+newone.uid+":"))
-                            for(int i=0;i<mapPeople.size();++i)
-                            {
-                                if(mapPeople.get(i).uid==newone.uid)
+                                for(int i=0;i<mapPeople.size();++i)
                                 {
-                                    mapPeople.get(i).latLng = newone.latLng;
-                                    mapPeople.get(i).color = newone.color;
-                                    setMarker(newone.latLng, i, newone.uid, "dp tobe set", true);
+                                    if(mapPeople.get(i).uid==newone.uid)
+                                    {
+                                        mapPeople.get(i).latLng = newone.latLng;
+                                        mapPeople.get(i).color = newone.color;
+                                        setMarker(newone.latLng, i, newone.uid, "dp tobe set", true);
+                                    }
                                 }
-                            }
                             else
                             {
                                 mapPeople.add(newone);
@@ -391,7 +390,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             newppl.name=loc_cur.getString(1);
             Log.e("THE SQLITEDB DATA","uid"+loc_cur.getString(0)
                     +"lat="+loc_cur.getString(loc_cur.getColumnIndex("LAT"))
-                        +"lng="+loc_cur.getString(loc_cur.getColumnIndex("LNG")));
+                    +"lng="+loc_cur.getString(loc_cur.getColumnIndex("LNG")));
             newppl.latLng=new LatLng(Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LAT"))),Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LNG"))));
             mapPeople.add(newppl);
             setMarker(newppl.latLng,mapPeople.size()-1,newppl.uid,"hahahah",false);
@@ -473,27 +472,27 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             public void onDataChange(DataSnapshot dataSnapshot) {
                 boolean adapt_bit=false;
                 for(DataSnapshot modes:dataSnapshot.getChildren())
-                for (DataSnapshot ds : modes.getChildren())
-                {
-                    Activities newone=new Activities();
-                    newone.act_id=ds.getKey().toString();
-                    newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
-                    list.add(new WeightedLatLng(newone.latLng,2));
-                    newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
-                    mapPeople.get(pos).activities.add(newone);
-                    setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
-                    if(adapt_bit==false)
+                    for (DataSnapshot ds : modes.getChildren())
                     {
-                        adapt_bit=true;
-                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        Activities_pg.setAdapter(activitiesPageAdapter);
+                        Activities newone=new Activities();
+                        newone.act_id=ds.getKey().toString();
+                        newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
+                        list.add(new WeightedLatLng(newone.latLng,2));
+                        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
+                        mapPeople.get(pos).activities.add(newone);
+                        setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
+                        if(adapt_bit==false)
+                        {
+                            adapt_bit=true;
+                            activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                            Activities_pg.setAdapter(activitiesPageAdapter);
+                        }
+                        else
+                        {
+                            activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                            activitiesPageAdapter.notifyDataSetChanged();
+                        }
                     }
-                    else
-                    {
-                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        activitiesPageAdapter.notifyDataSetChanged();
-                    }
-                }
                 addHeatMap(list);
             }
 
@@ -568,7 +567,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             e.printStackTrace();
         }
         Log.e("Marker status","mkr pos="+pos+"  uid="+id);
-       if(update==true)
+        if(update==true)
         {
             Marker mkr=ppl_marker.get(pos);
             // mkr.remove();
@@ -595,10 +594,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                 String all_ppl = dataSnapshot.getValue().toString();
                 crossChecker(all_ppl);
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
             }
         });
     }*/
@@ -716,12 +713,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     }
     void setActivityCardData(final int a_pos)
     {
+        final ShimmerLayout shimmerLayout=(ShimmerLayout)view.findViewById(R.id.activity_view).findViewById(R.id.shim_content);
+        shimmerLayout.startShimmerAnimation();
         DatabaseReference act_data_ref = FirebaseDatabase.getInstance().getReference();
         act_data_ref.child("Activities").child(cur_p_pos+"").child("All_Activities").child(a_pos+"").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
-                final String act_type=dataSnapshot.child("act_type").getValue().toString();
+                String act_type=dataSnapshot.child("act_type").getValue().toString();
                 String act_date=dataSnapshot.child("act_date").getValue().toString();
                 String act_visibility=dataSnapshot.child("act_visibility").getValue().toString();
                 String act_current_place=dataSnapshot.child("act_current_place").getValue().toString();
@@ -729,41 +728,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
                 if(Integer.parseInt(act_type)<3)
                 {
-                    final FirebaseStorage storage = FirebaseStorage.getInstance();
-                    StorageReference storageRef = storage.getReference();
-                    final String file_name=mapPeople.get(cur_p_pos).uid+"_"+mapPeople.get(cur_p_pos).activities.get(a_pos).act_id+".crypt";
-                    storageRef=storageRef.child("Activity/"+file_name);
-                    try {
-                        final File localFile = File.createTempFile(file_name, "crypt");
-                        storageRef.getFile(localFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
-                            {
-                                String storageDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
-                                copyFileOrDirectory(localFile.getAbsolutePath(),storageDir);
-                                if(act_type.equals("1"))
-                                {
-                                    setVideoView();
-                                    decryptAndSet(storageDir,file_name,".mp4");
-                                }
-                                else
-                                {
-                                    setImageView();
-                                    decryptAndSet(storageDir,file_name,".png");
-
-
-                                }
-
-                            }
-                        });
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-
-
+                   new ActivityViewSetter(getContext()).fileDownload( mapPeople.get(cur_p_pos).uid,mapPeople.get(cur_p_pos).activities.get(a_pos).act_id,act_type,view.findViewById(R.id.activity_view),shimmerLayout);
                 }
-
             }
 
             @Override
@@ -957,93 +923,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         }
     }
 
-    void copyFileOrDirectory(String srcDir, String dstDir) {
 
-        try {
-            File src = new File(srcDir);
-            File dst = new File(dstDir, src.getName());
-
-            if (src.isDirectory()) {
-
-                String files[] = src.list();
-                int filesLength = files.length;
-                for (int i = 0; i < filesLength; i++) {
-                    String src1 = (new File(src, files[i]).getPath());
-                    String dst1 = dst.getPath();
-                    copyFileOrDirectory(src1, dst1);
-
-                }
-            } else {
-                copyFile(src, dst);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void copyFile(File sourceFile, File destFile) throws IOException {
-        if (!destFile.getParentFile().exists())
-            destFile.getParentFile().mkdirs();
-
-        if (!destFile.exists()) {
-            destFile.createNewFile();
-        }
-
-        FileChannel source = null;
-        FileChannel destination = null;
-
-        try {
-            source = new FileInputStream(sourceFile).getChannel();
-            destination = new FileOutputStream(destFile).getChannel();
-            destination.transferFrom(source, 0, source.size());
-        } finally {
-            if (source != null) {
-                source.close();
-            }
-            if (destination != null) {
-                destination.close();
-            }
-        }
-    }
-
-    void setVideoView()
-    {
-            view.findViewById(R.id.activity_view).findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
-            view.findViewById(R.id.activity_view).findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
-
-    }
-    void setImageView()
-    {
-        view.findViewById(R.id.activity_view).findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
-        view.findViewById(R.id.activity_view).findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
-    }
-    void setTextView()
-    {
-        view.findViewById(R.id.activity_view).findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
-        view.findViewById(R.id.activity_view).findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
-    }
-    void decryptAndSet(String storageDir,String filename,String extension)
-    {
-        AES decrypt=new AES();
-        File actFile = new  File(storageDir+"/"+filename+extension);
-
-        if(extension.equals(".png"))
-        {
-            decrypt.decryptActivityImage("pmdrox",storageDir,filename);
-
-            if(actFile.exists())
-            {
-                Bitmap myBitmap = BitmapFactory.decodeFile(actFile.getAbsolutePath());
-                ImageView act_img = (ImageView) view.findViewById(R.id.activity_view).findViewById(R.id.img_view);
-                act_img.setImageBitmap(myBitmap);
-            }
-        }
-        else
-        {
-            decrypt.decryptActivityVideo("pmdrox",storageDir,filename);
-            VideoView act_vid = (VideoView)view.findViewById(R.id.activity_view).findViewById(R.id.vid_view);
-            act_vid.setVideoPath(actFile.getPath());
-        }
-    }
 
 }
