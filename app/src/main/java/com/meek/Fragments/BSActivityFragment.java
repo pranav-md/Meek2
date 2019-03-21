@@ -61,7 +61,6 @@ public class BSActivityFragment extends Fragment
     {
         DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Activities").child(uid).child("All_Activities").child(act_id).addListenerForSingleValueEvent(new ValueEventListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
