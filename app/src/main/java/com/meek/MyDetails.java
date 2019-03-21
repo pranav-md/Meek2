@@ -11,13 +11,12 @@ import org.joda.time.DateTime;
 
 import java.util.Date;
 
-import io.realm.RealmObject;
 
 /**
  * Created by User on 30-May-18.
  */
 
-public class MyDetails extends RealmObject {
+public class MyDetails  {
     String lat,lng;
     Date cur_date;
     String my_dp_uri;

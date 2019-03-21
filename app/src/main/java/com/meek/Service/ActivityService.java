@@ -18,8 +18,6 @@ import com.google.android.gms.location.DetectedActivity;
 
 import java.util.List;
 
-import io.realm.Realm;
-import io.realm.RealmConfiguration;
 
 /**
  * Created by User on 20-May-18.
@@ -92,16 +90,14 @@ public class ActivityService extends IntentService
             }
         }
 
-        Realm.init(this);
 
        // RealmConfiguration
 
-        Realm realm = Realm.getDefaultInstance();
 
      // create your Realm configuration
 
         final int finalAct = act;
-        realm.executeTransaction(new Realm.Transaction() {
+   /*     realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
 
@@ -120,9 +116,8 @@ public class ActivityService extends IntentService
 
             }
         });
-        realm.close();
 
-
+*/
 
         switch(act)
         {

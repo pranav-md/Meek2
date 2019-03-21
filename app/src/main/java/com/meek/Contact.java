@@ -1,6 +1,6 @@
 package com.meek;
 
-import io.realm.RealmObject;
+
 
 /**
  * Created by User on 28-May-18.

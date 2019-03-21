@@ -13,42 +13,61 @@
         android:layout_height="wrap_content" />
 comment -->
 
-        <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/textView23"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Other activities"
-            android:textAlignment="center"
-            android:textSize="20sp" />
+            android:layout_height="match_parent">
 
-            <ListView
-                android:id="@+id/activity_feed"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="427dp" />
-
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/add_act"
-                android:layout_width="114dp"
-                android:layout_height="69dp"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginStart="287dp"
-                android:layout_marginLeft="100dp"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="66dp"
-                android:background="@drawable/activity"
-                android:src="@drawable/activity"
-                app:backgroundTint="@android:color/transparent" />
-
-        </LinearLayout>
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
 
+                <TextView
+                    android:id="@+id/textView24"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Unseen Activites"
+                    android:textAlignment="center"
+                    android:textSize="20sp" />
 
-    </RelativeLayout>
+                <ListView
+                    android:id="@+id/unseen_activity_feed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                </ListView>
+
+                <TextView
+                    android:id="@+id/textView23"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Seen Activites"
+                    android:textAlignment="center"
+                    android:textSize="20sp" />
+
+                <ListView
+                    android:id="@+id/seen_activities"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    <Button
+        android:id="@+id/add_act"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="150dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginLeft="100dp"
+        android:layout_marginStart="287dp"
+        android:background="@drawable/activity" />
+
+</RelativeLayout>

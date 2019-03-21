@@ -18,7 +18,6 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.internal.BottomNavigationMenu;
 import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -250,7 +249,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         current_layout=inflatedLayout;
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
-        FloatingActionButton add_activity=btnView.findViewById(R.id.add_act);
+        Button add_activity=btnView.findViewById(R.id.add_act);
+        //feedListen();
         add_activity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -260,7 +260,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         //  setActFeatureButton();
         //   setTabsSetActivity();
 
-        //  setUsersActivity(inflatedLayout);
+          setUsersActivity(inflatedLayout);
     }
     void setActFeatureButton()
     {
@@ -320,16 +320,17 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     }
 
-    /*  void setUsersActivity(View inf_layout)
+      void setUsersActivity(View inf_layout)
       {
-          act_seen_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
-          act_nonseen_list=(ListView)inf_layout.findViewById(R.id.activity_feed);
-          actFeedAdapter=new ActFeedAdapter();
+          act_seen_list=(ListView)inf_layout.findViewById(R.id.seen_activities);
+          act_nonseen_list=(ListView)inf_layout.findViewById(R.id.unseen_activity_feed);
           feedListen();
       }
-  */
+
     void feedListen()
     {
+        actSeenAdapter=new ActFeedAdapter();
+        actUnSeenAdapter=new ActFeedAdapter();
         DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
 
         act_feed_ref.child("Users").child(uid).child("activity_feed").addValueEventListener(new ValueEventListener() {

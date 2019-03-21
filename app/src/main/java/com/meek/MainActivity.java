@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if(map_fragment==null)
                         map_fragment=new MapsFragment();
                     getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
-                            .replace(R.id.frg_container, map_fragment)
+                            .replace(R.id.frg_container, new MapsFragment())
                             .commit();
                 } else {
                     tabFragment=new TabFragment(MainActivity.this);
@@ -309,15 +309,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             SharedPreferences.Editor edit_pref=pref.edit();
 
             edit_pref.putString("lat",location.getLatitude()+"");
-            edit_pref.putString("lat",location.getLongitude()+"");
+            edit_pref.putString("lng",location.getLongitude()+"");
             edit_pref.commit();
 
             cur_location = new LatLng(location.getLatitude(), location.getLongitude());
-            if (map_tab_flg ==true)
+            if (map_tab_flg ==true&&map_fragment!=null)
             {
-                map_fragment.setUserMarker();
+            //    map_fragment.setUserMarker();
             }
-
         }
 
         @Override

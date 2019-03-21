@@ -46,7 +46,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import io.realm.Realm;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -218,7 +217,7 @@ public class ActivityVideo extends Fragment {
 
     void setVideo()         ///sets the video appropriately
     {
-        new AES().encryptActivityVideo("pmdroxx",getActivity());
+        new AES().encryptActivityVideo("pmdrox",getActivity());
         SharedPreferences getprefs = getContext().getSharedPreferences("ActsPrefs", MODE_PRIVATE);
         SharedPreferences.Editor edit_prefs = getprefs.edit();
         edit_prefs.putInt("curr_stat", 4);

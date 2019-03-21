@@ -38,7 +38,7 @@ public class BSProfileFragment extends Fragment
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.bs_profile, container, false);
+        view = inflater.inflate(R.layout.bs_profile, container, true);
         TextView name=(TextView)view.findViewById(R.id.bs_name);
         Toast.makeText(getContext(),"UID="+mapPeople.uid,Toast.LENGTH_LONG).show();
         name.setText(mapPeople.uid);

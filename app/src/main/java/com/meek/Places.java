@@ -1,12 +1,11 @@
 package com.meek;
 
-import io.realm.RealmObject;
 
 /**
  * Created by User on 15-Jun-18.
  */
 
-public class Places extends RealmObject
+public class Places
 {
     int p_num,type;
     String name;

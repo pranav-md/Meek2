@@ -1,4 +1,4 @@
-package com.meek;
+package com.meek.Authentication;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -46,6 +46,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.AccountManage.AccountSetup;
+import com.meek.MainActivity;
+import com.meek.R;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;

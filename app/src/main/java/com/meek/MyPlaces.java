@@ -30,14 +30,11 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
-import io.realm.Realm;
-import io.realm.RealmResults;
-
 
 /**
  * Created by User on 08-Jun-18.
  */
-
+/*
 public class MyPlaces extends AppCompatActivity implements OnMapReadyCallback,AdapterView.OnItemSelectedListener, AdapterView.OnItemLongClickListener, View.OnLongClickListener {
     ArrayList<Places> plcs_list;
     boolean list_on=false;
@@ -226,3 +223,4 @@ public class MyPlaces extends AppCompatActivity implements OnMapReadyCallback,Ad
         list_on=true;
     }
 }
+*/

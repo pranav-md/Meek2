@@ -246,7 +246,7 @@ public class ActivityImage extends Fragment {
 
     void setImage()
     {
-        new AES().encryptActivityImage("pmdroxx",getActivity());
+        new AES().encryptActivityImage("pmdrox",getActivity());
 
         RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
         tap_open.setVisibility(View.INVISIBLE);

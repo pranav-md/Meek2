@@ -27,8 +27,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import io.realm.Realm;
-import io.realm.RealmResults;
 
 /**
  * Created by User on 17-Jun-18.

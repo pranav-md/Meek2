@@ -30,7 +30,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.meek.MyActivities;
 import com.meek.MyDetails;
-import com.meek.MyPlaces;
 import com.meek.R;
 import com.myhexaville.smartimagepicker.ImagePicker;
 import com.myhexaville.smartimagepicker.OnImagePickedListener;
@@ -43,7 +42,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import io.realm.Realm;
 
 
 /**
@@ -76,7 +74,7 @@ public class MyProfileFrag extends AppCompatActivity {
         my_places.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(MyProfileFrag.this,MyPlaces.class));
+      //          startActivity(new Intent(MyProfileFrag.this,MyPlaces.class));
             }
         });
         dp=(CircleImageView)findViewById(R.id.my_prof_dp);
@@ -168,9 +166,7 @@ public class MyProfileFrag extends AppCompatActivity {
         File myFile = imagePicker.getImageFile();
         final Uri selectedImage=getImageContentUri(getApplicationContext(),myFile);
         final Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
-        Realm.init(getApplicationContext());
-        final Realm myRealm= Realm.getDefaultInstance();
-        myRealm.executeTransaction(new Realm.Transaction()
+    /*    myRealm.executeTransaction(new Realm.Transaction()
         {
             @Override
             public void execute(Realm realm) {
@@ -186,6 +182,7 @@ public class MyProfileFrag extends AppCompatActivity {
                // myDetails.my_dp_uri=selectedImage.toString();
             }
         });
+        */
     }
 
     public static Uri getImageContentUri(Context context, File imageFile) {

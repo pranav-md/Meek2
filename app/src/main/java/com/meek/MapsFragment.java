@@ -95,7 +95,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     BottomSheetBehavior<View> mBottomSheetBehavior1;
     Marker Activities;
     Marker cur_marker;
-    ProfilePageAdapter ppl_page_adapter;
+  //  ProfilePageAdapter ppl_page_adapter;
     LatLng cur_location;
     String uid,current_ppl=":";
     int cur_p_pos,cur_a_post;
@@ -136,8 +136,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         bottomSheetSetup();
         // profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
         //  Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
-        // flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
+        flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
         flip_bs.setFlipDuration(200);
+        flip_bs.setClickable(false);
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
         ppl_marker=new ArrayList<Marker>();
@@ -168,14 +169,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     bs_prof=true;
                     mBottomSheetBehavior1.setPeekHeight(0);
                     mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
-
                     TextView name=(TextView)view.findViewById(R.id.bs_name);
                     TextView place=(TextView)view.findViewById(R.id.bs_place);
                     TextView time=(TextView)view.findViewById(R.id.bs_time);
 
                     name.setText(mapPeople.get(cur_p_pos).name);
-                    place.setText(mapPeople.get(cur_p_pos).color);
-                    time.setText(mapPeople.get(cur_p_pos).latLng+"");;
+//                    place.setText(mapPeople.get(cur_p_pos).color);
+                    place.setText(mapPeople.get(cur_p_pos).latLng+"");;
                 }
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     ///all the activity markers should get dissapperared
@@ -277,6 +277,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         bs_prof = true;
                         showProfileBottomSheet(marker.getTitle(),(int)marker.getTag());
                         removeOtherPPLMarkers((int)marker.getTag());
+                        flip_bs.setFlipDuration(0);
+                        flip_bs.flipTheView();
+                        flip_bs.setFlipDuration(200);
                         if(marker.getTitle().equals(uid))
                             getMyActData();
                         else
@@ -286,7 +289,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     {
                         bs_prof=true;
                         bs_act=false;
-                        Activities_pg.setCurrentItem((int)marker.getTag());
+         //               Activities_pg.setCurrentItem((int)marker.getTag());
                         flip_bs.flipTheView();
                         setActivityCardData((int)marker.getTag());
                     }
@@ -304,11 +307,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         bs_act=true;
                         bs_prof = false;
                         flip_bs.flipTheView();
-                        Activities_pg.setCurrentItem((int)marker.getTag());
+//                        Activities_pg.setCurrentItem((int)marker.getTag());
                     }
                     else
                     {
-                        Activities_pg.setCurrentItem((int)marker.getTag());
+            //            Activities_pg.setCurrentItem((int)marker.getTag());
                     }
                 }
                 return true;
@@ -339,7 +342,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                             newone.uid=dataSnapshot.child("uid").getValue().toString();
                             newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("lat").getValue().toString())
                                     ,Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
-                            newone.color=Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
+                 //           newone.color=Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
 
                             new PeopleDBHelper(getContext()).updateLatLng(newone.latLng,newone.uid);
                             if(current_ppl.contains(":"+newone.uid+":"))
@@ -355,8 +358,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                             else
                             {
                                 mapPeople.add(newone);
-                                ppl_page_adapter.setData(mapPeople);
-                                ppl_page_adapter.notifyDataSetChanged();
+                         //       ppl_page_adapter.setData(mapPeople);
+                        //        ppl_page_adapter.notifyDataSetChanged();
                                 current_ppl += newone.uid + ":";
                                 setMarker(newone.latLng,mapPeople.size()-1,newone.uid,"dp tobe set",false);
                             }
@@ -391,20 +394,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             Log.e("THE SQLITEDB DATA","uid"+loc_cur.getString(0)
                     +"lat="+loc_cur.getString(loc_cur.getColumnIndex("LAT"))
                     +"lng="+loc_cur.getString(loc_cur.getColumnIndex("LNG")));
-            newppl.latLng=new LatLng(Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LAT"))),Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LNG"))));
-            mapPeople.add(newppl);
-            setMarker(newppl.latLng,mapPeople.size()-1,newppl.uid,"hahahah",false);
-
+            if(loc_cur.getString(loc_cur.getColumnIndex("LNG"))!=null) {
+                newppl.latLng = new LatLng(Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LAT"))), Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LNG"))));
+                mapPeople.add(newppl);
+                setMarker(newppl.latLng, mapPeople.size() - 1, newppl.uid, "hahahah", false);
+            }
             while (loc_cur.moveToNext())
             {
                 newppl=new MapPeople();
                 newppl.uid=loc_cur.getString(0);
                 newppl.name=loc_cur.getString(1);
-                newppl.latLng=new LatLng(Double.parseDouble(loc_cur.getString(2)),Double.parseDouble(loc_cur.getString(3)));
-                mapPeople.add(newppl);
-                setMarker(newppl.latLng,mapPeople.size()-1,newppl.uid,"hahahah",false);
-                ppl_page_adapter.setData(mapPeople);
-                ppl_page_adapter.notifyDataSetChanged();
+                if(loc_cur.getString(loc_cur.getColumnIndex("LNG"))!=null) {
+
+                    newppl.latLng = new LatLng(Double.parseDouble(loc_cur.getString(2)), Double.parseDouble(loc_cur.getString(3)));
+                    mapPeople.add(newppl);
+                    setMarker(newppl.latLng, mapPeople.size() - 1, newppl.uid, "hahahah", false);
+                    //     ppl_page_adapter.setData(mapPeople);
+                    //      ppl_page_adapter.notifyDataSetChanged();
+                }
             }
         }
         loc_db_mkr_lock=true;
@@ -428,10 +435,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             if(cur_location!=null)
                 setMarker(cur_location,0,uid,".Displaypic/pic",false);
             user_marker_lock=true;
-            ppl_page_adapter=new ProfilePageAdapter(getChildFragmentManager());
-            ppl_page_adapter.setData(mapPeople);
-            profile_pg.setAdapter(ppl_page_adapter);
-            profile_pg.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+      //      ppl_page_adapter=new ProfilePageAdapter(getChildFragmentManager());
+    //        ppl_page_adapter.setData(mapPeople);
+//            profile_pg.setAdapter(ppl_page_adapter);
+ /*           profile_pg.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                 @Override
                 public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
@@ -448,7 +455,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                 public void onPageScrollStateChanged(int state) {
 
                 }
-            });
+            });*/
 
         }
         else
@@ -465,7 +472,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         final int pos=1;
         act_marker=new ArrayList<Marker>();
         final List<WeightedLatLng> list=new ArrayList<WeightedLatLng>();
-        final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
+     //   final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Activities").child(uid).child("mapview").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -478,19 +485,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                         newone.act_id=ds.getKey().toString();
                         newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
                         list.add(new WeightedLatLng(newone.latLng,2));
-                        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
+//                        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
                         mapPeople.get(pos).activities.add(newone);
                         setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
                         if(adapt_bit==false)
                         {
                             adapt_bit=true;
-                            activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                            Activities_pg.setAdapter(activitiesPageAdapter);
+                  //          activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                 //           Activities_pg.setAdapter(activitiesPageAdapter);
                         }
                         else
                         {
-                            activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                            activitiesPageAdapter.notifyDataSetChanged();
+                 //           activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                  //          activitiesPageAdapter.notifyDataSetChanged();
                         }
                     }
                 addHeatMap(list);
@@ -511,7 +518,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         cur_p_pos=pos;
         act_marker=new ArrayList<Marker>();
         final List<WeightedLatLng> list=new ArrayList<WeightedLatLng>();
-        final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
+    //    final MapActivitiesPageAdapter activitiesPageAdapter=new MapActivitiesPageAdapter(getChildFragmentManager(),mapPeople.get(pos).uid);
         DatabaseReference db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -522,19 +529,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     newone.act_id=ds.getKey().toString();
                     newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
                     list.add(new WeightedLatLng(newone.latLng,2));
-                    newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
+            //        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
                     mapPeople.get(pos).activities.add(newone);
                     setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
                     if(adapt_bit[0] ==false)
                     {
                         adapt_bit[0] =true;
-                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        Activities_pg.setAdapter(activitiesPageAdapter);
+          //              activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+         //               Activities_pg.setAdapter(activitiesPageAdapter);
                     }
                     else
                     {
-                        activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-                        activitiesPageAdapter.notifyDataSetChanged();
+               //         activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+               //         activitiesPageAdapter.notifyDataSetChanged();
                     }
                 }
                 addHeatMap(list);
@@ -620,7 +627,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
                         newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("lat").getValue().toString()),Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
-                        newone.color= Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
+             //           newone.color= Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
                         if(!current_ppl.contains(newone.uid))
                         {
                             mapPeople.add(newone);
@@ -639,8 +646,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                                 }
                             }
                         }
-                        ppl_page_adapter.setData(mapPeople);
-                        ppl_page_adapter.notifyDataSetChanged();
+                  //      ppl_page_adapter.setData(mapPeople);
+                  //      ppl_page_adapter.notifyDataSetChanged();
                     }
 
                     @Override
@@ -664,8 +671,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                             ppl_marker.get(j).remove();
                             ppl_marker.remove(j);
                             current_ppl.replace(":"+cr_pl.get(i),"");
-                            ppl_page_adapter.setData(mapPeople);
-                            ppl_page_adapter.notifyDataSetChanged();
+                    //        ppl_page_adapter.setData(mapPeople);
+                    //        ppl_page_adapter.notifyDataSetChanged();
                         }
                     }
                 }

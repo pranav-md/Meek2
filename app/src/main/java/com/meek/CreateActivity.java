@@ -1,6 +1,7 @@
 package com.meek;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -26,6 +27,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -60,7 +62,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-import io.realm.Realm;
 
 import static android.content.ContentValues.TAG;
 
@@ -132,8 +133,10 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 ////
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         final DatabaseReference userRef = database.getReference("Activities");
+        final ProgressDialog progressBar=new ProgressDialog(CreateActivity.this);
+        progressBar.show();
+        progressBar.setCancelable(false);
         userRef.child(uid).child("Activity_info").child("Activity_num").addListenerForSingleValueEvent(new ValueEventListener() {
-                    @RequiresApi(api = Build.VERSION_CODES.O)
                     @Override
                     public void onDataChange(final DataSnapshot dataSnapshot)
                     {
@@ -145,7 +148,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                                 @RequiresApi(api = Build.VERSION_CODES.O)
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-
+                                    progressBar.dismiss();
                                     setAttributes(Integer.parseInt(dataSnapshot.getValue().toString())+1,curr_stat);
                                     userRef.child(uid).child("Activity_info").child("Activity_num").setValue(Integer.parseInt(dataSnapshot.getValue().toString())+1);
                                 }
@@ -156,10 +159,9 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                             });
                         else
                         {
-                                setAttributes(Integer.parseInt(dataSnapshot.getValue().toString())+1,curr_stat);
+                            progressBar.dismiss();
+                            setAttributes(Integer.parseInt(dataSnapshot.getValue().toString())+1,curr_stat);
                         }
-
-
                     }
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
@@ -168,7 +170,6 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 });
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     void setAttributes(int act_num, int curr_stat)
     {
         FirebaseDatabase database = FirebaseDatabase.getInstance();

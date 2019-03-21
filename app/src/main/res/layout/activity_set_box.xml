@@ -61,6 +61,12 @@
                         android:adjustViewBounds="true"
                         android:scaleType="fitCenter" />
 
+                    <ImageView
+                        android:id="@+id/imageView11"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        card_view:srcCompat="@drawable/loading" />
+
                 </LinearLayout>
 
 
