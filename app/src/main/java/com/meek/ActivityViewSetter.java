@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.VideoView;
@@ -18,9 +19,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
 import io.supercharge.shimmerlayout.ShimmerLayout;
+
 
 public class ActivityViewSetter {
     Context context;
@@ -53,13 +57,13 @@ public class ActivityViewSetter {
         }
     }
 
-    void setVideoView(View set_view)
+    public void setVideoView(View set_view)
     {
         set_view.findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
         set_view.findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
 
     }
-    void setImageView(View set_view)
+    public void setImageView(View set_view)
     {
         set_view.findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
         set_view.findViewById(R.id.text_view).setVisibility(View.INVISIBLE);
@@ -69,7 +73,27 @@ public class ActivityViewSetter {
         set_view.findViewById(R.id.vid_view).setVisibility(View.INVISIBLE);
         set_view.findViewById(R.id.img_view).setVisibility(View.INVISIBLE);
     }
+////////////////////
+public static void copy(File src, File dst) throws IOException {
+    InputStream in = new FileInputStream(src);
+    try {
+        OutputStream out = new FileOutputStream(dst);
+        try {
+            // Transfer bytes from in to out
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        } finally {
+            out.close();
+        }
+    } finally {
+        in.close();
+    }
+}
 
+//////////////////////
     void copyFileOrDirectory(String srcDir, String dstDir) {
 
         try {
@@ -96,25 +120,27 @@ public class ActivityViewSetter {
     void decryptAndSet(String storageDir,String filename,String extension,View set_view)
     {
         AES decrypt=new AES();
-        File actFile = new  File(storageDir+"/"+filename+extension);
+        File actFile = new  File(storageDir+"/"+filename.replace(".crypt",extension));
 
         if(extension.equals(".png"))
         {
-            decrypt.decryptActivityImage("pmdrox",storageDir,filename);
+            decrypt.decryptActivityImage("pmdrox",storageDir,filename.replace(".crypt",""));
 
             if(actFile.exists())
             {
                 Bitmap myBitmap = BitmapFactory.decodeFile(actFile.getAbsolutePath());
+
                 ImageView act_img = (ImageView) set_view.findViewById(R.id.img_view);
                 act_img.setImageBitmap(myBitmap);
             }
         }
         else
         {
-            decrypt.decryptActivityVideo("pmdrox",storageDir,filename);
+            decrypt.decryptActivityVideo("pmdrox",storageDir,filename.replace(".crypt",""));
             VideoView act_vid = (VideoView)set_view.findViewById(R.id.vid_view);
             act_vid.setVideoPath(actFile.getPath());
         }
+        Log.e("ABSOLUTE PATH","ABS PATH IS"+actFile.getAbsolutePath());
     }
     void copyTheFile(File src, File dst) throws IOException {
         FileChannel inChannel = new FileInputStream(src).getChannel();
@@ -133,6 +159,11 @@ public class ActivityViewSetter {
         final FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
         final String file_name=u_id+"_"+act_id+".crypt";
+        if(act_type.equals("1"))
+            setVideoView(set_view);
+        else
+            setImageView(set_view);
+
         storageRef=storageRef.child("Activity/"+file_name);
         try {
             final File localFile = File.createTempFile(file_name, "crypt");
@@ -144,18 +175,16 @@ public class ActivityViewSetter {
                     String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
 
                     try {
-                        copyTheFile(new File(localFile.getAbsolutePath()),new File(storageDir+"/"+file_name+".crypt"));
+                        copy(new File(localFile.getAbsolutePath()),new File(storageDir+"/"+file_name));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     if(act_type.equals("1"))
                     {
-                        setVideoView(set_view);
                         decryptAndSet(storageDir,file_name,".mp4",set_view);
                     }
                     else
                     {
-                        setImageView(set_view);
                         decryptAndSet(storageDir,file_name,".png",set_view);
                     }
                 }

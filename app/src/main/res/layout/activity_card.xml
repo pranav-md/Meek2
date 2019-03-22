@@ -50,38 +50,36 @@
 
             <io.supercharge.shimmerlayout.ShimmerLayout
                 android:id="@+id/shim_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="50dp"
-                android:paddingLeft="30dp"
-                android:paddingRight="30dp"
-                app:shimmer_animation_duration="1200">
-            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="150dp">
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="50dp">
 
-                <ImageView
-                    android:id="@+id/img_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    card_view:srcCompat="@android:color/transparent" />
-
-                <VideoView
-                    android:id="@+id/vid_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true" />
-
-                <me.grantland.widget.AutofitTextView
-                    android:id="@+id/text_view"
+                <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:maxLines="2"
-                    android:singleLine="true"
-                    android:textSize="40sp"
-                    autofit:minTextSize="16sp" />
-            </RelativeLayout>
+                    android:layout_height="150dp">
+
+                    <ImageView
+                        android:id="@+id/img_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        card_view:srcCompat="@android:color/transparent" />
+
+                    <VideoView
+                        android:id="@+id/vid_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_centerInParent="true" />
+
+                    <me.grantland.widget.AutofitTextView
+                        android:id="@+id/text_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:maxLines="2"
+                        android:singleLine="true"
+                        android:textSize="40sp"
+                        autofit:minTextSize="16sp" />
+                </RelativeLayout>
             </io.supercharge.shimmerlayout.ShimmerLayout>
             <LinearLayout
                 android:layout_width="match_parent"

@@ -3,8 +3,6 @@ package com.meek.Encryption;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.RequiresApi;
-import android.util.Base64;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -172,7 +170,6 @@ public class AES {
 
 
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public String decrypt(String strToDecrypt, String secret)
     {
         try

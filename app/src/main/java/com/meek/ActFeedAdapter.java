@@ -55,6 +55,7 @@ public class ActFeedAdapter extends BaseAdapter {
         final ViewPager viewPager=view.findViewById(R.id.act_page);
         View lin_lyt=(LinearLayout)view.findViewById(R.id.lin_lyt);
         final ExpandableLayout act_views=view.findViewById(R.id.act_expand_layout);
+        act_views.setExpanded(false);
         lin_lyt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

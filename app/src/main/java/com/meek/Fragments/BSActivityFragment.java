@@ -1,8 +1,10 @@
 package com.meek.Fragments;
 
 import android.annotation.SuppressLint;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -11,7 +13,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -21,6 +25,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.meek.ActivityViewSetter;
 import com.meek.Encryption.AES;
 import com.meek.R;
+
+import java.io.File;
 
 import io.supercharge.shimmerlayout.ShimmerLayout;
 import me.grantland.widget.AutofitTextView;
@@ -35,6 +41,7 @@ public class BSActivityFragment extends Fragment
     String uid,act_id;
     View view;
     ShimmerLayout shim_content;
+
     BSActivityFragment()
     {}
     @SuppressLint("ValidFragment")
@@ -49,10 +56,9 @@ public class BSActivityFragment extends Fragment
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)
     {
         view = inflater.inflate(R.layout.activity_card, container, false);
-
+       shimmer();
        getDataActivity();
       //  if(act_id.equals("0"))
-        shimmer();
 
         return view;
     }
@@ -70,8 +76,28 @@ public class BSActivityFragment extends Fragment
                 String act_current_place=dataSnapshot.child("act_current_place").getValue().toString();
                 String act_text=dataSnapshot.child("act_text").getValue().toString();
                 act_text= new AES().decrypt(act_text,"pmdrox");
-
-                if(Integer.parseInt(act_type)<3)
+                String extension;
+                if(act_type.equals("1"))
+                    extension=".mp4";
+                else
+                    extension=".png";
+                String filename=getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString()+"/"+uid+"_"+act_id+"."+extension;
+                if((new File(filename)).isFile())
+                {
+                    if(act_type.equals("1"))
+                    {
+                        new ActivityViewSetter(getContext()).setVideoView(view);
+                        VideoView act_vid = (VideoView)view.findViewById(R.id.vid_view);
+                        act_vid.setVideoPath(filename);
+                    }
+                    else if(act_type.equals("2"))
+                    {
+                        new ActivityViewSetter(getContext()).setImageView(view);
+                        ImageView act_img = (ImageView) view.findViewById(R.id.img_view);
+                        act_img.setImageBitmap(BitmapFactory.decodeFile(filename));
+                    }
+                }
+                else if(Integer.parseInt(act_type)<3)
                 {
                     new ActivityViewSetter(getContext()).fileDownload( uid,act_id,act_type,view,shim_content);
                     TextView caption=(TextView)view.findViewById(R.id.caption);
@@ -96,5 +122,6 @@ public class BSActivityFragment extends Fragment
     {
         shim_content = (ShimmerLayout) view.findViewById(R.id.shim_content);
         shim_content.startShimmerAnimation();
+
     }
 }
