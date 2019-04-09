@@ -1,4 +1,4 @@
-package com.meek.Service;
+package com.meek.Services;
 
 import android.app.Service;
 import android.content.Intent;

@@ -40,7 +40,7 @@ public class BSActivityFragment extends Fragment
 {
     String uid,act_id;
     View view;
-    ShimmerLayout shim_content;
+   // ShimmerLayout shim_content;
 
     BSActivityFragment()
     {}
@@ -56,7 +56,7 @@ public class BSActivityFragment extends Fragment
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)
     {
         view = inflater.inflate(R.layout.activity_card, container, false);
-       shimmer();
+    //   shimmer();
        getDataActivity();
       //  if(act_id.equals("0"))
 
@@ -99,7 +99,7 @@ public class BSActivityFragment extends Fragment
                 }
                 else if(Integer.parseInt(act_type)<3)
                 {
-                    new ActivityViewSetter(getContext()).fileDownload( uid,act_id,act_type,view,shim_content);
+                    new ActivityViewSetter(getContext()).fileDownload( uid,act_id,act_type,view);
                     TextView caption=(TextView)view.findViewById(R.id.caption);
                     caption.setText(act_text);
                 }
@@ -120,8 +120,8 @@ public class BSActivityFragment extends Fragment
 
     void shimmer()
     {
-        shim_content = (ShimmerLayout) view.findViewById(R.id.shim_content);
-        shim_content.startShimmerAnimation();
-
+     //   shim_content = (ShimmerLayout) view.findViewById(R.id.shim_content);
+    //    shim_content.startShimmerAnimation();
+    //    shim_content.setShimmerAnimationDuration(500);
     }
 }

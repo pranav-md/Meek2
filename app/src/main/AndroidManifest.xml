@@ -92,7 +92,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".MessageListMaker">
+        <activity android:name=".Messaging.MessageListMaker">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

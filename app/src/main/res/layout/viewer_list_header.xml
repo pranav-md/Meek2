@@ -2,6 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:background="@drawable/meek_loccon"
     android:orientation="horizontal">
 
     <TextView
@@ -9,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="70dp"
         android:layout_weight="1"
+        android:background="@drawable/meek_loccon"
         android:text="TextView"
         android:textAlignment="center"
         android:textSize="30sp" />

@@ -7,7 +7,7 @@ package com.meek;
  */
 
 public class Contact {
-    private String id, name, phnum, status, uid,dpno;
+    private String  name, phnum, status, uid,dpno;
     int conn_level;
     boolean in_meek;
 
@@ -19,9 +19,6 @@ public class Contact {
         this.dpno = dpno;
     }
 
-    public void setID(String ID) {
-        this.id = ID;
-    }
 
     public Contact()
     {
@@ -51,11 +48,6 @@ public class Contact {
         this.status = status;
     }
 
-
-    public String getID() {
-        return id;
-    }
-
     public String getUID() {
         return uid;
     }
@@ -73,7 +65,4 @@ public class Contact {
         return status;
     }
 
-    public String getUid() {
-        return uid;
-    }
 }

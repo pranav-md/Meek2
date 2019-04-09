@@ -52,7 +52,7 @@
             android:textSize="30sp"
             android:visibility="invisible" />
 
-        <com.stfalcon.chatkit.messages.MessagesList
+        <ListView
             android:id="@+id/messagesList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -60,15 +60,13 @@
             android:layout_weight="2"
             tools:ignore="NotSibling">
 
-        </com.stfalcon.chatkit.messages.MessagesList>
+        </ListView>
     </RelativeLayout>
 
-    <com.stfalcon.chatkit.messages.MessageInput
+    <EditText
         android:id="@+id/input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        app:inputHint="Send a message"
-        app:showAttachmentButton="true"
-        app:attachmentButtonIcon="@drawable/activity"/>
+        android:hint="Send a message" />
 </LinearLayout>

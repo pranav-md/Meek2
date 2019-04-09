@@ -735,7 +735,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
                 if(Integer.parseInt(act_type)<3)
                 {
-                   new ActivityViewSetter(getContext()).fileDownload( mapPeople.get(cur_p_pos).uid,mapPeople.get(cur_p_pos).activities.get(a_pos).act_id,act_type,view.findViewById(R.id.activity_view),shimmerLayout);
+                   new ActivityViewSetter(getContext()).fileDownload( mapPeople.get(cur_p_pos).uid,mapPeople.get(cur_p_pos).activities.get(a_pos).act_id,act_type,view.findViewById(R.id.activity_view));
                 }
             }
 

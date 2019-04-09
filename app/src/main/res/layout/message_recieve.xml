@@ -13,7 +13,7 @@
         android:paddingRight="10dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/messageUserAvatar"
+            android:id="@+id/receiverImg"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_alignParentStart="true"
@@ -23,19 +23,18 @@
             app:civ_border_width="2dp" />
 
         <TextView
-            android:id="@+id/messageText"
+            android:id="@+id/receiverText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="35dp"
             android:layout_marginTop="4dp"
-            android:text="TextView"
             android:textSize="15sp"
             app:layout_constraintStart_toStartOf="parent" />
 
     </RelativeLayout>
 
     <TextView
-        android:id="@+id/messageTime"
+        android:id="@+id/receiverTime"
         android:layout_width="wrap_content"
         android:layout_height="19dp"
         android:layout_alignStart="@+id/messageText "
@@ -44,7 +43,6 @@
         android:layout_marginTop="3dp"
         android:layout_weight="1"
         android:gravity="bottom"
-        android:text="TextView"
         android:textSize="10sp"
         app:layout_constraintTop_toTopOf="parent" />
 </LinearLayout>

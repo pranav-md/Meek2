@@ -44,7 +44,7 @@ dependencies {
     implementation 'se.emilsjolander:stickylistheaders:2.7.0'
     implementation 'com.github.tamir7.contacts:contacts:1.1.7'
 
-    implementation 'com.github.stfalcon:chatkit:0.2.2'
+ //   implementation 'com.github.stfalcon:chatkit:0.2.2'
     implementation 'com.myhexaville:smart-image-picker:1.0.4'
     implementation 'io.supercharge:shimmerlayout:2.1.0'
     implementation 'com.google.android.gms:play-services-ads:11.8.0'

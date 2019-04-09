@@ -2,13 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_height="60dp"
+    android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal">
 
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -56,66 +52,5 @@
             android:text="TextView"
             android:textSize="25sp" />
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="60dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:color/darker_gray" />
 
-        <Button
-            android:id="@+id/reply_expand"
-            android:layout_width="5dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:text="Reply" />
-
-    </LinearLayout>
-
-    <net.cachapa.expandablelayout.ExpandableLayout
-        android:id="@+id/reply_expandable_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        app:el_duration="400"
-        app:el_expanded="false"
-        app:el_parallax="0.5">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-
-            <TextView
-                android:id="@+id/msg_came"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="TextView" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="20dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/reply_box"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:ems="10"
-                    android:inputType="textPersonName"
-                    android:text="Name" />
-
-                <Button
-                    android:id="@+id/reply_bttn"
-                    android:layout_width="50dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:text="Button" />
-            </LinearLayout>
-        </LinearLayout>
-    </net.cachapa.expandablelayout.ExpandableLayout>
 </LinearLayout>

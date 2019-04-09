@@ -1,41 +1,27 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
-import android.app.*;
-import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
+import android.database.Cursor;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.design.internal.BottomNavigationMenu;
-import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.Manifest.permission;
-import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
-import android.support.v4.view.ViewPager;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -45,13 +31,9 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -62,33 +44,33 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
+import com.meek.Database.MessageDBHelper;
 import com.meek.Database.PeopleDBHelper;
+import com.meek.Encryption.RSAKeyExchange;
+import com.meek.Messaging.MessageDialogAdapter;
+import com.meek.Messaging.MessageService;
+import com.meek.Messaging.MsgPPL;
 import com.myhexaville.smartimagepicker.ImagePicker;
-import com.myhexaville.smartimagepicker.OnImagePickedListener;
 
 import android.widget.Button;
-import android.widget.VideoView;
 
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.List;
 
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import it.sephiroth.android.library.bottomnavigation.BottomNavigation;
 import se.emilsjolander.stickylistheaders.StickyListHeadersAdapter;
 import se.emilsjolander.stickylistheaders.StickyListHeadersListView;
 
 
-import static android.content.ContentValues.TAG;
 import static android.content.Context.MODE_PRIVATE;
+import static com.meek.Encryption.RSAKeyExchange.encrypt;
 
 /**
  * Created by User on 25-May-18.
@@ -129,7 +111,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     int shown_md_num=0;
     int tot_msg_ppl;
     ProgressBar msg_load;
-    MsgDialogAdapter mg_dg_adapter;
+    MessageDialogAdapter mg_dg_adapter;
     View btnView;
     //////////////////////
     ConnectionAdapter connectionAdapter=null;
@@ -463,42 +445,14 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             }
 
         });
-        mg_dg_adapter=new MsgDialogAdapter(getContext());
+        mg_dg_adapter=new MessageDialogAdapter(getContext());
         msg_load=(ProgressBar)inflatedLayout.findViewById(R.id.msg_load);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MessageService.MY_ACTION);
+        getContext().registerReceiver(updateDlgsBCR, intentFilter);
+
         //// firebase listener to the message list
-
-        DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
-        if(msg_listener==null)
-            msg_listener=msg_ref.child("Users").child(uid).child("Message_counter").addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot)
-                {
-                    msg_load.setVisibility(View.VISIBLE);
-                    tot_msg_ppl =0;
-                    shown_md_num=0;
-                    msgPPLS=new ArrayList<MsgPPL>();
-                    dg_msgs=dataSnapshot.getValue().toString();
-                    for( int i=0; i<dg_msgs.length(); i++ ) {
-                        if (dg_msgs.charAt(i) == ':') {
-                            tot_msg_ppl++;
-                        }
-                    }
-                    --tot_msg_ppl;
-                    adaptMsgs();
-
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-        else
-        {
-            mg_dg_adapter.getData(msgPPLS);
-            mg_dg_View.setAdapter(mg_dg_adapter);
-
-        }
 
 
         /// Declare an array list...assign the data of the messages of list one by one
@@ -508,42 +462,35 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         /// repeat until the first six and store the last list item  ///
 
         ///adapt and shoow... if the listner worked as listener, do the same thing and notifydatachange
-
-
     }
 
-    void adaptMsgs()
+    void getMsgDialogs()
     {
-        int loop_num;
-        if(tot_msg_ppl-shown_md_num<6)
-            loop_num=tot_msg_ppl;
-        else
-            loop_num=tot_msg_ppl-shown_md_num;
-        int tmp_show=shown_md_num;
-        for(int i=shown_md_num;i<tmp_show+loop_num;++i)
+        Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
+        msgDlgs.moveToFirst();
+        MsgPPL newone=new MsgPPL();
+        newone.sender_id=msgDlgs.getString(1);
+        newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
+        newone.last_msg=msgDlgs.getString(2);
+        newone.date=msgDlgs.getString(3);
+        msgPPLS.add(newone);
+        while(msgDlgs.moveToNext())
         {
-            dg_msgs=dg_msgs.substring(1);
-            int pos=dg_msgs.indexOf(':');
-            String msg_content=dg_msgs.substring(0,pos);
-            dg_msgs=dg_msgs.substring(pos);
-            MsgPPL msgPPL=new MsgPPL("."+msg_content,uid);
-            if(msgPPL.num_unread>0)
-                msgPPL.get_lastMsg();
-            msgPPL.getName();
-            msgPPLS.add(msgPPL);
-            mg_dg_adapter.getData(msgPPLS);
-            if(shown_md_num==0)
-            {
-                mg_dg_View.setAdapter(mg_dg_adapter);
-            }
-            else
-                mg_dg_adapter.notifyDataSetChanged();
-            ++shown_md_num;
+            newone=new MsgPPL();
+            newone.sender_id=msgDlgs.getString(1);
+            newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
+            newone.last_msg=msgDlgs.getString(2);
+            newone.date=msgDlgs.getString(3);
+            msgPPLS.add(newone);
         }
-        if(msg_load.getVisibility()==View.VISIBLE)
-            msg_load.setVisibility(View.INVISIBLE);
-
-
+        mg_dg_adapter.getData(msgPPLS);
+        if(shown_md_num==0)
+        {
+            mg_dg_View.setAdapter(mg_dg_adapter);
+        }
+        else
+            mg_dg_adapter.notifyDataSetChanged();
+        ++shown_md_num;
     }
 
 
@@ -568,10 +515,17 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 final String con_meek=dataSnapshot.child("con_meek").getValue().toString();
                 String activity_meek=dataSnapshot.child("activity_meek").getValue().toString();
                 String location_meek=dataSnapshot.child("location_meek").getValue().toString();
+                String sent_request=dataSnapshot.child("act_request_sent").getValue().toString();
+                String received_request=dataSnapshot.child("act_request_received").getValue().toString();
 
                 ArrayList<String> meek_cons=extractor(con_meek);
                 ArrayList<String> activity_cons=extractor(activity_meek);
                 ArrayList<String> loc_cons=extractor(location_meek);
+                ArrayList<String> sent_req_cons=extractor(sent_request);
+                ArrayList<String> rcv_req_cons=extractor(received_request);
+
+                ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
+
                 new PeopleDBHelper(getContext());
                 for(final String id:meek_cons)
                 {
@@ -638,7 +592,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                                 if(phnm!=null);
                                 new PeopleDBHelper(getContext()).insertPerson(id,phnm,3);
                                 Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
-                                setConnectionList();
+                              //  setConnectionList();
                             }
 
                             @Override
@@ -651,8 +605,61 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     {
                         new PeopleDBHelper(getContext()).changePersonStatus(id,3);
                     }
-                    setConnectionList();
                 }
+
+                for(final String id:sent_req_cons)
+                {
+                Log.e("ACT RQ SNT","id="+id);
+                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    {
+                        Log.e("Conn activity setting","current id="+id);
+                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                final String phnm=dataSnapshot.getValue().toString();
+                                if(phnm!=null);
+                                new PeopleDBHelper(getContext()).insertPerson(id,phnm,4);
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,4)))
+                    {
+                        new PeopleDBHelper(getContext()).changePersonStatus(id,4);
+                    }
+                }
+
+                for(final String id:rcv_req_cons)
+                {
+                    Log.e("ACT RQ SNT","id="+id);
+                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    {
+                        Log.e("Conn activity setting","current id="+id);
+                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                final String phnm=dataSnapshot.getValue().toString();
+                                if(phnm!=null);
+                                new PeopleDBHelper(getContext()).insertPerson(id,phnm,5);
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,5)))
+                    {
+                        new PeopleDBHelper(getContext()).changePersonStatus(id,5);
+                    }
+                }
+
+
                 setConnectionList();
 
 
@@ -663,11 +670,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
             }
         });
-
     }
 
 
-    private File createImageFile(String ext) throws IOException {
+    private File createImageFile(String ext) throws IOException
+    {
         // Create an image file name
         String imageFileName = "activity";
         String storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
@@ -708,12 +715,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
         //Button play=(Button)activity_layout.findViewById(R.id.play)
 
-
     }*/
-
-
-
-    static ArrayList<String> extractor(String all_uid)
+    public static ArrayList<String> extractor(String all_uid)
     {
         ArrayList<String> uids=new ArrayList<String>() ;
         int numMeek = 0,i;
@@ -738,7 +741,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
         conn_list=new PeopleDBHelper(context).getAllConnections();
 
-        connectionAdapter.getData(conn_list,getContext());
+        connectionAdapter.getData(conn_list,getContext(),uid);
         if(curr_tab==0)
         {
             if(con_list!=null)
@@ -752,15 +755,27 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 }
         }
     }
-
-
+    BroadcastReceiver updateDlgsBCR = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            Bundle bundle = intent.getExtras();
+            String sender_id = bundle.getString("sender_id");
+            String uid = bundle.getString("uid");
+            getMsgDialogs();
+        }
+    };
 }
+
+
 class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 {
     ArrayList<Contact> conn_ppl;
     Context context;
-    void getData(ArrayList<Contact> conn_ppl,Context context)
+    String uid;
+    void getData(ArrayList<Contact> conn_ppl,Context context,String id)
     {
+        this.uid=id;
         this.context=context;
         this.conn_ppl=conn_ppl;
     }
@@ -779,11 +794,187 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         return 0;
     }
 
+    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         Log.e("CONN ADAPTER","NAME:"+conn_ppl.get(i).getName()+"   UID:"+conn_ppl.get(i).getUID());
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        view = inflater.inflate(R.layout.viewer_list_item, null);
+
+        switch(conn_ppl.get(i).conn_level)
+        {
+            case 5: view = inflater.inflate(R.layout.request_list_item, null);
+                    final CircleImageView okay=(CircleImageView)view.findViewById(R.id.rq_okay);
+                    final CircleImageView cancel=(CircleImageView)view.findViewById(R.id.rq_cancel);
+                    okay.setTag(conn_ppl.get(i).getUID());
+                    cancel.setTag(conn_ppl.get(i).getUID());
+                    okay.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(final View view) {
+                            try {
+
+                                PublicKey publicKey= new RSAKeyExchange().getPublicKey(view.getTag().toString());
+                                byte [] encrypted = encrypt(publicKey, "This is a secret message");     ///set the key in it
+                                ///////     write the encrypted key
+
+                                ////Read the key from that  specific user who sent me and decrypt using my private key
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+
+                            final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                            ppl_ref.child("Users")
+                                    .child(view.getTag().toString())
+                                    .child("Connections")
+                                    .child("act_request_received")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String rcv_id=dataSnapshot.getValue().toString();
+                                            if(!rcv_id.contains(":"+uid+":"))
+                                            {
+                                                ppl_ref.child("Users").child(view.getTag().toString())
+                                                        .child("Connections")
+                                                        .child("act_request_received").setValue(":"+uid+rcv_id);
+                                            }
+
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+
+
+                        }
+                    });
+                    break;
+
+            case 3: view = inflater.inflate(R.layout.viewer_list_item, null);
+                    break;
+
+            case 2: view = inflater.inflate(R.layout.viewer_list_item, null);
+                    view.setBackgroundResource(R.drawable.bg_conmeek);
+                    break;
+            case 1: view = inflater.inflate(R.layout.meek_con_item, null);
+                    final CircleImageView btn=(CircleImageView)view.findViewById(R.id.add);
+                    btn.setTag(conn_ppl.get(i).getUID());
+                    btn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            final String usr_id=view.getTag().toString();
+                            final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                            ppl_ref.child("Users")
+                                    .child(usr_id)
+                                    .child("Connections")
+                                    .child("act_request_received")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String rcv_id=dataSnapshot.getValue().toString();
+                                            if(!rcv_id.contains(":"+uid+":"))
+                                            {
+                                                ppl_ref.child("Users").child(usr_id)
+                                                        .child("Connections")
+                                                        .child("act_request_received").setValue(rcv_id+uid+"");
+                                            }
+
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+
+
+                            ppl_ref.child("Users").child(uid)
+                                    .child("Connections")
+                                    .child("act_request_sent")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String sent_id=dataSnapshot.getValue().toString();
+                                            if(!sent_id.contains(":"+usr_id+":"))
+                                            {
+                                                ppl_ref.child("Users").child(uid)
+                                                        .child("Connections")
+                                                        .child("act_request_sent").setValue(sent_id+uid+"");
+                                            }
+
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+                            btn.setImageResource(R.drawable.cancel_cross);
+
+                        }
+                    });
+                    break;
+            case 4: view = inflater.inflate(R.layout.meek_con_item, null);
+                    final CircleImageView btn2=(CircleImageView)view.findViewById(R.id.add);
+                    btn2.setImageResource(R.drawable.cancel_cross);
+                    btn2.setTag(conn_ppl.get(i).getUID());
+                    btn2.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        final String usr_id=view.getTag().toString();
+                        final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                        ppl_ref.child("Users").child(usr_id)
+                                .child("Connections")
+                                .child("act_request_received")
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot)
+                                    {
+                                        String rcv_id=dataSnapshot.getValue().toString();
+                                        ppl_ref.child("Users").child(usr_id)
+                                                    .child("Connections")
+                                                    .child("act_request_received").setValue(rcv_id.replace(uid+":",""));
+                                    }
+
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+
+                                    }
+                                });
+
+
+                        ppl_ref.child("Users").child(uid)
+                                .child("Connections")
+                                .child("act_request_sent")
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot)
+                                    {
+                                        String sent_id=dataSnapshot.getValue().toString();
+                                        ppl_ref.child("Users").child(uid)
+                                                    .child("Connections")
+                                                    .child("act_request_sent").setValue(sent_id.replace(":"+usr_id,""));
+                                    }
+
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+
+                                    }
+                                });
+                        btn2.setImageResource(R.drawable.cancel_cross);
+
+                    }
+                });
+                break;
+        }
+        ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
+
         TextView name=(TextView) view.findViewById(R.id.name);
         name.setText(conn_ppl.get(i).getName());
         return view;
@@ -797,12 +988,21 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         TextView name=(TextView) view.findViewById(R.id.header);
         switch(conn_ppl.get(position).conn_level)
         {
+            case 5: name.setText("Received Activity Requests");
+                    view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
+                    break;
+            case 4: name.setText("Sent Activity Requests");
+                    view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
+                    break;
             case 3: name.setText("Location access");
-                break;
+                    view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
+                    break;
             case 2: name.setText("Activity access");
-                break;
-            case 1: name.setText("Connected in meek");
-                break;
+                    view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_actcon) );
+                    break;
+            case 1: view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.bg_conmeek) );
+                    name.setText("Connected in meek");
+                    break;
         }
         return view;
     }
@@ -819,6 +1019,7 @@ class ActFeed
     String a_uid;
     ArrayList<Activities> activities;
 
+
     ActFeed(String act_content,String a_uid,boolean seen)
     {
         activities=new ArrayList<Activities>();
@@ -831,7 +1032,6 @@ class ActFeed
             act_content=act_content.substring(act_content.substring(1).indexOf('.')+1);
             activities.add(newone);
         }
-        //getName();
     }
 
 }

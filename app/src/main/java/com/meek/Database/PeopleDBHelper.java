@@ -132,8 +132,20 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         {
             return true;
         }
+
         else
             return false;
+    }
+
+    public String getName(String id)
+    {
+        String query = "SELECT " + NME + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =?";
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, new String[]{id});
+        Log.e("checkUID","UID="+id+"   the cursor count="+cursor.getCount());
+
+        String name=cursor.getString(0);
+        return name;
     }
 
     public void updateLatLng(LatLng latLng, String uid)
@@ -222,6 +234,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         db.update(TABLE_NAME, values, UID + " = ?",
                 new String[]{String.valueOf(uid)});
     }
+
+
     public PeopleObj getNote(String id) {
         // get readable database as we are not inserting anything
         SQLiteDatabase db = this.getReadableDatabase();

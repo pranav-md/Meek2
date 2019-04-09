@@ -154,7 +154,7 @@ public static void copy(File src, File dst) throws IOException {
                 outChannel.close();
         }
     }
-    public void fileDownload(String u_id, String act_id, final String act_type, final View set_view, final ShimmerLayout shimmerLayout)
+    public void fileDownload(String u_id, String act_id, final String act_type, final View set_view)
     {
         final FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
@@ -171,7 +171,7 @@ public static void copy(File src, File dst) throws IOException {
                 @Override
                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
                 {
-                    shimmerLayout.stopShimmerAnimation();
+                 //   shimmerLayout.stopShimmerAnimation();
                     String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
 
                     try {

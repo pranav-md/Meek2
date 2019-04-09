@@ -1,4 +1,4 @@
-package com.meek.Service;
+package com.meek.Services;
 
 import android.app.Activity;
 import android.app.IntentService;
@@ -143,5 +143,7 @@ public class ActivityService extends IntentService
 
         }
     }
+
+
 
 }

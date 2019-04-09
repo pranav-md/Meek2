@@ -32,10 +32,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.Fragments.MyProfileFrag;
-import com.meek.Service.ActivityService;
-//import com.meek.Service.LocationService;
+import com.meek.Services.ActivityService;
+//import com.meek.Services.LocationService;
 
 import java.util.List;
 
