@@ -26,7 +26,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
 
     public static final String CREATE_TABLE =
             "CREATE TABLE "+TABLE_NAME+" ("
-                    +MSG_ID+" TEXT,"+
+                    +MSG_ID+" TEXT, "+
                     MSG_NUM+ " INTEGER PRIMARY KEY," +
                     SENDER_ID+ " TEXT,"+
                     TEXT+ " TEXT,"+
@@ -34,13 +34,13 @@ public class MessageDBHelper extends SQLiteOpenHelper {
 
     public MessageDBHelper(Context context)
     {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, DATABASE_NAME, null, 4);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db)
     {
-        Log.e("ONCREATEE","The table is created");
+        Log.e("ON MESSGE CREATE","The Message table is created");
         db.execSQL(CREATE_TABLE);
     }
 
@@ -49,9 +49,37 @@ public class MessageDBHelper extends SQLiteOpenHelper {
     {
         // Drop older table if existed
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-
         // Create tables again
         onCreate(db);
+    }
+
+    public boolean checkTable()
+    {
+        SQLiteDatabase mDatabase = this.getWritableDatabase();
+
+        Log.d("CHECK TABLE", TABLE_NAME+" Exist or not check");
+
+        Cursor c = null;
+        boolean tableExists = false;
+        /* get cursor on it */
+        try
+        {
+            c = mDatabase.query(TABLE_NAME, null,
+                    null, null, null, null, null);
+            tableExists = true;
+        }
+        catch (Exception e) {
+          /* fail */
+            Log.d("TABLE NOT EXISTS", TABLE_NAME+" doesn't exist :(((");
+        }
+
+        return tableExists;
+    }
+
+    public void createTable()
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL(CREATE_TABLE);
     }
 
     /////////////////////// INSERTION
@@ -68,7 +96,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         values.put(DATE,date);
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
-        Log.e("INSERT PERSON",msg_id+"_value is written with id="+sender_id);
+        Log.e("INSERT PERSON",msg_id+" written with number of="+number);
         // close db connection
         db.close();
     }
@@ -80,7 +108,6 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         String query = "SELECT "+SENDER_ID+" , " + TEXT+ " , " + DATE+ " FROM "+ TABLE_NAME  +" WHERE "+ MSG_ID+ " =?" ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, new String[]{msg_id});
-        int con_status=cursor.getInt(0);
         return cursor;
     }
 
@@ -91,12 +118,12 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(query, new String[]{});
         return cursor.getCount();
     }
+
     public Cursor getMessageDialogs()
     {
-        String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " + TEXT+ " , " + DATE+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID+" HAVING MAX("+MSG_NUM+")" ;
+        String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " +TEXT+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID+" HAVING MAX("+MSG_NUM+")" ;
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{});
-        int con_status=cursor.getInt(0);
+        Cursor cursor =  db.query(TABLE_NAME, new String[] {MSG_ID,SENDER_ID,TEXT,DATE },null,null,MSG_ID, "MAX("+MSG_NUM+")", null);
         return cursor;
     }
 ///////////DELETION

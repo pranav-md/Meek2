@@ -59,8 +59,6 @@ public class MyProfileFrag extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.myprofile);
-        Button dpchange=(Button)findViewById(R.id.dpchange);
-        CardView my_places=(CardView)findViewById(R.id.places);
         CardView my_activities=(CardView)findViewById(R.id.activities);
         SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=mypref.getString("uid","");
@@ -71,14 +69,9 @@ public class MyProfileFrag extends AppCompatActivity {
                 startActivity(new Intent(MyProfileFrag.this,MyActivities.class));
             }
         });
-        my_places.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-      //          startActivity(new Intent(MyProfileFrag.this,MyPlaces.class));
-            }
-        });
+
         dp=(CircleImageView)findViewById(R.id.my_prof_dp);
-        dpchange.setOnClickListener(new View.OnClickListener() {
+        dp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imagePicker=new ImagePicker(MyProfileFrag.this, null, new OnImagePickedListener() {
@@ -104,6 +97,9 @@ public class MyProfileFrag extends AppCompatActivity {
                                             saveImage(byteArray);
                                             dp.setImageBitmap(dp_bp);
                                             userRef.child(uid).child("dpno").setValue(Integer.parseInt(dataSnapshot.getValue().toString())+1);
+
+
+
                                         }
                                     }).addOnFailureListener(new OnFailureListener() {
                                         @Override

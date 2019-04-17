@@ -46,6 +46,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.AccountManage.AccountSetup;
+import com.meek.Encryption.RSAKeyExchange;
 import com.meek.MainActivity;
 import com.meek.R;
 
@@ -64,6 +65,7 @@ public class
 AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     private ProgressDialog progressBar;
+    String uid;
     String[] countryNames={"Afghanistan 	+93",
             "Albania 	+355",
             "Algeria 	+213",
@@ -412,13 +414,14 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                                         if(dataSnapshot!=null)
                                         {
                                             Log.e("AUTH","inside ds!=null");
-                                            String uid=dataSnapshot.child("uid").getValue().toString();
+                                            uid=dataSnapshot.child("uid").getValue().toString();
                                           //  String enc_key=dataSnapshot.child("enc_key").getValue().toString();
                                             SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                                             SharedPreferences.Editor uidpref=pref.edit();
                                             uidpref.putString("uid", uid);
                                            // uidpref.putString("enc_key", enc_key);
                                             uidpref.commit();
+                                            createExchangeKey();
                                             nextActivity();
                                         }
                                         else{
@@ -470,7 +473,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
             public void onDataChange(DataSnapshot dataSnapshot) {
 
                 Log.e("AUTH","inside setnewnode firebase");
-                String uid= ((int)dataSnapshot.getValue()+1)+"";
+                uid= (Integer.parseInt(dataSnapshot.getValue().toString())+1)+"";
                 String enc_key=random();
                 userRef.child("NUM_ID").child(String.valueOf(pnum)).child("uid").setValue(uid);
                 userRef.child("NUM_ID").child(String.valueOf(pnum)).child("enc_key").setValue(enc_key);
@@ -481,6 +484,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                 uidpref.putString("uid", uid);
                 uidpref.putString("enc_key", enc_key);
                 uidpref.commit();
+                createExchangeKey();
                 nextActivity();
             }
 
@@ -490,6 +494,19 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
             }
         });
     }
+    void createExchangeKey()
+    {
+        RSAKeyExchange keyExchange=new RSAKeyExchange(this,uid);
+        try
+        {
+            keyExchange.generateKeyPair();
+            keyExchange.writeMyKeys();
+            keyExchange.uploadPublicKey();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("PANI PAALI","Key generation is "+e.toString());
+        }
+    }
 
     void nextActivity()
     {
@@ -497,7 +514,6 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         startActivity(new Intent(AuthenticationActivity.this,AccountSetup.class));
         finish();
     }
-
 
     private void startPhoneNumberVerification(String phoneNumber)
     {
@@ -509,7 +525,6 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                 this,               // Activity (for callback binding)
                 mCallbacks);        // OnVerificationStateChangedCallbacks
         // [END start_phone_auth]
-
     }
 
     private boolean validatePhoneNumber() {
@@ -522,7 +537,9 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
 
         return true;
     }
-    public static String random() {
+
+    public static String random()
+    {
         Random generator = new Random();
         StringBuilder randomStringBuilder = new StringBuilder();
         int randomLength = generator.nextInt(6);
@@ -533,6 +550,8 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         }
         return randomStringBuilder.toString();
     }
+
+
     void verifyNumber()
     {
         authwait.show();
@@ -544,7 +563,8 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
 
         ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
-                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED)
+        {
             //we are connected to a network
 
         }

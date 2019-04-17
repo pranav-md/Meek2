@@ -21,11 +21,13 @@ import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.meek.Contact;
+import com.meek.Database.PeopleDBHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 /**
@@ -50,22 +52,20 @@ public class DpDownloadService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-/*
+
     void downloadDPs()
     {
-        Realm.init(this);
-        final Realm myRealm= Realm.getDefaultInstance();
+        ArrayList<Contact> all_uid_guys=new PeopleDBHelper(this).getAllConnections();
 
-        RealmResults<Contact> all_uid_guys=myRealm.where(Contact.class).notEqualTo("uid","0").findAll();
         for(final Contact con:all_uid_guys)
         {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             final DatabaseReference userRef = database.getReference("Users");
-            final String f_id=con.getUid();
-            userRef.child(con.getUid()).child("dpno").addValueEventListener(new ValueEventListener() {
+            final String f_id=con.getUID();
+            userRef.child(con.getUID()).child("dpno").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if(!checkDpPresent(f_id+"_"+dataSnapshot.getValue().toString()))
+                    if(!checkDpPresent(dataSnapshot.getValue().toString(),f_id))
                     {
                         File localFile = new File("");
                         final String dpno= dataSnapshot.getValue().toString();
@@ -80,14 +80,14 @@ public class DpDownloadService extends Service {
                         storageReference.child("Users DP/"+f_id+"_"+dataSnapshot.getValue().toString()+".jpg").getFile(Uri.fromFile(localFile)).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                myRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(Realm realm) {
-                                        com.meek.Contact contact=realm.where(com.meek.Contact.class).equalTo("uid",dpno).findFirst();
-                                        contact.setDpno(dpno);
-                                    }
-                                });
-                                File new_dp=new File(dp_dest+"/"+f_id+"_"+dpno+".jpg");
+
+                                new PeopleDBHelper(getBaseContext()).updateDPNumber(f_id,dpno);
+                                if((new File(dp_dest+"/"+f_id+".jpg")).exists())
+                                {
+                                    (new File(dp_dest+"/"+f_id+".jpg")).delete();
+
+                                }
+                                File new_dp=new File(dp_dest+"/"+f_id+".jpg");
                                 Bitmap bitmap = BitmapFactory.decodeFile(fin_loc_file.getAbsolutePath());
                                 FileOutputStream out = null;
                                 try {
@@ -99,16 +99,6 @@ public class DpDownloadService extends Service {
                                     e.printStackTrace();
                                 } catch (IOException e) {
                                     e.printStackTrace();
-                                }
-                                for(int i=Integer.parseInt(dpno);i>0;i--)
-                                {
-                                    if((new File(dp_dest+"/"+f_id+"_"+i+".jpg")).exists())
-                                    {
-                                        (new File(dp_dest+"/"+f_id+"_"+i+".jpg")).delete();
-                                        break;
-                                    }
-                                    else
-                                        continue;
                                 }
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -128,13 +118,9 @@ public class DpDownloadService extends Service {
 
         }
     }
-    boolean checkDpPresent(String name)
-    {
-        String storageDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
-        File image = new File(storageDir, "/UsersDp/"+name+".jpg");
-        if(image.exists())
-            return true;
-        else
-            return false;
-    }*/
+    boolean checkDpPresent(String dpno,String uid) {
+        return new PeopleDBHelper(getBaseContext()).checkDPNO(dpno, uid);
+    }
+
 }
+

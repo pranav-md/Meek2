@@ -59,6 +59,7 @@ import net.cachapa.expandablelayout.ExpandableLayout;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 
@@ -70,6 +71,7 @@ import se.emilsjolander.stickylistheaders.StickyListHeadersListView;
 
 
 import static android.content.Context.MODE_PRIVATE;
+import static com.meek.Encryption.RSAKeyExchange.decrypt;
 import static com.meek.Encryption.RSAKeyExchange.encrypt;
 
 /**
@@ -110,7 +112,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     String dg_msgs;
     int shown_md_num=0;
     int tot_msg_ppl;
-    ProgressBar msg_load;
     MessageDialogAdapter mg_dg_adapter;
     View btnView;
     //////////////////////
@@ -179,28 +180,9 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
             }
         });
-        callPlaceDetectionApi();
         return view;
     }
 
-    private void callPlaceDetectionApi() throws SecurityException {
-        Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
-        placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
-            @Override
-            public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                    Log.i("Google places", String.format("Place '%s' has likelihood: %g",
-                            placeLikelihood.getPlace().getName()
-                            ,
-                            placeLikelihood.getLikelihood()));
-                    placess=placess+placeLikelihood.getPlace().getName().toString()+"\n";
-                }
-                likelyPlaces.release();
-                setPlaceList();
-            }
-        });
-    }
 
     void setPlaceList()
     {
@@ -438,16 +420,19 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
         mg_dg_View=(ListView) inflatedLayout.findViewById(R.id.msg_d_list);
-        mg_dg_View.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-            }
-
-        });
         mg_dg_adapter=new MessageDialogAdapter(getContext());
-        msg_load=(ProgressBar)inflatedLayout.findViewById(R.id.msg_load);
+        Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
+        msgDlgs.moveToFirst();
 
+        if(msgDlgs.getCount()==0)
+        {
+            noMsgYet(true,inflatedLayout);
+        }
+        else {
+            noMsgYet(false, inflatedLayout);
+            setMsgDialogs(msgDlgs);
+        }
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MessageService.MY_ACTION);
         getContext().registerReceiver(updateDlgsBCR, intentFilter);
@@ -464,34 +449,51 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         ///adapt and shoow... if the listner worked as listener, do the same thing and notifydatachange
     }
 
-    void getMsgDialogs()
+    void noMsgYet(boolean flg,View view)
     {
-        Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
-        msgDlgs.moveToFirst();
-        MsgPPL newone=new MsgPPL();
-        newone.sender_id=msgDlgs.getString(1);
-        newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
-        newone.last_msg=msgDlgs.getString(2);
-        newone.date=msgDlgs.getString(3);
-        msgPPLS.add(newone);
-        while(msgDlgs.moveToNext())
+        if(flg)
         {
-            newone=new MsgPPL();
+            view.findViewById(R.id.nomsgyet).setVisibility(View.VISIBLE);
+            view.findViewById(R.id.msg_d_list).setVisibility(View.INVISIBLE);
+        }
+        else
+        {
+            view.findViewById(R.id.nomsgyet).setVisibility(View.INVISIBLE);
+            view.findViewById(R.id.msg_d_list).setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    void setMsgDialogs(Cursor msgDlgs)
+    {
+
+            msgPPLS=new ArrayList<MsgPPL>();
+            MsgPPL newone=new MsgPPL();
             newone.sender_id=msgDlgs.getString(1);
             newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
             newone.last_msg=msgDlgs.getString(2);
             newone.date=msgDlgs.getString(3);
             msgPPLS.add(newone);
-        }
-        mg_dg_adapter.getData(msgPPLS);
-        if(shown_md_num==0)
-        {
-            mg_dg_View.setAdapter(mg_dg_adapter);
-        }
-        else
-            mg_dg_adapter.notifyDataSetChanged();
-        ++shown_md_num;
+            while(msgDlgs.moveToNext())
+            {
+             newone=new MsgPPL();
+             newone.sender_id=msgDlgs.getString(1);
+             newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
+             newone.last_msg=msgDlgs.getString(2);
+             newone.date=msgDlgs.getString(3);
+             msgPPLS.add(newone);
+            }
+            mg_dg_adapter.getData(msgPPLS);
+            if(shown_md_num==0)
+            {
+             mg_dg_View.setAdapter(mg_dg_adapter);
+            }
+            else
+             mg_dg_adapter.notifyDataSetChanged();
+            ++shown_md_num;
+
     }
+
 
 
     void setPplTab()
@@ -507,6 +509,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setConnection()
     {
+        if(!new PeopleDBHelper(getContext()).checkTable())
+            new PeopleDBHelper(getContext()).createTable();
         final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Users").child(uid).child("Connections").addValueEventListener(new ValueEventListener() {
             @Override
@@ -535,7 +539,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                         Log.e("Conn meek_con setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
+                            public void onDataChange(DataSnapshot dataSnapshot)
+                            {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null)
                                     new PeopleDBHelper(getContext()).insertPerson(id,phnm,1);
@@ -716,6 +721,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         //Button play=(Button)activity_layout.findViewById(R.id.play)
 
     }*/
+
     public static ArrayList<String> extractor(String all_uid)
     {
         ArrayList<String> uids=new ArrayList<String>() ;
@@ -736,6 +742,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         }
         return uids;
     }
+
     void setConnectionList()
     {
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
@@ -755,6 +762,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 }
         }
     }
+
     BroadcastReceiver updateDlgsBCR = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent)
@@ -762,7 +770,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             Bundle bundle = intent.getExtras();
             String sender_id = bundle.getString("sender_id");
             String uid = bundle.getString("uid");
-            getMsgDialogs();
+            Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
+            setMsgDialogs(msgDlgs);
         }
     };
 }
@@ -794,7 +803,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         return 0;
     }
 
-    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
+    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         Log.e("CONN ADAPTER","NAME:"+conn_ppl.get(i).getName()+"   UID:"+conn_ppl.get(i).getUID());
@@ -812,23 +821,44 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                         public void onClick(final View view) {
                             try {
 
-                                PublicKey publicKey= new RSAKeyExchange().getPublicKey(view.getTag().toString());
+                                PublicKey publicKey= new RSAKeyExchange(context,uid).getPublicKey(view.getTag().toString());
                                 byte [] encrypted = encrypt(publicKey, "This is a secret message");     ///set the key in it
-                                ///////     write the encrypted key
 
-                                ////Read the key from that  specific user who sent me and decrypt using my private key
+                                DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted.toString());
+
+                                key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                        String user_key=dataSnapshot.getValue().toString();
+                                        PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
+                                        try {
+                                            byte[] real_key_bytes=decrypt(myPrivateKey,user_key.getBytes());
+                                            String str_real_key=real_key_bytes.toString();
+
+                                            /////SAVE IN THE DB
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+
+                                    }
+                                });
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
 
-
+                            /////adding to the other user's activity_meek
                             final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
                             ppl_ref.child("Users")
                                     .child(view.getTag().toString())
                                     .child("Connections")
-                                    .child("act_request_received")
+                                    .child("activity_meek")
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(DataSnapshot dataSnapshot)
@@ -838,7 +868,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                             {
                                                 ppl_ref.child("Users").child(view.getTag().toString())
                                                         .child("Connections")
-                                                        .child("act_request_received").setValue(":"+uid+rcv_id);
+                                                        .child("activity_meek").setValue(":"+uid+rcv_id);
                                             }
 
                                         }
@@ -848,6 +878,55 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 
                                         }
                                     });
+
+                            /////adding to the user's activity_meek
+                            ppl_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("activity_meek")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String rcv_id=dataSnapshot.getValue().toString();
+                                            if(!rcv_id.contains(":"+view.getTag().toString()+":"))
+                                            {
+                                                ppl_ref.child("Users").child(uid)
+                                                        .child("Connections")
+                                                        .child("activity_meek").setValue(":"+view.getTag().toString()+rcv_id);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+
+                            /////adding to the user's activity_meek
+                            ppl_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("activity_meek")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String rcv_id=dataSnapshot.getValue().toString();
+                                            if(!rcv_id.contains(":"+view.getTag().toString()+":"))
+                                            {
+                                                ppl_ref.child("Users").child(uid)
+                                                        .child("Connections")
+                                                        .child("activity_meek").setValue(":"+view.getTag().toString()+rcv_id);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+
 
 
                         }
@@ -881,7 +960,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                             {
                                                 ppl_ref.child("Users").child(usr_id)
                                                         .child("Connections")
-                                                        .child("act_request_received").setValue(rcv_id+uid+"");
+                                                        .child("act_request_received").setValue(":"+uid+rcv_id);
                                             }
 
                                         }
@@ -905,9 +984,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                             {
                                                 ppl_ref.child("Users").child(uid)
                                                         .child("Connections")
-                                                        .child("act_request_sent").setValue(sent_id+uid+"");
+                                                        .child("act_request_sent").setValue(":"+sent_id+uid+"");
                                             }
-
                                         }
 
                                         @Override

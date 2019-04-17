@@ -5,8 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -32,8 +35,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.meek.Database.MessageDBHelper;
 import com.meek.Fragments.MyProfileFrag;
 import com.meek.Services.ActivityService;
+import com.meek.Messaging.MessageService;
 //import com.meek.Services.LocationService;
 
 import java.util.List;
@@ -65,9 +70,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         dp = (CircleImageView) findViewById(R.id.dp);
         tabFragment = new TabFragment(MainActivity.this);
         /////////
+
+        String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
+        String localFilename = sFolder + "/dp.jpg";
+        Bitmap dp_bm= BitmapFactory.decodeFile(localFilename);
+        dp.setImageBitmap(dp_bm);
       //  CompressAsyncTask task = new CompressAsyncTask(this);
     //    task.execute();
         /////////////////
+        new MessageDBHelper(this);
+
+        startService(new Intent(this,MessageService.class));
+
         FragmentManager tabfm = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();
         fragmentTransaction.replace(R.id.frg_container, tabFragment);

@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,11 +64,19 @@ public class MessageListMaker extends AppCompatActivity
         r_uid=bundle.getString("r_uid");
         String name=bundle.getString("name");
         msg_id=msgID(uid,r_uid);
-
+        Log.e("MSG_ID is",msg_id+" msg id is here");
         messagesList=findViewById(R.id.messagesList);
 
         getMSGS(msg_id);
         setTop(name);
+
+        Button send_button=(Button)findViewById(R.id.msg_send);
+        send_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendMessage();
+            }
+        });
     }
     void setTop(String name)
     {
@@ -78,29 +87,30 @@ public class MessageListMaker extends AppCompatActivity
     {
         msgList=new ArrayList<Message>();
         Cursor allMsgs=new MessageDBHelper(this).getMessages(msg_id);
-        allMsgs.moveToFirst();
-        Message newone=new Message(allMsgs.getString(0),
-                                   allMsgs.getString(1),
-                                   new PeopleDBHelper(this).getName(allMsgs.getString(0)),
-                                    allMsgs.getString(2));
-        msgList.add(newone);
-        while(allMsgs.moveToNext())
-        {
-            newone=new Message(allMsgs.getString(0),
+        if(allMsgs.getCount()==0)
+            noMsgYet(true);
+        else {
+            noMsgYet(false);
+            allMsgs.moveToFirst();
+            Message newone = new Message(allMsgs.getString(0),
                     allMsgs.getString(1),
                     new PeopleDBHelper(this).getName(allMsgs.getString(0)),
                     allMsgs.getString(2));
             msgList.add(newone);
-        }
-        if(messageListAdapter==null)
-        {
-            messageListAdapter=new MessageListAdapter(this,msgList,uid);
-            messagesList.setAdapter(messageListAdapter);
-        }
-        else
-        {
-            messageListAdapter.getData(msgList);
-            messageListAdapter.notifyDataSetChanged();
+            while (allMsgs.moveToNext()) {
+                newone = new Message(allMsgs.getString(0),
+                        allMsgs.getString(1),
+                        new PeopleDBHelper(this).getName(allMsgs.getString(0)),
+                        allMsgs.getString(2));
+                msgList.add(newone);
+            }
+            if (messageListAdapter == null) {
+                messageListAdapter = new MessageListAdapter(this, msgList, uid);
+                messagesList.setAdapter(messageListAdapter);
+            } else {
+                messageListAdapter.getData(msgList);
+                messageListAdapter.notifyDataSetChanged();
+            }
         }
     }
 
@@ -124,6 +134,7 @@ public class MessageListMaker extends AppCompatActivity
     {
         EditText msg=(EditText)findViewById(R.id.input);
         String text=msg.getText().toString();
+        msg.setText("");
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/M/yyyy kk:mm:ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -150,7 +161,9 @@ public class MessageListMaker extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
-        updateMsgsBCR.abortBroadcast();
+        super.onDestroy();
+//        updateMsgsBCR.abortBroadcast();
+        unregisterReceiver(updateMsgsBCR);
     }
 }
 

@@ -142,6 +142,7 @@ public class UserProfile extends AppCompatActivity {
         d_format.setTimeZone(TimeZone.getTimeZone("GMT"));
         try
         {
+
             lwr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 00:00:01");
             upr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 23:59:59");
 

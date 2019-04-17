@@ -70,7 +70,7 @@ public class MessageDialogAdapter extends BaseAdapter {
                 Log.v("Message clicked","r_uid= "+r_uid);
                 Intent intent=new Intent(context,MessageListMaker.class);
                 intent.putExtra("r_uid",r_uid);
-                intent.putExtra("name",view.getTag(R.integer.name).toString());
+            //    intent.putExtra("name",view.getTag(R.integer.name).toString());
                 context.startActivity(intent);
             }
         });

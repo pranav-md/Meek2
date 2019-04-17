@@ -6,13 +6,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <ProgressBar
-        android:id="@+id/msg_load"
-        style="?android:attr/progressBarStyle"
+    <TextView
+        android:id="@+id/nomsgyet"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_marginTop="70dp"
-        tools:visibility="invisible" />
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="No Messages yet"
+        android:textSize="25sp"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/msg_d_list"

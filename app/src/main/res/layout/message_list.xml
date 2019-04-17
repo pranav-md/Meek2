@@ -39,7 +39,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="2">
 
         <TextView
@@ -63,10 +63,25 @@
         </ListView>
     </RelativeLayout>
 
-    <EditText
-        android:id="@+id/input"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:hint="Send a message" />
+        android:layout_height="100dp"
+        android:layout_weight="0.5"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:hint="Send a message" />
+
+        <Button
+            android:id="@+id/msg_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/send" />
+    </LinearLayout>
 </LinearLayout>

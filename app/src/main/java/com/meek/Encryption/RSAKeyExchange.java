@@ -47,6 +47,10 @@ public class RSAKeyExchange {
     PrivateKey privateKey;
     Context context;
 
+    public RSAKeyExchange(Context context,String uid) {
+        this.context = context;
+        this.uid=uid;
+    }
 
     public void generateKeyPair() throws Exception {
         // generate public and private keys
@@ -55,14 +59,14 @@ public class RSAKeyExchange {
         privateKey = keyPair.getPrivate();
 
         // sign the message
-        byte [] encrypted = encrypt(pubKey, "This is a secret message");
-        System.out.println("Encrypted message is :"+(new String(encrypted)));  // <<signed message>>
+  //      byte [] encrypted = encrypt(pubKey, "This is a secret message");
+  //      System.out.println("Encrypted message is :"+(new String(encrypted)));  // <<signed message>>
 
         // verify the message
-        byte [] decrypted = decrypt(privateKey, encrypted);
-        System.out.println("Decrypted message is :"+(new String(decrypted)));     // This is a secret message
-        System.out.println("Public key="+pubKey);
-        System.out.println("Private key="+privateKey);
+  //      byte [] decrypted = decrypt(privateKey, encrypted);
+  //      System.out.println("Decrypted message is :"+(new String(decrypted)));     // This is a secret message
+  //      System.out.println("Public key="+pubKey);
+  //      System.out.println("Private key="+privateKey);
     }
 
 
@@ -88,20 +92,22 @@ public class RSAKeyExchange {
         return cipher.doFinal(encrypted);
     }
 
-    void writeMyKeys() throws IOException
+    public void writeMyKeys() throws IOException
     {
         FileOutputStream out=null;
-        out=context.openFileOutput("MyKey/private.key", Context.MODE_PRIVATE);
+        out=context.openFileOutput("private.key", Context.MODE_PRIVATE);
         out.write(privateKey.getEncoded());
 
-        out = context.openFileOutput("MyKey/public.pub", Context.MODE_PRIVATE);
+        out = context.openFileOutput("public.pub", Context.MODE_PRIVATE);
         out.write(pubKey.getEncoded());
         out.close();
     }
 
-    void uploadPublicKey() throws IOException
+    public void uploadPublicKey() throws IOException
     {
-        FileInputStream fis = context.openFileInput("MyKey/public.pub");
+        Log.e("PUBLIC KEY UPLOADER","THe key is being uploaded");
+
+        FileInputStream fis = context.openFileInput("public.pub");
         final byte[] bytes = new byte[(int) fis.getChannel().size()];
         try
         {
@@ -176,12 +182,12 @@ public class RSAKeyExchange {
             return id_pubkey;
     }
 
-    PrivateKey myPrivateKey()
+    public PrivateKey myPrivateKey()
     {
         PrivateKey pvt=null;
         try
         {
-            FileInputStream out = context.openFileInput("MyKey/public.pub");
+            FileInputStream out = context.openFileInput("public.pub");
             final byte[] bytes = new byte[(int) out.getChannel().size()];
 
             BufferedInputStream buf = new BufferedInputStream(out);
@@ -191,7 +197,6 @@ public class RSAKeyExchange {
             PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(bytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             pvt = kf.generatePrivate(ks);
-
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

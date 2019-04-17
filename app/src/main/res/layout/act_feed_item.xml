@@ -17,11 +17,11 @@
             android:gravity="right">
 
             <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/imageView1"
+                android:id="@+id/dp"
                 android:layout_width="60dp"
                 android:layout_height="match_parent"
-                android:layout_alignParentStart="true"
                 android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
                 android:layout_alignParentTop="true"
                 android:src="@drawable/defaultdp"
                 app:civ_border_color="#FF000000"

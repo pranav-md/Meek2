@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -13,6 +14,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meek.Database.MessageDBHelper;
+import com.meek.Database.PeopleDBHelper;
+
+import static com.meek.TabFragment.extractor;
 
 import java.util.ArrayList;
 
@@ -29,10 +33,16 @@ public class MessageService extends Service
     @Override
     public void onCreate()
     {
-            SharedPreferences userPrefs=getSharedPreferences("UserDetails",MODE_PRIVATE);
+        if(!new MessageDBHelper(this).checkTable())
+            new MessageDBHelper(this).createTable();
+
+        SharedPreferences userPrefs=getSharedPreferences("UserDetails",MODE_PRIVATE);
             String uid=userPrefs.getString("uid","");
             listenMsgs(uid);
     }
+
+
+
 
     void listenMsgs(final String uid)
     {
@@ -54,29 +64,36 @@ public class MessageService extends Service
 
     void retrieveMsgs(ArrayList<String> uids, final String uid)
     {
+        MessageDBHelper msg_db=new MessageDBHelper(this);
+        msg_db.getWritableDatabase();
         for(final String id:uids)
         {
-            DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
+            final DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
             msg_ref.child("Messages_DB")
                     .child(msgID(uid,id))
-                    .child("Messages")
                     .child("sent_msgs:"+id+":")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
-                            String xml_msgs=dataSnapshot.getValue().toString();
-                            while(xml_msgs.contains("<Message>"))
+                            if(dataSnapshot.getValue()!=null)
                             {
-                                String msg_text = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "text");
-                                String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "date");
-                                new MessageDBHelper(MessageService.this).insertMessage(msgID(uid, id), id, msg_text, msg_date);
-                                xml_msgs.replace("<Message>" + parseXML(parseXML(xml_msgs, "AllMessages"), "Message") + "</Message>", "");
+                                String xml_msgs = dataSnapshot.getValue().toString();
+                                msg_ref.child("Messages_DB")
+                                        .child(msgID(uid, id))
+                                        .child("sent_msgs:" + id + ":").setValue("<AllMessages><Message></Message></AllMessages>");
+                                while (xml_msgs.contains("<Message>") && (!xml_msgs.contains("<Message></Message>")))
+                                {
+                                    String msg_text = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "text");
+                                    String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "date");
+                                    new MessageDBHelper(MessageService.this).insertMessage(msgID(uid, id), id, msg_text, msg_date);
+                                    xml_msgs = xml_msgs.replace("<Message>" + parseXML(parseXML(xml_msgs, "AllMessages"), "Message") + "</Message>", "");
+                                }
+                                Intent intent = new Intent();
+                                intent.setAction(MY_ACTION);
+                                intent.putExtra("uid", uid);
+                                intent.putExtra("sender_id", id);
+                                sendBroadcast(intent);
                             }
-                            Intent intent = new Intent();
-                            intent.setAction(MY_ACTION);
-                            intent.putExtra("uid",uid);
-                            intent.putExtra("sender_id",id);
-                            sendBroadcast(intent);
                         }
 
                         @Override
@@ -102,26 +119,7 @@ public class MessageService extends Service
     public IBinder onBind(Intent intent) {
         return null;
     }
-    public static ArrayList<String> extractor(String all_uid)
-    {
-        ArrayList<String> uids=new ArrayList<String>() ;
-        int numMeek = 0,i;
-        for( i=0; i<all_uid.length(); i++ ) {
-            if( all_uid.charAt(i) == ':' ) {
-                numMeek++;
-            }
-        }
-        numMeek--;
-        for (i=0;i<numMeek;++i)
-        {
-            all_uid=all_uid.substring(1);
-            int pos=all_uid.indexOf(':');
-            String m_uid=all_uid.substring(0,pos);
-            uids.add(m_uid);
-            all_uid=all_uid.substring(pos);
-        }
-        return uids;
-    }
+
 
     public String parseXML(String source, String tag){
         int flag=0;
@@ -133,5 +131,15 @@ public class MessageService extends Service
         return out;
     }
 
+    public void onDestroy()
+    {
+        Log.d("service started","destroy");
+    }
 
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent)
+    {
+        startService(new Intent(this,MessageService.class));
+    }
 }

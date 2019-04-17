@@ -2,6 +2,7 @@ package com.meek.Database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Color;
@@ -29,6 +30,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     static String HSHED_PNM="HASHED_PHNM";
     static String CON_LEVEL="CON_LEVEL";
     static String LT="LAT";
+    static String DP_NO="DP_NO";
     static String LG="LNG";
     static String LOC_AC="LOCATION_ACCESS";
 
@@ -38,6 +40,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
                     NME+ " TEXT,"+
                     E_KY+ " TEXT,"+
                     HSHED_PNM+" TEXT ,"+
+                    DP_NO+" TEXT ,"+
                     CON_LEVEL+ " INTEGER,"+
                     LT+ " DOUBLE,"+
                     LG+ " DOUBLE,"+
@@ -45,7 +48,37 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
 
     public PeopleDBHelper(Context context)
     {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, DATABASE_NAME, null, 4);
+    }
+
+    public boolean checkTable()
+    {
+        SQLiteDatabase mDatabase = this.getWritableDatabase();
+
+        Log.d("CHECK TABLE", TABLE_NAME+" Exist or not check");
+
+        Cursor c = null;
+        boolean tableExists = false;
+        /* get cursor on it */
+        try
+        {
+            c = mDatabase.query(TABLE_NAME, null,
+                    null, null, null, null, null);
+            tableExists = true;
+        }
+        catch (Exception e) {
+          /* fail */
+            Log.d("TABLE NOT EXISTS", TABLE_NAME+" doesn't exist :(((");
+        }
+
+        return tableExists;
+
+    }
+    public void createTable()
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL(CREATE_TABLE);
+
     }
 
     @Override
@@ -107,6 +140,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         Log.e("changePersonStatus","UID="+uid+"  CON_LEVEL="+con_level+"  update stat="+update);
         db.close();
     }
+
     public boolean checkUID(String uid,int status)
     {
         String query = "SELECT " + UID + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =? AND "+CON_LEVEL+"=?";
@@ -132,9 +166,36 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         {
             return true;
         }
-
         else
             return false;
+    }
+
+    public boolean checkDPNO(String dpno,String uid)
+    {
+
+        String query = "SELECT " + DP_NO + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =?  AND " +DP_NO+" =?";
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, new String[]{uid,dpno});
+        Log.e("checkDP","UID="+uid+"   the cursor count="+cursor.getCount());
+        if (cursor.getCount() > 0)
+        {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    public void updateDPNumber(String uid,String dp_no)
+    {
+        // get writable database as we want to write data
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(DP_NO, dp_no);
+        String whereClause = UID+"=?";
+        String whereArgs[] = {uid};
+        int update= db.update(TABLE_NAME, contentValues, whereClause, whereArgs);
+        Log.e("changePersonStatus","UID="+uid+"  DPNO="+DP_NO+"  update stat="+update);
+        db.close();
     }
 
     public String getName(String id)
@@ -143,8 +204,14 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, new String[]{id});
         Log.e("checkUID","UID="+id+"   the cursor count="+cursor.getCount());
-
-        String name=cursor.getString(0);
+        String name="";
+        try {
+            cursor.moveToFirst();
+            name=cursor.getString(0);
+        }
+        catch (CursorIndexOutOfBoundsException ex){
+            name="";
+        }
         return name;
     }
 
@@ -181,6 +248,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         }
         return conPPL;
     }
+
     public void checkPnumHash(String h_num)
     {
         // get writable database as we want to write data
