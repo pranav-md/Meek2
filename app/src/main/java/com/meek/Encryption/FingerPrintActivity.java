@@ -12,6 +12,8 @@ import android.security.keystore.KeyProperties;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.meek.R;
@@ -84,7 +86,7 @@ public class FingerPrintActivity extends AppCompatActivity {
                 textView.setText("Please enable lockscreen security in your device's Settings");
             } else {
                 try {
-
+                    Log.e("FINGERPRINT","try generatekey");
                     generateKey();
                 } catch (FingerprintException e) {
                     e.printStackTrace();
@@ -98,6 +100,8 @@ public class FingerPrintActivity extends AppCompatActivity {
                     // for starting the authentication process (via the startAuth method) and processing the authentication process events//
                     FingerprintHandler helper = new FingerprintHandler(this);
                     helper.startAuth(fingerprintManager, cryptoObject);
+                    Log.e("FINGERPRINT"," under fingerprinthandler");
+
                 }
             }
         }
@@ -119,7 +123,6 @@ public class FingerPrintActivity extends AppCompatActivity {
 
             //Initialize the KeyGenerator//
             keyGenerator.init(new
-
                     //Specify the operation(s) this key can be used for//
                     KeyGenParameterSpec.Builder(KEY_NAME,
                     KeyProperties.PURPOSE_ENCRYPT |
@@ -135,6 +138,7 @@ public class FingerPrintActivity extends AppCompatActivity {
             //Generate the key//
             keyGenerator.generateKey();
 
+            Log.e("FINGERPRINT"," under keygenearator");
         } catch (KeyStoreException
                 | NoSuchAlgorithmException
                 | NoSuchProviderException
@@ -142,6 +146,7 @@ public class FingerPrintActivity extends AppCompatActivity {
                 | CertificateException
                 | IOException exc) {
             exc.printStackTrace();
+            Log.e("FINGERPRINT",exc.toString()+"  are the errors");
             throw new FingerprintException(exc);
         }
     }
@@ -155,21 +160,29 @@ public class FingerPrintActivity extends AppCompatActivity {
                     KeyProperties.KEY_ALGORITHM_AES + "/"
                             + KeyProperties.BLOCK_MODE_CBC + "/"
                             + KeyProperties.ENCRYPTION_PADDING_PKCS7);
-        } catch (NoSuchAlgorithmException |
-                NoSuchPaddingException e) {
+        } catch (NoSuchAlgorithmException |NoSuchPaddingException e) {
             throw new RuntimeException("Failed to get Cipher", e);
         }
+        Log.e("FINGERPRINT"," inside initcipher");
 
         try {
             keyStore.load(null);
             SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
                     null);
+
+            Log.e("FINGERPRINT","private key="+key.toString());
+
             cipher.init(Cipher.ENCRYPT_MODE, key);
+
+            Log.e("FINGERPRINT"," initcipher is true");
+
             //Return true if the cipher has been initialized successfully//
             return true;
         } catch (KeyPermanentlyInvalidatedException e) {
 
             //Return false if cipher initialization failed//
+            Log.e("FINGERPRINT"," initcipher is false");
+
             return false;
         } catch (KeyStoreException | CertificateException
                 | UnrecoverableKeyException | IOException
@@ -183,4 +196,23 @@ public class FingerPrintActivity extends AppCompatActivity {
             super(e);
         }
     }
+    void fingerPrintSuccess()
+    {
+
+        ImageView meek_access=(ImageView)findViewById(R.id.meek_fp);
+        meek_access.setImageResource(R.drawable.log2);
+
+        TextView meek_tv=(TextView)findViewById(R.id.finger_tv);
+        meek_tv.setText("Success");
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
 }
+

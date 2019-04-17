@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/finger_tv"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="126dp"
-        android:layout_marginTop="107dp"
+        android:layout_below="@+id/meek_fp"
+        android:layout_marginTop="43dp"
+        android:text="Fingerprint Authentication required"
+        android:textAlignment="center"
         android:textSize="30sp" />
+
+    <ImageView
+        android:id="@+id/meek_fp"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="94dp"
+        app:srcCompat="@drawable/log3" />
 </RelativeLayout>

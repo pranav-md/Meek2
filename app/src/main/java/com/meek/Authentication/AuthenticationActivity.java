@@ -24,6 +24,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +47,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.AccountManage.AccountSetup;
+import com.meek.Encryption.FingerPrintActivity;
+import com.meek.Encryption.FingerprintHandler;
 import com.meek.Encryption.RSAKeyExchange;
 import com.meek.MainActivity;
 import com.meek.R;
@@ -302,7 +305,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
             Thread mythread = new Thread(runnable);
             mythread.start();
 
-            startActivity(new Intent(AuthenticationActivity.this, MainActivity.class));
+            startActivity(new Intent(AuthenticationActivity.this, FingerPrintActivity.class));
             finish();
         }
         /////
@@ -589,7 +592,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         authview.setText("Code waiting...");
         startPhoneNumberVerification(phnum.getText().toString());
         pnum=phnum.getText();
-
     }
+
 
 }

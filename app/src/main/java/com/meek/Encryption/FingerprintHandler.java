@@ -2,6 +2,7 @@ package com.meek.Encryption;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.Manifest;
@@ -9,6 +10,8 @@ import android.os.Build;
 import android.os.CancellationSignal;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
+
+import com.meek.MainActivity;
 
 @TargetApi(Build.VERSION_CODES.M)
 public class FingerprintHandler extends FingerprintManager.AuthenticationCallback {
@@ -66,6 +69,14 @@ public class FingerprintHandler extends FingerprintManager.AuthenticationCallbac
             FingerprintManager.AuthenticationResult result) {
 
         Toast.makeText(context, "Success!", Toast.LENGTH_LONG).show();
+
+        FingerPrintActivity fingerPrintActivity=(FingerPrintActivity)context;
+        fingerPrintActivity.fingerPrintSuccess();
+
+        Intent intent=new Intent(context, MainActivity.class);
+        context.startActivity(intent);
+
+
     }
 
 }
