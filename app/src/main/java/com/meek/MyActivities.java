@@ -38,11 +38,9 @@ public class MyActivities extends AppCompatActivity {
     boolean comp_lw, comp_up;
     LinearLayout no_act;
     Calendar cal;
-    CheckActivity curr_act;
-    MapActivitiesPageAdapter activitiesPageAdapter;
+    MapActivitiesPageAdapter activitiesPageAdapter=null;
     ViewPager actvity_pgs;
-    ArrayList<CheckActivity> checked_activities;
-    ArrayList<Activities> activities;
+    ArrayList<Activities> activities=null;
     boolean changed;
 
     DialogFragment picker;
@@ -59,7 +57,7 @@ public class MyActivities extends AppCompatActivity {
         actvity_pgs=(ViewPager)findViewById(R.id.act_pgs);
         no_act.setVisibility(View.INVISIBLE);
         changed=false;
-        activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),uid);
+      //  activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),uid);
 
         date_setter.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +68,6 @@ public class MyActivities extends AppCompatActivity {
             }
         });
         curr_date = new Date();
-        checked_activities = new ArrayList<CheckActivity>();
         activities = new ArrayList<Activities>();
         cal = Calendar.getInstance();
         setDateBar(curr_date);
@@ -91,6 +88,7 @@ public class MyActivities extends AppCompatActivity {
     }
     public void setDate(Date date)
     {
+        activities=null;
         curr_date=date;
         setDateBar(curr_date);
         fetchDateData();
@@ -116,88 +114,75 @@ public class MyActivities extends AppCompatActivity {
         setGMTdates();
         comp_up = comp_lw = false;
         DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
-        for (int i = 0; i < checked_activities.size(); ++i)
-        {
-            if (checked_activities.get(i).date == curr_date)
-            {
-                curr_act = checked_activities.get(i);
-                break;
-            }
-            else
-                curr_act = null;
-        }
-        if (curr_act == null) {
-            act_ref.child("Activities").child(uid).child("pg_view").child(upr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (curr_act == null)
-                    {
-                        curr_act = new CheckActivity();
-                        curr_act.date = curr_date;
-                    }
-                    if (dataSnapshot != null)
-                    {
-                        SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-                        for (DataSnapshot ds : dataSnapshot.getChildren())
-                        {
-                            try
-                            {
-                                Date act_date = d_format.parse(ds.getValue().toString());
-                                Log.v("My act_pg set","upr date = "+act_date);
-                                if (act_date.before(upr_gmt))
-                                {
-                                    curr_act.exists=true;
-                                    Log.v("My act_pg set","Inside date before");
-                                    curr_act.act_id.add(ds.getKey().toString());
-                                }
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-                     }
-                    comp_up=true;
-                    if(comp_lw==true&&comp_up==true)
-                    {
-                        checked_activities.add(curr_act);
-                        fetchActivityData();
-                    }
-                }
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
 
             act_ref.child("Activities").child(uid).child("pg_view").child(lwr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (curr_act == null) {
-                        curr_act = new CheckActivity();
-                        curr_act.date = curr_date;
-                    }
                     if (dataSnapshot != null) {
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-                        for (DataSnapshot ds : dataSnapshot.getChildren())
-                        {
+                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                            try {
+
+                                Date act_date = d_format.parse(ds.getValue().toString());
+                                Log.v("My act_pg set", "upr date = " + act_date);
+                                if (act_date.after(lwr_gmt))
+                                {
+                                    Activities newone=new Activities();
+                                    newone.act_id=ds.getKey().toString();
+                                    Log.v("My act_pg set", "Inside date before");
+                                    activities.add(newone);
+                                }
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    }
+                    comp_lw = true;
+                    if (comp_lw == true && comp_up == true) {
+                        fetchActivityData(activities);
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+            if(!lwr_dt.equals(upr_dt))
+            act_ref.child("Activities").child(uid).child("pg_view").child(upr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                    while(comp_lw==false);
+
+                    if (dataSnapshot != null)
+                    {
+                        SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
                             try {
                                 Date act_date = d_format.parse(ds.getValue().toString());
-                                Log.v("My act_pg set","lwr date = "+act_date);
-                                if (act_date.after(lwr_gmt)) {
-                                    curr_act.exists=true;
-                                    Log.v("My act_pg set","Inside date after");
-                                    curr_act.act_id.add(ds.getKey().toString());
+                                Log.v("My act_pg set", "lwr date = " + act_date);
+                                if (act_date.before(upr_gmt))
+                                {
+                                    Activities newone=new Activities();
+                                    newone.act_id=ds.getKey().toString();
+                                    Log.v("My act_pg set", "Inside date after");
+                                    activities.add(newone);
                                 }
                             } catch (ParseException e) {
                                 e.printStackTrace();
                             }
                         }
                     }
-                    comp_lw=true;
-                    if(comp_lw==true&&comp_up==true)
+
+                    comp_lw = true;
+
+                    if (comp_lw == true && comp_up == true)
                     {
-                        checked_activities.add(curr_act);
-                        fetchActivityData();
+
+                        fetchActivityData(activities);
                     }
                 }
 
@@ -206,88 +191,36 @@ public class MyActivities extends AppCompatActivity {
 
                 }
             });
-        } else {
-            /////
-            ///checked the activity already
-        }
+            else
+                comp_up=true;
 
     }
 
-    void fetchActivityData()
+    void fetchActivityData(ArrayList<Activities> act_ids)
     {
-        Log.v("My act_pg set","Inside setpages");
-        final SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-        DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
-        if(curr_act.exists==true)
-        for(int i=0;i<curr_act.act_id.size();++i) {
-            final int finalI = i;
-            Log.v("My act_pg set","Inside fetchact loops"+i);
-            act_ref.child("Activities").child(uid).child("All_Activities").child(curr_act.act_id.get(i)).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    Activities newone = new Activities();
-                    newone.act_id = dataSnapshot.getKey().toString();
-                    newone.act_text = dataSnapshot.child("act_text").getValue().toString();
-                    try {
-                        newone.act_date = d_format.parse(dataSnapshot.child("act_date").getValue().toString());
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                    newone.dest_name = dataSnapshot.child("act_dest").getValue().toString();
-                    if (!newone.dest_name.equals(" ")) {
-                        newone.dest_lat = dataSnapshot.child("dest_lat").getValue().toString();
-                        newone.dest_lng = dataSnapshot.child("dest_lng").getValue().toString();
-                    }
-                    newone.visiblity = dataSnapshot.child("act_visibility").getValue().toString();
-                    newone.curr_place = dataSnapshot.child("act_current_place").getValue().toString();
-                    //   newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("act_lat").getValue().toString()),
-                    //           Double.parseDouble(dataSnapshot.child("act_lng").getValue().toString()));
-                    newone.act_music = (boolean) dataSnapshot.child("act_music").getValue();
-                    newone.act_activity = dataSnapshot.child("act_activity").getValue().toString();
-                    activities.add(newone);
-                    Log.v("My act_pg set","Inside datachange"+newone.act_id);
-                    if(finalI ==curr_act.act_id.size()-1)
-                        setPages();
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-        }
-        else
+        if(act_ids!=null)
         {
-            setNoActivityFound();
-        }
-
-    }
-
-    void setPages()
-    {
-        Log.v("My act_pg set","Inside setpages");
-        if(curr_act.exists==false)
-            setNoActivityFound();
-        else
-            no_act.setVisibility(View.INVISIBLE);
-
-        ArrayList<Activities> set_acts=new ArrayList<Activities>();
-        for(int i=0;i<curr_act.act_id.size();++i)
-        {
-            Activities newone=new Activities();
-            for(int j=0;j<activities.size();++j)
+            actvity_pgs.setVisibility(View.VISIBLE);
+            if(activitiesPageAdapter==null)
             {
-                if(activities.get(j).act_id.equals(curr_act.act_id))
-                {
-                    Log.v("My act_pg set","loop "+curr_act.act_id);
-                    set_acts.add(activities.get(j));
-                }
+                activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),uid);
+                activitiesPageAdapter.setData(act_ids);
+                actvity_pgs.setAdapter(activitiesPageAdapter);
             }
+            else
+            {
+                activitiesPageAdapter.setData(act_ids);
+                activitiesPageAdapter.notifyDataSetChanged();
+            }
+            CircleIndicator indicator = (CircleIndicator) findViewById(R.id.indicator);
+            indicator.setViewPager(actvity_pgs);
         }
-        activitiesPageAdapter.setData(activities);
-        activitiesPageAdapter.notifyDataSetChanged();
-        CircleIndicator indicator = (CircleIndicator) findViewById(R.id.indicator);
-        indicator.setViewPager(actvity_pgs);
+        else
+        {
+            setNoActivityFound();
+        }
+
     }
 
     void setGMTdates()
@@ -326,15 +259,5 @@ public class MyActivities extends AppCompatActivity {
         no_act.setVisibility(View.INVISIBLE);
     }
 
-    static class CheckActivity
-    {
-        Date date;
-        ArrayList<String> act_id;
-        boolean exists;
-        CheckActivity()
-        {
-            exists=false;
-            act_id=new ArrayList<String>();
-        }
-    }
+
 }
