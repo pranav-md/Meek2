@@ -9,11 +9,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
@@ -25,6 +27,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.meek.ActivityViewSetter;
 import com.meek.Encryption.AES;
 import com.meek.R;
+import com.meek.Time.TimeManage;
 
 import java.io.File;
 
@@ -59,69 +62,82 @@ public class BSActivityFragment extends Fragment
     //   shimmer();
        getDataActivity();
       //  if(act_id.equals("0"))
-
+      //  view.findViewById(R.id.progressView).setVisibility(View.VISIBLE);
         return view;
     }
 
+
     void getDataActivity()
     {
+        fileCheck();
+
+        view.findViewById(R.id.progressView).setVisibility(View.VISIBLE);
         DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Activities").child(uid).child("All_Activities").child(act_id).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot)
-            {
-                String act_type=dataSnapshot.child("act_type").getValue().toString();
-                String act_date=dataSnapshot.child("act_date").getValue().toString();
-                String act_visibility=dataSnapshot.child("act_visibility").getValue().toString();
-                String act_current_place=dataSnapshot.child("act_current_place").getValue().toString();
-                String act_text=dataSnapshot.child("act_text").getValue().toString();
-                act_text= new AES().decrypt(act_text,"pmdrox");
-                String extension;
-                if(act_type.equals("1"))
-                    extension=".mp4";
-                else
-                    extension=".png";
-                String filename=getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString()+"/"+uid+"_"+act_id+"."+extension;
-                if((new File(filename)).isFile())
-                {
-                    if(act_type.equals("1"))
-                    {
-                        new ActivityViewSetter(getContext()).setVideoView(view);
-                        VideoView act_vid = (VideoView)view.findViewById(R.id.vid_view);
-                        act_vid.setVideoPath(filename);
-                    }
-                    else if(act_type.equals("2"))
-                    {
-                        new ActivityViewSetter(getContext()).setImageView(view);
-                        ImageView act_img = (ImageView) view.findViewById(R.id.img_view);
-                        act_img.setImageBitmap(BitmapFactory.decodeFile(filename));
-                    }
-                }
-                else if(Integer.parseInt(act_type)<3)
-                {
-                    new ActivityViewSetter(getContext()).fileDownload( uid,act_id,act_type,view);
-                    TextView caption=(TextView)view.findViewById(R.id.caption);
-                    caption.setText(act_text);
-                }
-                else
-                {
-                    new ActivityViewSetter(getContext()).setTextView( view);
-                    AutofitTextView caption=(AutofitTextView)view.findViewById(R.id.text_view);
-                    caption.setText(act_text);
-                }
-            }
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    view.findViewById(R.id.progressView).setVisibility(View.INVISIBLE);
+                    String act_type = dataSnapshot.child("act_type").getValue().toString();
+                    String act_date = dataSnapshot.child("act_date").getValue().toString();
+                    String act_visibility = dataSnapshot.child("act_visibility").getValue().toString();
+                    String act_current_place = dataSnapshot.child("act_current_place").getValue().toString();
+                    String act_text = dataSnapshot.child("act_text").getValue().toString();
+                    act_text = new AES().decrypt(act_text, "pmdrox");
+                    act_date = new AES().decrypt(act_date, "pmdrox");
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                    String extension;
+                    if (act_type.equals("1"))
+                        extension = ".mp4";
+                    else
+                        extension = ".png";
+                    TextView date_view=(TextView)view.findViewById(R.id.date_view);
+                    date_view.setText(new TimeManage().setTimeString(Long.parseLong(act_date)));
 
-            }
-        });
+                    String filename = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString() + "/" + uid + "_" + act_id + "." + extension;
+                    if(!new File(filename).exists()) {
+                        if (Integer.parseInt(act_type) < 3) {
+                            new ActivityViewSetter(getContext()).fileDownload(uid, act_id, act_type, view);
+                            TextView caption = (TextView) view.findViewById(R.id.caption);
+                            caption.setText(act_text);
+                        } else {
+                            new ActivityViewSetter(getContext()).setTextView(view);
+                            AutofitTextView caption = (AutofitTextView) view.findViewById(R.id.text_view);
+                            caption.setText(act_text);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
     }
 
-    void shimmer()
+
+    @RequiresApi(api = Build.VERSION_CODES.FROYO)
+    boolean fileCheck()
     {
-     //   shim_content = (ShimmerLayout) view.findViewById(R.id.shim_content);
-    //    shim_content.startShimmerAnimation();
-    //    shim_content.setShimmerAnimationDuration(500);
+        String filename=getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString()+"/"+uid+"_"+act_id;
+        Log.e(" FILE CHECK ","filename= "+ filename);
+        if((new File(filename+".mp4")).isFile())
+        {
+            new ActivityViewSetter(getContext()).setVideoView(view);
+            VideoView act_vid = (VideoView)view.findViewById(R.id.vid_view);
+            act_vid.setVideoPath(filename+".mp4");
+            Log.e(" FILE CHECK ","mp4 is found");
+            return true;
+        }
+        else if((new File(filename+".png")).isFile())
+        {
+            new ActivityViewSetter(getContext()).setImageView(view);
+            ImageView act_img = (ImageView) view.findViewById(R.id.img_view);
+            act_img.setImageBitmap(BitmapFactory.decodeFile(filename+".png"));
+            Log.e(" FILE CHECK ","png is found");
+            return true;
+        }
+        Log.e(" FILE CHECK ","file is not found");
+        return false;
     }
+
 }

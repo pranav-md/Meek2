@@ -48,6 +48,9 @@ public class FingerPrintActivity extends AppCompatActivity {
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
 
+    public SecretKey key;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +87,13 @@ public class FingerPrintActivity extends AppCompatActivity {
             if (!keyguardManager.isKeyguardSecure()) {
                 // If the user hasn’t secured their lockscreen with a PIN password or pattern, then display the following text//
                 textView.setText("Please enable lockscreen security in your device's Settings");
+                try {
+                    Log.e("FINGERPRINT","try generatekey");
+                    generateKey();
+                } catch (FingerprintException e) {
+                    e.printStackTrace();
+                }
+
             } else {
                 try {
                     Log.e("FINGERPRINT","try generatekey");
@@ -167,7 +177,7 @@ public class FingerPrintActivity extends AppCompatActivity {
 
         try {
             keyStore.load(null);
-            SecretKey key = (SecretKey) keyStore.getKey(KEY_NAME,
+            key = (SecretKey) keyStore.getKey(KEY_NAME,
                     null);
 
             Log.e("FINGERPRINT","private key="+key.toString());

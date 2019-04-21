@@ -7,6 +7,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.VideoView;
 
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -156,6 +157,9 @@ public static void copy(File src, File dst) throws IOException {
     }
     public void fileDownload(String u_id, String act_id, final String act_type, final View set_view)
     {
+        set_view.findViewById(R.id.progressView).setVisibility(View.VISIBLE);
+        final ProgressBar download_stat=(ProgressBar)set_view.findViewById(R.id.downloadBar);
+        download_stat.setMax(100);
         final FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
         final String file_name=u_id+"_"+act_id+".crypt";
@@ -172,9 +176,11 @@ public static void copy(File src, File dst) throws IOException {
                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
                 {
                  //   shimmerLayout.stopShimmerAnimation();
+                    download_stat.setProgress((int) ((taskSnapshot.getBytesTransferred()*100)/taskSnapshot.getTotalByteCount()));
                     String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
 
                     try {
+                        set_view.findViewById(R.id.progressView).setVisibility(View.INVISIBLE);
                         copy(new File(localFile.getAbsolutePath()),new File(storageDir+"/"+file_name));
                     } catch (IOException e) {
                         e.printStackTrace();

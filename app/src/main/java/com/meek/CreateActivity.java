@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -107,6 +108,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
     {
         caption=text;
     }
+    @RequiresApi(api = Build.VERSION_CODES.FROYO)
     void uploadActivity()
     {
         SharedPreferences actPrefs= getSharedPreferences("ActPrefs", MODE_PRIVATE);
@@ -170,6 +172,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                 });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     void setAttributes(int act_num, int curr_stat)
     {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -177,7 +180,10 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         IconSwitch privacy=(IconSwitch)findViewById(R.id.privacy_status);
         boolean p_stat=privacy.isActivated();
         //EditText caption=(EditText)findViewById(R.id.img_caption);
-        SimpleDateFormat dateFormatGmt = new SimpleDateFormat("dd:MM:yyyy HH:mm:ss");
+        DateFormat df = DateFormat.getTimeInstance();
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        SimpleDateFormat dateFormatGmt = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
         String getTime= dateFormatGmt.format(new Date())+"";
 
@@ -193,6 +199,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
             visiblity=1;
             map_branch="public";
         }
+
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(lat);
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(lng);
         userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
@@ -200,7 +207,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(type);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,"pmdrox"));
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(getTime);
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"","pmdrox"));
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,"pmdrox"));
     }
 

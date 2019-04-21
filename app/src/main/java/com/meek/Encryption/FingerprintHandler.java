@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import com.meek.MainActivity;
 
+import javax.security.auth.DestroyFailedException;
+
 @TargetApi(Build.VERSION_CODES.M)
 public class FingerprintHandler extends FingerprintManager.AuthenticationCallback {
 
@@ -72,11 +74,18 @@ public class FingerprintHandler extends FingerprintManager.AuthenticationCallbac
 
         FingerPrintActivity fingerPrintActivity=(FingerPrintActivity)context;
         fingerPrintActivity.fingerPrintSuccess();
-
-        Intent intent=new Intent(context, MainActivity.class);
+        String secretkey=fingerPrintActivity.key.toString();
+/*        try
+        {
+           fingerPrintActivity.key.destroy();
+        }
+        catch (DestroyFailedException e)
+        {
+            e.printStackTrace();
+        }
+  */      Intent intent=new Intent(context, MainActivity.class);
+        intent.putExtra("SECRETKEY",secretkey);
         context.startActivity(intent);
-
-
+        ((FingerPrintActivity) context).finish();
     }
-
 }

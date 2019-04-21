@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -44,6 +45,8 @@ public class MyActivities extends AppCompatActivity {
     ArrayList<Activities> activities;
     boolean changed;
 
+    DialogFragment picker;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,7 +65,7 @@ public class MyActivities extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                DialogFragment picker = new DatePickerFragment();
+                picker = new DatePickerFragment(curr_date);
                 picker.show(getSupportFragmentManager(), "datePicker");
             }
         });
@@ -70,8 +73,7 @@ public class MyActivities extends AppCompatActivity {
         checked_activities = new ArrayList<CheckActivity>();
         activities = new ArrayList<Activities>();
         cal = Calendar.getInstance();
-        setDateBar();
-
+        setDateBar(curr_date);
         fetchDateData();
     }
     void setShimmer()
@@ -90,86 +92,60 @@ public class MyActivities extends AppCompatActivity {
     public void setDate(Date date)
     {
         curr_date=date;
-        setDateBar();
+        setDateBar(curr_date);
+        fetchDateData();
     }
 
-    void setDateBar() {
+    void setDateBar(Date c_date)
+    {
         TextView day = (TextView) findViewById(R.id.day);
         TextView month = (TextView) findViewById(R.id.month);
         TextView year = (TextView) findViewById(R.id.year);
+        String daystr          = (String) DateFormat.format("dd",   c_date); // 20
+        String monthstr = (String) DateFormat.format("MMM",  c_date); // Jun
+        String yearstr        = (String) DateFormat.format("yyyy", c_date); // 2013
 
-        String mnth = "";
-        switch ((cal.get(Calendar.MONTH) + 1)) {
-            case 1:
-                mnth = "JAN";
-                break;
-            case 2:
-                mnth = "FEB";
-                break;
-            case 3:
-                mnth = "MAR";
-                break;
-            case 4:
-                mnth = "APR";
-                break;
-            case 5:
-                mnth = "MAY";
-                break;
-            case 6:
-                mnth = "JUN";
-                break;
-            case 7:
-                mnth = "JUL";
-                break;
-            case 8:
-                mnth = "AUG";
-                break;
-            case 9:
-                mnth = "SEP";
-                break;
-            case 10:
-                mnth = "OCT";
-                break;
-            case 11:
-                mnth = "NOV";
-                break;
-            case 12:
-                mnth = "DEC";
-                break;
-        }
-        year.setText( cal.get(Calendar.YEAR)+"");
-        month.setText(mnth);
-        day.setText(cal.get(Calendar.DAY_OF_MONTH)+ "");
-        Log.v("Date attributes", cal.get(Calendar.DAY_OF_MONTH) + "/" + (cal.get(Calendar.MONTH) + 1) + "/" + cal.get(Calendar.YEAR));
+        year.setText( yearstr);
+        month.setText(monthstr);
+        day.setText(daystr);
+        //Log.e("Date attributes", cal.get(Calendar.DAY_OF_MONTH) + "/" + (cal.get(Calendar.MONTH) + 1) + "/" + cal.get(Calendar.YEAR));
     }
 
     void fetchDateData() {
-        setShimmer();
+      //  setShimmer();
         setGMTdates();
         comp_up = comp_lw = false;
         DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
-        for (int i = 0; i < checked_activities.size(); ++i) {
-            if (checked_activities.get(i).date == curr_date) {
+        for (int i = 0; i < checked_activities.size(); ++i)
+        {
+            if (checked_activities.get(i).date == curr_date)
+            {
                 curr_act = checked_activities.get(i);
                 break;
-            } else
+            }
+            else
                 curr_act = null;
         }
         if (curr_act == null) {
             act_ref.child("Activities").child(uid).child("pg_view").child(upr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (curr_act == null) {
+                    if (curr_act == null)
+                    {
                         curr_act = new CheckActivity();
                         curr_act.date = curr_date;
                     }
-                    if (dataSnapshot != null) {
+                    if (dataSnapshot != null)
+                    {
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            try {
+                        for (DataSnapshot ds : dataSnapshot.getChildren())
+                        {
+                            try
+                            {
                                 Date act_date = d_format.parse(ds.getValue().toString());
                                 Log.v("My act_pg set","upr date = "+act_date);
-                                if (act_date.before(upr_gmt)) {
+                                if (act_date.before(upr_gmt))
+                                {
                                     curr_act.exists=true;
                                     Log.v("My act_pg set","Inside date before");
                                     curr_act.act_id.add(ds.getKey().toString());
@@ -202,7 +178,8 @@ public class MyActivities extends AppCompatActivity {
                     }
                     if (dataSnapshot != null) {
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                        for (DataSnapshot ds : dataSnapshot.getChildren())
+                        {
                             try {
                                 Date act_date = d_format.parse(ds.getValue().toString());
                                 Log.v("My act_pg set","lwr date = "+act_date);
@@ -214,7 +191,6 @@ public class MyActivities extends AppCompatActivity {
                             } catch (ParseException e) {
                                 e.printStackTrace();
                             }
-
                         }
                     }
                     comp_lw=true;
@@ -317,13 +293,27 @@ public class MyActivities extends AppCompatActivity {
     void setGMTdates()
     {
         SimpleDateFormat d_format=new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+        SimpleDateFormat default_tz=new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+        default_tz.setTimeZone(TimeZone.getDefault());
         d_format.setTimeZone(TimeZone.getTimeZone("GMT"));
         try {
-            lwr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 00:00:01");
-            upr_gmt=d_format.parse(cal.get(Calendar.DAY_OF_MONTH)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.YEAR)+" 23:59:59");
+            lwr_gmt=default_tz.parse(DateFormat.format("dd",   curr_date).toString()+"-"
+                    +(Integer.parseInt(DateFormat.format("M",   curr_date).toString()))
+                    +"-"+DateFormat.format("yyyy",   curr_date)+" 00:00:01");
 
             lwr_dt=d_format.format(lwr_gmt).substring(0,d_format.format(lwr_gmt).indexOf(" ")).trim();
+
+            lwr_gmt=d_format.parse(d_format.format(lwr_gmt));
+
+
+            upr_gmt=default_tz.parse(DateFormat.format("dd",   curr_date).toString()+"-"
+                    +(Integer.parseInt(DateFormat.format("M",   curr_date).toString()))
+                    +"-"+DateFormat.format("yyyy",   curr_date)+" 23:59:59");
+
             upr_dt=d_format.format(upr_gmt).substring(0,d_format.format(upr_gmt).indexOf(" ")).trim();
+
+            upr_gmt=d_format.parse(d_format.format(upr_gmt));
+
         }
         catch (ParseException e) {
             e.printStackTrace();

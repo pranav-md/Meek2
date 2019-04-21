@@ -155,6 +155,7 @@ public class UserProfile extends AppCompatActivity {
         }
         Log.v("GMT time daa","lwr:"+lwr_dt+"  upr_gmt"+upr_dt);
     }
+
     void fetchActivityData()
     {
         Log.v("My act_pg set","Inside setpages");

@@ -10,6 +10,11 @@ import android.provider.ContactsContract;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.meek.Contact;
 import com.meek.MainActivity;
 
@@ -33,7 +38,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     static String DP_NO="DP_NO";
     static String LG="LNG";
     static String LOC_AC="LOCATION_ACCESS";
-
+    static String name;
+    static boolean lock;
 
     public static final String CREATE_TABLE =
             "CREATE TABLE "+TABLE_NAME+" ("+UID+" TEXT PRIMARY KEY,"+
@@ -105,13 +111,15 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         int con_status=cursor.getInt(0);
         return con_status;
     }
-    public void insertPerson(String uid,String h_num,int con_level)
+
+    public void insertPerson(String uid,String name,String h_num,int con_level)
     {
         // get writable database as we want to write data
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
         values.put(UID, uid);
+        values.put(NME, name);
         values.put(HSHED_PNM,h_num);
         values.put(CON_LEVEL,con_level);
         // insert row
@@ -120,6 +128,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         // close db connection
         db.close();
     }
+
     public Cursor getLocationPplData()
     {
         String query = "SELECT " + UID+" , " + NME+" , " + LT+ " , " + LG+ " FROM "+ TABLE_NAME  +" WHERE "+ CON_LEVEL+ " =?" ;
@@ -215,6 +224,22 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         return name;
     }
 
+    public void updateName(String name, String uid)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        PeopleObj pOBj=getNote(uid);
+        //values.put(UID, uid);
+        values.put(NME,name);
+
+        db.update(TABLE_NAME, values, UID + " = ?",
+                new String[]{String.valueOf(uid)});
+
+    }
+
+
+
     public void updateLatLng(LatLng latLng, String uid)
     {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -273,6 +298,29 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         db.close();
         */
     }
+    public String userName(final String id)
+    {
+        lock=false;
+        name="";
+        final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+        ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                name =dataSnapshot.getValue().toString();
+                lock =true;
+                updateName(name,id);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        while(lock==false);
+        return name;
+
+    }
+
 
     void updateEncKeyPerson(int uid,String e_key)
     {

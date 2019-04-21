@@ -49,10 +49,12 @@ public class AES {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             return android.util.Base64.encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")), android.util.Base64.DEFAULT);
         }
+
         catch (Exception e)
         {
             System.out.println("Error while encrypting: " + e.toString());
         }
+
         return null;
     }
 

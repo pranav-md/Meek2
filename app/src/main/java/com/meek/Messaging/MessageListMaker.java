@@ -24,9 +24,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Database.PeopleDBHelper;
+import com.meek.Encryption.AES;
 import com.meek.R;
 
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -94,8 +97,8 @@ public class MessageListMaker extends AppCompatActivity
             allMsgs.moveToFirst();
             Message newone = new Message(allMsgs.getString(0),
                     allMsgs.getString(1),
-                    new PeopleDBHelper(this).getName(allMsgs.getString(0)),
-                    allMsgs.getString(2));
+                    new AES().decrypt(new PeopleDBHelper(this).getName(allMsgs.getString(0)),"pmdrox"),
+                    new AES().decrypt(allMsgs.getString(2),"pmdrox"));
             msgList.add(newone);
             while (allMsgs.moveToNext()) {
                 newone = new Message(allMsgs.getString(0),
@@ -141,10 +144,10 @@ public class MessageListMaker extends AppCompatActivity
         String date=simpleDateFormat.format(new Date())+"";
 
         DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
-        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_timestamp").setValue(date);
-        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_text").setValue(text);
+        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_timestamp").setValue(new AES().encrypt(date,"pmdrox"));
+        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_text").setValue(new AES().encrypt(text,"pmdrox"));
 
-        new MessageDBHelper(this).insertMessage(msg_id,uid,text,date);
+        new MessageDBHelper(this).insertMessage(msg_id,uid,new AES().encrypt(text,"pmdrox"),new AES().encrypt(date,"pmdrox"));
         getMSGS(msg_id);
     }
 
@@ -165,6 +168,28 @@ public class MessageListMaker extends AppCompatActivity
 //        updateMsgsBCR.abortBroadcast();
         unregisterReceiver(updateMsgsBCR);
     }
+
+    String msgTime(String time)
+    {
+
+        DateFormat df = DateFormat.getTimeInstance();
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        SimpleDateFormat df2 = new SimpleDateFormat(" HH:mm: a");
+        df2.setTimeZone(TimeZone.getDefault());
+
+
+        Date date = null;
+        try {
+            date = df.parse(time);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        String formattedDate = df2.format(date);
+
+        return formattedDate;
+    }
+
 }
 
 
