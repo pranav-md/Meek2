@@ -4,4 +4,7 @@
         <integer name="slow_custom_animation_duration">500</integer>
         <integer name="custom_animation_duration">100</integer>
     <integer name="name">1</integer>
-    </resources>
+    <integer name="attr">2</integer>
+    <integer name="stat">3</integer>
+
+</resources>

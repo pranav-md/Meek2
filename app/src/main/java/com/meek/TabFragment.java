@@ -827,6 +827,38 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 
         switch(conn_ppl.get(i).conn_level)
         {
+            case 6: view = inflater.inflate(R.layout.request_list_item, null);
+                final CircleImageView ok=(CircleImageView)view.findViewById(R.id.rq_okay);
+                final CircleImageView cancl=(CircleImageView)view.findViewById(R.id.rq_cancel);
+                ok.setTag(conn_ppl.get(i).getUID());
+                cancl.setTag(conn_ppl.get(i).getUID());
+                ok.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(final View view) {
+
+                        final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                        trigger_ref.child("Users")
+                                .child(uid)
+                                .child("Connection_Trigger")
+                                .child("loc_request_received")
+                                .child("yes").setValue(view.getTag().toString());
+
+                    }
+                });
+
+                cancl.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                        trigger_ref.child("Users")
+                                .child(uid)
+                                .child("Connection_Trigger")
+                                .child("loc_request_received")
+                                .child("no").setValue(view.getTag().toString());
+                    }
+                });
+                break;
+
             case 5: view = inflater.inflate(R.layout.request_list_item, null);
                     final CircleImageView okay=(CircleImageView)view.findViewById(R.id.rq_okay);
                     final CircleImageView cancel=(CircleImageView)view.findViewById(R.id.rq_cancel);
@@ -869,81 +901,27 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 e.printStackTrace();
                             }
 
-                            /////adding to the other user's activity_meek
-                            final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                            ppl_ref.child("Users")
-                                    .child(view.getTag().toString())
-                                    .child("Connections")
-                                    .child("activity_meek")
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot)
-                                        {
-                                            String rcv_id=dataSnapshot.getValue().toString();
-                                            if(!rcv_id.contains(":"+uid+":"))
-                                            {
-                                                ppl_ref.child("Users").child(view.getTag().toString())
-                                                        .child("Connections")
-                                                        .child("activity_meek").setValue(":"+uid+rcv_id);
-                                            }
-
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-
-                            /////adding to the user's activity_meek
-                            ppl_ref.child("Users")
+                            final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                            trigger_ref.child("Users")
                                     .child(uid)
-                                    .child("Connections")
-                                    .child("activity_meek")
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot)
-                                        {
-                                            String rcv_id=dataSnapshot.getValue().toString();
-                                            if(!rcv_id.contains(":"+view.getTag().toString()+":"))
-                                            {
-                                                ppl_ref.child("Users").child(uid)
-                                                        .child("Connections")
-                                                        .child("activity_meek").setValue(":"+view.getTag().toString()+rcv_id);
-                                            }
-                                        }
+                                    .child("Connection_Trigger")
+                                    .child("act_request_received")
+                                    .child("yes").setValue(view.getTag().toString());
 
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
 
-                                        }
-                                    });
 
-                            /////adding to the user's activity_meek
-                            ppl_ref.child("Users")
+                        }
+                    });
+
+                    cancel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                            trigger_ref.child("Users")
                                     .child(uid)
-                                    .child("Connections")
-                                    .child("activity_meek")
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot)
-                                        {
-                                            String rcv_id=dataSnapshot.getValue().toString();
-                                            if(!rcv_id.contains(":"+view.getTag().toString()+":"))
-                                            {
-                                                ppl_ref.child("Users").child(uid)
-                                                        .child("Connections")
-                                                        .child("activity_meek").setValue(":"+view.getTag().toString()+rcv_id);
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-
-
+                                    .child("Connection_Trigger")
+                                    .child("act_request_received")
+                                    .child("no").setValue(view.getTag().toString());
 
                         }
                     });
@@ -958,59 +936,31 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
             case 1: view = inflater.inflate(R.layout.meek_con_item, null);
                     final CircleImageView btn=(CircleImageView)view.findViewById(R.id.add);
                     btn.setTag(conn_ppl.get(i).getUID());
+                    btn.setTag(R.integer.stat,"0");
                     btn.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
                             final String usr_id=view.getTag().toString();
-                            final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                            ppl_ref.child("Users")
-                                    .child(usr_id)
-                                    .child("Connections")
-                                    .child("act_request_received")
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot)
-                                        {
-                                            String rcv_id=dataSnapshot.getValue().toString();
-                                            if(!rcv_id.contains(":"+uid+":"))
-                                            {
-                                                ppl_ref.child("Users").child(usr_id)
-                                                        .child("Connections")
-                                                        .child("act_request_received").setValue(":"+uid+rcv_id);
-                                            }
-
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-
-
-                            ppl_ref.child("Users").child(uid)
-                                    .child("Connections")
-                                    .child("act_request_sent")
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot)
-                                        {
-                                            String sent_id=dataSnapshot.getValue().toString();
-                                            if(!sent_id.contains(":"+usr_id+":"))
-                                            {
-                                                ppl_ref.child("Users").child(uid)
-                                                        .child("Connections")
-                                                        .child("act_request_sent").setValue(":"+sent_id+uid+"");
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                            btn.setImageResource(R.drawable.cancel_cross);
-
+                            if(btn.getTag(R.integer.stat).toString().equals("0"))
+                            {
+                                final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                                trigger_ref.child("Users")
+                                        .child(uid)
+                                        .child("Connection_Trigger")
+                                        .child("act_request_sent").setValue(view.getTag().toString());
+                                btn.setTag(R.integer.stat,"1");
+                                btn.setImageResource(R.drawable.cancel_cross);
+                            }
+                            else
+                            {
+                                final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
+                                trigger_ref.child("Users")
+                                        .child(uid)
+                                        .child("Connection_Trigger")
+                                        .child("act_request_reject").setValue(view.getTag().toString());
+                                btn.setTag(R.integer.stat,"0");
+                                btn.setImageResource(R.drawable.add_img);
+                            }
                         }
                     });
                     break;
@@ -1079,6 +1029,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
             name.setText(conn_ppl.get(i).getName());
         return view;
     }
+    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6
 
     @Override
     public View getHeaderView(int position, View convertView, ViewGroup parent)
@@ -1088,6 +1039,10 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         TextView name=(TextView) view.findViewById(R.id.header);
         switch(conn_ppl.get(position).conn_level)
         {
+            case 6: name.setText("Location Access Requests");
+                view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
+                break;
+
             case 5: name.setText("Received Activity Requests");
                     view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
                     break;

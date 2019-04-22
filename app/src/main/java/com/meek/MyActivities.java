@@ -113,6 +113,7 @@ public class MyActivities extends AppCompatActivity {
       //  setShimmer();
         setGMTdates();
         comp_up = comp_lw = false;
+        activities=new ArrayList<Activities>();
         DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
 
             act_ref.child("Activities").child(uid).child("pg_view").child(lwr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -155,10 +156,10 @@ public class MyActivities extends AppCompatActivity {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    while(comp_lw==false);
 
                     if (dataSnapshot != null)
                     {
+                        while(comp_lw==false);
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
                             try {
@@ -177,7 +178,7 @@ public class MyActivities extends AppCompatActivity {
                         }
                     }
 
-                    comp_lw = true;
+                    comp_up = true;
 
                     if (comp_lw == true && comp_up == true)
                     {

@@ -144,8 +144,8 @@ public class MessageListMaker extends AppCompatActivity
         String date=simpleDateFormat.format(new Date())+"";
 
         DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
-        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_timestamp").setValue(new AES().encrypt(date,"pmdrox"));
-        msg_set_ref.child("Messages_DB").child(msg_id).child("received_msg:"+uid+":").child("msg_text").setValue(new AES().encrypt(text,"pmdrox"));
+        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(date,"pmdrox"));
+        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,"pmdrox"));
 
         new MessageDBHelper(this).insertMessage(msg_id,uid,new AES().encrypt(text,"pmdrox"),new AES().encrypt(date,"pmdrox"));
         getMSGS(msg_id);
