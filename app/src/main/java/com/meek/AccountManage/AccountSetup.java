@@ -14,6 +14,8 @@ import com.googlecode.mp4parser.authoring.Edit;
 import com.meek.MainActivity;
 import com.meek.R;
 
+import java.util.Random;
+
 public class AccountSetup extends AppCompatActivity {
 
     @Override
@@ -28,9 +30,27 @@ public class AccountSetup extends AppCompatActivity {
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                 DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
                 act_ref.child("NAMES").child(pref.getString("uid","")).setValue(name.getText().toString());
-                startActivity(new Intent(AccountSetup.this, EnterKey.class));
+                String server_key=random();
+
+                act_ref.child("Server_Key").child(pref.getString("uid","")).setValue(server_key);
+
+                Intent intent=new Intent(AccountSetup.this,EnterKey.class);
+                intent.putExtra("ServerKey",server_key);
+                startActivity(intent);
             }
         });
 
+    }
+
+    public static String random() {
+        Random generator = new Random();
+        StringBuilder randomStringBuilder = new StringBuilder();
+        int randomLength = generator.nextInt(15);
+        char tempChar;
+        for (int i = 0; i < randomLength; i++){
+            tempChar = (char) (generator.nextInt(96) + 32);
+            randomStringBuilder.append(tempChar);
+        }
+        return randomStringBuilder.toString();
     }
 }

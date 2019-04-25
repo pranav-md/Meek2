@@ -1,6 +1,5 @@
 package com.meek;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -37,7 +36,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Fragments.MyProfileFrag;
-import com.meek.Services.ActivityService;
 import com.meek.Messaging.MessageService;
 //import com.meek.Services.LocationService;
 
@@ -62,14 +60,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final float LOCATION_DISTANCE = 10f;
     public LocationManager mLocationManager = null;
     MapsFragment map_fragment=null;
+    String server_key;
     LatLng cur_location;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.container);
         dp = (CircleImageView) findViewById(R.id.dp);
-        tabFragment = new TabFragment(MainActivity.this);
+        tabFragment = new TabFragment(MainActivity.this,server_key);
         /////////
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        server_key = extras.getString("ServerKey");
 
         String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
         String localFilename = sFolder + "/dp.jpg";
@@ -118,12 +120,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 map_tab_flg = !map_tab_flg;
                 if (map_tab_flg) {
                     if(map_fragment==null)
-                        map_fragment=new MapsFragment();
+                        map_fragment=new MapsFragment(server_key);
                     getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
-                            .replace(R.id.frg_container, new MapsFragment())
+                            .replace(R.id.frg_container, new MapsFragment(server_key))
                             .commit();
                 } else {
-                    tabFragment=new TabFragment(MainActivity.this);
+                    tabFragment=new TabFragment(MainActivity.this,server_key);
                     getSupportFragmentManager().beginTransaction().setCustomAnimations(R.animator.flip_right_in, R.animator.flip_right_out, R.animator.flip_left_in, R.animator.flip_left_out)
                             .replace(R.id.frg_container,tabFragment )
                             .commit();
@@ -240,9 +242,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        Intent intent = new Intent(this, ActivityService.class);
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mApiClient, 3000, pendingIntent);
+   //     Intent intent = new Intent(this, ActivityService.class);
+   //     PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+   //     ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mApiClient, 3000, pendingIntent);
 
     }
 

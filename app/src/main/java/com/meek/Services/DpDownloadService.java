@@ -1,5 +1,6 @@
 package com.meek.Services;
 
+import android.app.IntentService;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -34,8 +35,12 @@ import java.util.ArrayList;
  * Created by User on 17-Jun-18.
  */
 
-public class DpDownloadService extends Service {
+public abstract class DpDownloadService extends IntentService {
     String dp_dest;
+
+    public DpDownloadService(String name) {
+        super(name);
+    }
 
     @Override
     public void onCreate()
@@ -55,7 +60,7 @@ public class DpDownloadService extends Service {
 
     void downloadDPs()
     {
-        ArrayList<Contact> all_uid_guys=new PeopleDBHelper(this).getAllConnections();
+        ArrayList<Contact> all_uid_guys=new PeopleDBHelper(this,"server key to be set").getAllConnections();
 
         for(final Contact con:all_uid_guys)
         {
@@ -81,7 +86,7 @@ public class DpDownloadService extends Service {
                             @Override
                             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
 
-                                new PeopleDBHelper(getBaseContext()).updateDPNumber(f_id,dpno);
+                                new PeopleDBHelper(getBaseContext(),"server key to be set").updateDPNumber(f_id,dpno);
                                 if((new File(dp_dest+"/"+f_id+".jpg")).exists())
                                 {
                                     (new File(dp_dest+"/"+f_id+".jpg")).delete();
@@ -119,7 +124,7 @@ public class DpDownloadService extends Service {
         }
     }
     boolean checkDpPresent(String dpno,String uid) {
-        return new PeopleDBHelper(getBaseContext()).checkDPNO(dpno, uid);
+        return new PeopleDBHelper(getBaseContext(),"server key to be set").checkDPNO(dpno, uid);
     }
 
 }

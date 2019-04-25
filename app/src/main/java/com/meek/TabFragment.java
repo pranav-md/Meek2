@@ -109,7 +109,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     ValueEventListener msg_listener=null;
     ArrayList<MsgPPL> msgPPLS;
-    String dg_msgs;
+    String server_key;
     int shown_md_num=0;
     int tot_msg_ppl;
     MessageDialogAdapter mg_dg_adapter;
@@ -120,10 +120,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     @SuppressLint("WrongViewCast") ListView mg_dg_View;
     @SuppressLint("ValidFragment")
-    public TabFragment(Context context)
+    public TabFragment(Context context,String server_key)
     {
         super.onAttach(context);
         this.context=context;
+        this.server_key=server_key;
     }
     public TabFragment()
     {    }
@@ -470,7 +471,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             msgPPLS=new ArrayList<MsgPPL>();
             MsgPPL newone=new MsgPPL();
             newone.sender_id=msgDlgs.getString(1);
-            newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
+            newone.name=new PeopleDBHelper(getContext(),server_key).getName(newone.sender_id);
             newone.last_msg=msgDlgs.getString(2);
             newone.date=msgDlgs.getString(3);
             msgPPLS.add(newone);
@@ -478,7 +479,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             {
              newone=new MsgPPL();
              newone.sender_id=msgDlgs.getString(1);
-             newone.name=new PeopleDBHelper(getContext()).getName(newone.sender_id);
+             newone.name=new PeopleDBHelper(getContext(),server_key).getName(newone.sender_id);
              newone.last_msg=msgDlgs.getString(2);
              newone.date=msgDlgs.getString(3);
              msgPPLS.add(newone);
@@ -509,8 +510,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setConnection()
     {
-        if(!new PeopleDBHelper(getContext()).checkTable())
-            new PeopleDBHelper(getContext()).createTable();
+        if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+            new PeopleDBHelper(getContext(),server_key).createTable();
         final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Users").child(uid).child("Connections").addValueEventListener(new ValueEventListener() {
             @Override
@@ -530,11 +531,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
                 ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
 
-                new PeopleDBHelper(getContext());
+                new PeopleDBHelper(getContext(),server_key);
                 for(final String id:meek_cons)
                 {
                     Log.e("MEEK CONS","id="+id);
-                    if(!(new PeopleDBHelper(context).checkUID(id)))
+                    if(!(new PeopleDBHelper(context,server_key).checkUID(id)))
                     {
                         Log.e("Conn meek_con setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -544,8 +545,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null)
                                 {
-                                    String name=new PeopleDBHelper(context).userName(id);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,name,phnm,1);
+                                    String name=new PeopleDBHelper(context,server_key).userName(id);
+                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,1);
                                 }
                             }
 
@@ -555,16 +556,16 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,1)))
+                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,1)))
                     {
-                        new PeopleDBHelper(getContext()).changePersonStatus(id,1);
+                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,1);
                     }
                 }
                 ///////////
                 for(final String id:activity_cons)
                 {
                     Log.e("ACTIVITY CONS","id="+id);
-                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
                     {
                         Log.e("Conn activity setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -572,8 +573,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context).userName(id);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,name,phnm,2);
+                                    String name=new PeopleDBHelper(context,server_key).userName(id);
+                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,2);
                                 }
 
                             }
@@ -584,16 +585,16 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,2)))
+                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,2)))
                     {
-                        new PeopleDBHelper(getContext()).changePersonStatus(id,2);
+                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,2);
                     }
                 }
 
                 for(final String id:loc_cons)
                 {
                     Log.e("LOC CONS","id="+id);
-                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
                     {
                         Log.e("Checked loc CONS","id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -601,8 +602,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context).userName(id);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,name,phnm,3);
+                                    String name=new PeopleDBHelper(context,server_key).userName(id);
+                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,3);
                                 }
 
                                 Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
@@ -615,16 +616,16 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,3)))
+                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,3)))
                     {
-                        new PeopleDBHelper(getContext()).changePersonStatus(id,3);
+                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,3);
                     }
                 }
 
                 for(final String id:sent_req_cons)
                 {
                 Log.e("ACT RQ SNT","id="+id);
-                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
                     {
                         Log.e("Conn activity setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -632,8 +633,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm = dataSnapshot.getValue().toString();
                                 if (phnm != null) {
-                                    String name=new PeopleDBHelper(context).userName(id);
-                                    new PeopleDBHelper(getContext()).insertPerson(id, name, phnm, 4);
+                                    String name=new PeopleDBHelper(context,server_key).userName(id);
+                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id, name, phnm, 4);
                                 }
                             }
 
@@ -643,16 +644,16 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,4)))
+                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,4)))
                     {
-                        new PeopleDBHelper(getContext()).changePersonStatus(id,4);
+                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,4);
                     }
                 }
 
                 for(final String id:rcv_req_cons)
                 {
                     Log.e("ACT RQ SNT","id="+id);
-                    if(!(new PeopleDBHelper(getContext()).checkUID(id)))
+                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
                     {
                         Log.e("Conn activity setting","current id="+id);
                         ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -660,8 +661,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context).userName(id);
-                                    new PeopleDBHelper(getContext()).insertPerson(id,name,phnm,5);
+                                    String name=new PeopleDBHelper(context,server_key).userName(id);
+                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,5);
                                 }
 
                             }
@@ -672,9 +673,9 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             }
                         });
                     }
-                    else if(!(new PeopleDBHelper(getContext()).checkUID(id,5)))
+                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,5)))
                     {
-                        new PeopleDBHelper(getContext()).changePersonStatus(id,5);
+                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,5);
                     }
                 }
 
@@ -762,9 +763,9 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     void setConnectionList()
     {
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
-        conn_list=new PeopleDBHelper(context).getAllConnections();
+        conn_list=new PeopleDBHelper(context,server_key).getAllConnections();
 
-        connectionAdapter.getData(conn_list,getContext(),uid);
+        connectionAdapter.getData(conn_list,getContext(),uid,server_key);
         if(curr_tab==0)
         {
             if(con_list!=null)
@@ -797,9 +798,10 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 {
     ArrayList<Contact> conn_ppl;
     Context context;
-    String uid;
-    void getData(ArrayList<Contact> conn_ppl,Context context,String id)
+    String uid,serverkey;
+    void getData(ArrayList<Contact> conn_ppl,Context context,String id,String serverkey)
     {
+        this.serverkey=serverkey;
         this.uid=id;
         this.context=context;
         this.conn_ppl=conn_ppl;
@@ -1022,7 +1024,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         TextView name=(TextView) view.findViewById(R.id.name);
         if(conn_ppl.get(i).getName()==null)
         {
-            String u_name=new PeopleDBHelper(context).getName(conn_ppl.get(i).getUID());
+            String u_name=new PeopleDBHelper(context,serverkey).getName(conn_ppl.get(i).getUID());
             name.setText(u_name);
         }
         else

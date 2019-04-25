@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -70,6 +71,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.supercharge.shimmerlayout.ShimmerLayout;
@@ -97,7 +99,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     Marker cur_marker;
   //  ProfilePageAdapter ppl_page_adapter;
     LatLng cur_location;
-    String uid,current_ppl=":";
+    String uid,current_ppl=":",serverkey;
     int cur_p_pos,cur_a_post;
     EasyFlipView flip_bs;
     View bottomSheet,view;
@@ -121,6 +123,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     {
         Marker marker;
         String uid;
+    }
+    public  MapsFragment(){}
+    @SuppressLint("ValidFragment")
+    public MapsFragment(String serverkey)
+    {
+        this.serverkey=serverkey;
     }
     @Override
     public Animation onCreateAnimation(int transit, boolean enter, int nextAnim) {
@@ -221,7 +229,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         mMap=googleMap;
         setUserMarker();
         setMapMarkerListen();
-        Cursor locCurData=new PeopleDBHelper(getContext()).getLocationPplData();
+        Cursor locCurData=new PeopleDBHelper(getContext(),serverkey).getLocationPplData();
         setDbPplMarker(locCurData);
 
 
@@ -344,7 +352,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                                     ,Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
                  //           newone.color=Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
 
-                            new PeopleDBHelper(getContext()).updateLatLng(newone.latLng,newone.uid);
+                            new PeopleDBHelper(getContext(),serverkey).updateLatLng(newone.latLng,newone.uid);
                             if(current_ppl.contains(":"+newone.uid+":"))
                                 for(int i=0;i<mapPeople.size();++i)
                                 {

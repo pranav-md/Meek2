@@ -16,6 +16,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meek.Contact;
+import com.meek.Encryption.AES;
 import com.meek.MainActivity;
 
 import java.util.ArrayList;
@@ -30,16 +31,17 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     static String DATABASE_NAME="MeekDB.db";
     static String TABLE_NAME="PeopleDB";
     static String UID="UID";
-    static String NME="NAME";
-    static String E_KY="ENC_KEY";
+    static String NME="NAME";//
+    static String E_KY="ENC_KEY";//
     static String HSHED_PNM="HASHED_PHNM";
     static String CON_LEVEL="CON_LEVEL";
-    static String LT="LAT";
+    static String LT="LAT";//
     static String DP_NO="DP_NO";
-    static String LG="LNG";
+    static String LG="LNG";//
     static String LOC_AC="LOCATION_ACCESS";
     static String name;
     static boolean lock;
+    String serverkey;
 
     public static final String CREATE_TABLE =
             "CREATE TABLE "+TABLE_NAME+" ("+UID+" TEXT PRIMARY KEY,"+
@@ -52,9 +54,10 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
                     LG+ " DOUBLE,"+
                     LOC_AC+ " INTEGER"+")";
 
-    public PeopleDBHelper(Context context)
+    public PeopleDBHelper(Context context,String serverkey)
     {
         super(context, DATABASE_NAME, null, 4);
+        this.serverkey=serverkey;
     }
 
     public boolean checkTable()
@@ -84,7 +87,6 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL(CREATE_TABLE);
-
     }
 
     @Override
@@ -119,7 +121,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
 
         values.put(UID, uid);
-        values.put(NME, name);
+        values.put(NME, new AES().encrypt(name,serverkey));
         values.put(HSHED_PNM,h_num);
         values.put(CON_LEVEL,con_level);
         // insert row
@@ -221,7 +223,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         catch (CursorIndexOutOfBoundsException ex){
             name="";
         }
-        return name;
+        return new AES().decrypt(name,serverkey);
     }
 
     public void updateName(String name, String uid)
@@ -231,7 +233,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
 
         PeopleObj pOBj=getNote(uid);
         //values.put(UID, uid);
-        values.put(NME,name);
+        values.put(NME,new AES().encrypt(name,serverkey));
 
         db.update(TABLE_NAME, values, UID + " = ?",
                 new String[]{String.valueOf(uid)});
@@ -247,8 +249,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
 
         PeopleObj pOBj=getNote(uid);
         //values.put(UID, uid);
-        values.put(LT,latLng.latitude);
-        values.put(LT,latLng.longitude);
+        values.put(LT,new AES().encrypt(latLng.latitude+"",serverkey));
+        values.put(LG,new AES().encrypt(latLng.longitude+"",serverkey));
 
         db.update(TABLE_NAME, values, UID + " = ?",
                 new String[]{String.valueOf(uid)});
