@@ -113,7 +113,7 @@ public class MessageService extends Service {
             String text=parseXML(parseXML(parseXML(allMsgs,"AllMessages"),"Message"),"text" );
             String sender_id=parseXML(parseXML(parseXML(allMsgs,"AllMessages"),"Message"),"sender_id" );
             String timestamp=parseXML(parseXML(parseXML(allMsgs,"AllMessages"),"Message"),"timestamp" );
-            new MessageDBHelper(getBaseContext()).insertMessage(msg_id,sender_id,text,timestamp);
+            new MessageDBHelper(getBaseContext()," fsfdf").insertMessage(msg_id,sender_id,text,timestamp);
             allMsgs=allMsgs.replace("<Message>"+removetext+"</Message>","");
         }
 

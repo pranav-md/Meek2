@@ -22,5 +22,12 @@ public class MapPeople
     {
         activities=new ArrayList<Activities>();
     }
+    public MapPeople(String uid,String name,LatLng latLng)
+    {
+        this.uid=uid;
+        this.name=name;
+        this.latLng=latLng;
+        activities=new ArrayList<Activities>();
+    }
 
 }

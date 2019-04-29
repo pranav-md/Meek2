@@ -21,7 +21,7 @@
         app:layout_constraintVertical_bias="0.0" />
 
     <EditText
-        android:id="@+id/editText3"
+        android:id="@+id/otpview"
         android:layout_width="205dp"
         android:layout_height="74dp"
         android:layout_marginStart="8dp"
@@ -54,7 +54,7 @@
         app:layout_constraintVertical_bias="1.0" />
 
     <Button
-        android:id="@+id/button6"
+        android:id="@+id/enter"
         android:layout_width="185dp"
         android:layout_height="53dp"
         android:layout_marginStart="8dp"

@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -14,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
+import com.meek.Encryption.AES;
 import com.victorminerva.widget.edittext.AutofitEdittext;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -22,8 +24,15 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by User on 07-Jun-18.
  */
 
+@SuppressLint("ValidFragment")
 public class ActivityText extends Fragment {
     boolean active;
+    String serverkey;
+    @SuppressLint("ValidFragment")
+    public ActivityText(String serverkey)
+    {
+        this.serverkey=serverkey;
+    }
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)
@@ -61,8 +70,10 @@ public class ActivityText extends Fragment {
             @Override
             public void afterTextChanged(Editable editable) {
                 CreateActivity act_funcall = (CreateActivity) getContext();
-                act_funcall.setCaptionText(act_edit.getText().toString());
+                SharedPreferences getPref=getContext().getSharedPreferences("USERKEY",MODE_PRIVATE);
+                String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
 
+                act_funcall.setCaptionText(new AES().encrypt(act_edit.getText().toString(),key));
             }
         });
 

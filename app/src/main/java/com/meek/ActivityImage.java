@@ -67,6 +67,7 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by User on 07-Jun-18.
  */
 
+@SuppressLint("ValidFragment")
 public class ActivityImage extends Fragment {
 
     String mCurrentPhotoPath;
@@ -74,6 +75,13 @@ public class ActivityImage extends Fragment {
     private static final float BLUR_RADIUS = 25f;
     View img_view;
     boolean active,kb_on;
+    String serverkey;
+
+    @SuppressLint("ValidFragment")
+    public ActivityImage(String serverkey)
+    {
+        this.serverkey=serverkey;
+    }
 
     @Nullable
     @Override

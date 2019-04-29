@@ -18,6 +18,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.meek.Contact;
 import com.meek.Encryption.AES;
 import com.meek.MainActivity;
+import com.meek.MapPeople;
 
 import java.util.ArrayList;
 
@@ -131,12 +132,29 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public Cursor getLocationPplData()
+    public ArrayList<MapPeople> getLocationPplData()
     {
         String query = "SELECT " + UID+" , " + NME+" , " + LT+ " , " + LG+ " FROM "+ TABLE_NAME  +" WHERE "+ CON_LEVEL+ " =?" ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, new String[]{"2"});
-        return cursor;
+        ArrayList<MapPeople> mapPPL=new ArrayList<MapPeople>();
+        cursor.moveToFirst();
+        if(cursor.getCount()!=0)
+        {
+            mapPPL.add(new MapPeople(cursor.getString(0)
+                    ,new AES().decrypt(cursor.getString(1),serverkey)
+                    ,new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2),serverkey)),
+                                Double.parseDouble(new AES().decrypt(cursor.getString(3),serverkey)))));
+            while (cursor.moveToNext())
+            {
+                Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
+                mapPPL.add(new MapPeople(cursor.getString(0)
+                        ,new AES().decrypt(cursor.getString(1),serverkey)
+                        ,new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2),serverkey)),
+                        Double.parseDouble(new AES().decrypt(cursor.getString(3),serverkey)))));
+            }
+        }
+        return mapPPL;
     }
 
     public void changePersonStatus(String uid,int con_level)
@@ -230,7 +248,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
+        if(getNote(uid+"")==null)
+            return;
         PeopleObj pOBj=getNote(uid);
         //values.put(UID, uid);
         values.put(NME,new AES().encrypt(name,serverkey));
@@ -246,7 +265,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
+        if(getNote(uid+"")==null)
+            return;
         PeopleObj pOBj=getNote(uid);
         //values.put(UID, uid);
         values.put(LT,new AES().encrypt(latLng.latitude+"",serverkey));
@@ -329,7 +349,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         // get writable database as we want to write data
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
+        if(getNote(uid+"")==null)
+            return;
         PeopleObj pOBj=getNote(uid+"");
         //values.put(UID, uid);
         values.put(E_KY,e_key);
@@ -367,18 +388,24 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
             cursor.moveToFirst();
 
         // prepare note object
-        PeopleObj pObj = new PeopleObj(
-                cursor.getInt(cursor.getColumnIndex(UID)),
-                cursor.getString(cursor.getColumnIndex(NME)),
-                cursor.getString(cursor.getColumnIndex(E_KY)),
-                cursor.getString(cursor.getColumnIndex(HSHED_PNM)),
-                cursor.getDouble(cursor.getColumnIndex(LT)),
-                cursor.getDouble(cursor.getColumnIndex(LG)));
+        if(cursor.getCount()!=0) {
+            PeopleObj pObj = new PeopleObj(
+                    cursor.getInt(cursor.getColumnIndex(UID)),
+                    cursor.getString(cursor.getColumnIndex(NME)),
+                    cursor.getString(cursor.getColumnIndex(E_KY)),
+                    cursor.getString(cursor.getColumnIndex(HSHED_PNM)),
+                    cursor.getDouble(cursor.getColumnIndex(LT)),
+                    cursor.getDouble(cursor.getColumnIndex(LG)));
 
-        // close the db connection
-        cursor.close();
+            // close the db connection
+            cursor.close();
+            return pObj;
+        }
+        else {
+            return null;
+        }
 
-        return pObj;
+
     }
 
 

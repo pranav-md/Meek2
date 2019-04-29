@@ -229,7 +229,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         mMap=googleMap;
         setUserMarker();
         setMapMarkerListen();
-        Cursor locCurData=new PeopleDBHelper(getContext(),serverkey).getLocationPplData();
+        ArrayList<MapPeople> locCurData=new PeopleDBHelper(getContext(),serverkey).getLocationPplData();
         setDbPplMarker(locCurData);
 
 
@@ -390,38 +390,18 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
     }
 
-    void setDbPplMarker(Cursor loc_cur)       //To set the markers of people in DB locally
+    void setDbPplMarker(ArrayList<MapPeople> loc_cur)       //To set the markers of people in DB locally
     {
+       // mapPeople=loc_cur;
         while (user_marker_lock==false);
-        loc_cur.moveToFirst();
-        if(loc_cur.getCount()!=0)
-        {
-            MapPeople newppl=new MapPeople();
-            newppl.uid=loc_cur.getString(0);
-            newppl.name=loc_cur.getString(1);
-            Log.e("THE SQLITEDB DATA","uid"+loc_cur.getString(0)
-                    +"lat="+loc_cur.getString(loc_cur.getColumnIndex("LAT"))
-                    +"lng="+loc_cur.getString(loc_cur.getColumnIndex("LNG")));
-            if(loc_cur.getString(loc_cur.getColumnIndex("LNG"))!=null) {
-                newppl.latLng = new LatLng(Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LAT"))), Double.parseDouble(loc_cur.getString(loc_cur.getColumnIndex("LNG"))));
-                mapPeople.add(newppl);
-                setMarker(newppl.latLng, mapPeople.size() - 1, newppl.uid, "hahahah", false);
-            }
-            while (loc_cur.moveToNext())
+            for(MapPeople newppl:loc_cur)
             {
-                newppl=new MapPeople();
-                newppl.uid=loc_cur.getString(0);
-                newppl.name=loc_cur.getString(1);
-                if(loc_cur.getString(loc_cur.getColumnIndex("LNG"))!=null) {
-
-                    newppl.latLng = new LatLng(Double.parseDouble(loc_cur.getString(2)), Double.parseDouble(loc_cur.getString(3)));
                     mapPeople.add(newppl);
                     setMarker(newppl.latLng, mapPeople.size() - 1, newppl.uid, "hahahah", false);
                     //     ppl_page_adapter.setData(mapPeople);
                     //      ppl_page_adapter.notifyDataSetChanged();
-                }
+
             }
-        }
         loc_db_mkr_lock=true;
     }
 
@@ -778,6 +758,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             }
         }
     }
+
+
     void visibleMarkers()
     {
         for(Marker mkr:ppl_marker)

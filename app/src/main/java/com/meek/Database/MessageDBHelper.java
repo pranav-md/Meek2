@@ -9,6 +9,9 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.meek.Contact;
+import com.meek.Encryption.AES;
+import com.meek.MapPeople;
+import com.meek.Messaging.Message;
 
 import java.util.ArrayList;
 
@@ -22,6 +25,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
     static String SENDER_ID="SENDER_ID";
     static String DATE="DATE";
     static String TEXT="TEXT";
+    String serverkey;
 
 
     public static final String CREATE_TABLE =
@@ -32,9 +36,10 @@ public class MessageDBHelper extends SQLiteOpenHelper {
                     TEXT+ " TEXT,"+
                     DATE+ " TEXT)";
 
-    public MessageDBHelper(Context context)
+    public MessageDBHelper(Context context,String serverkey)
     {
         super(context, DATABASE_NAME, null, 4);
+        this.serverkey=serverkey;
     }
 
     @Override
@@ -89,11 +94,12 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         long number=numberOfMessages();
+
         values.put(MSG_ID, msg_id);
         values.put(MSG_NUM, number+1);
         values.put(SENDER_ID,sender_id);
-        values.put(TEXT,text);
-        values.put(DATE,date);
+        values.put(TEXT,new AES().decrypt(text,serverkey));
+        values.put(DATE,new AES().decrypt(date,serverkey));
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
         Log.e("INSERT PERSON",msg_id+" written with number of="+number);
@@ -103,12 +109,27 @@ public class MessageDBHelper extends SQLiteOpenHelper {
 
 
     //////////RETREIVAL
-    public Cursor getMessages(String msg_id)
+    public ArrayList<Message> getMessages(String msg_id)
     {
         String query = "SELECT "+SENDER_ID+" , " + TEXT+ " , " + DATE+ " FROM "+ TABLE_NAME  +" WHERE "+ MSG_ID+ " =?" ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, new String[]{msg_id});
-        return cursor;
+        ArrayList<Message> msgPPL=new ArrayList<Message>();
+        cursor.moveToFirst();
+        if(cursor.getCount()!=0)
+        {
+            msgPPL.add(new Message(cursor.getString(0)
+                    ,new AES().decrypt(cursor.getString(1),serverkey)
+                    ,cursor.getString(2)));
+            while (cursor.moveToNext())
+            {
+                Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
+                msgPPL.add(new Message(cursor.getString(0)
+                        ,new AES().decrypt(cursor.getString(1),serverkey)
+                        ,new AES().decrypt(cursor.getString(2),serverkey)));
+            }
+        }
+        return msgPPL;
     }
 
     long numberOfMessages()
@@ -119,12 +140,29 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         return cursor.getCount();
     }
 
-    public Cursor getMessageDialogs()
+    public ArrayList<Message> getMessageDialogs()
     {
         String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " +TEXT+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID+" HAVING MAX("+MSG_NUM+")" ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor =  db.query(TABLE_NAME, new String[] {MSG_ID,SENDER_ID,TEXT,DATE },null,null,MSG_ID, "MAX("+MSG_NUM+")", null);
-        return cursor;
+
+        ArrayList<Message> msgPPL=new ArrayList<Message>();
+        cursor.moveToFirst();
+        if(cursor.getCount()!=0)
+        {
+            Message newone=new Message(cursor.getString(0));
+            newone.setMsgDlg(cursor.getString(1),cursor.getString(2));
+            msgPPL.add(newone);
+            while (cursor.moveToNext())
+            {
+                Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
+                newone=new Message(cursor.getString(0));
+                newone.setMsgDlg(cursor.getString(1),cursor.getString(2));
+                msgPPL.add(newone);
+            }
+        }
+
+        return msgPPL;
     }
 ///////////DELETION
 
@@ -135,4 +173,5 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_NAME, MSG_ID + "=" + msg_id, null);
         db.close();
     }
+
 }

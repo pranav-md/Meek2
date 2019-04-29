@@ -1,6 +1,7 @@
 package com.meek;
 
 import android.annotation.SuppressLint;
+import android.app.IntentService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,9 +48,11 @@ import com.labo.kaji.fragmentanimations.FlipAnimation;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Database.PeopleDBHelper;
 import com.meek.Encryption.RSAKeyExchange;
+import com.meek.Messaging.Message;
 import com.meek.Messaging.MessageDialogAdapter;
 import com.meek.Messaging.MessageService;
 import com.meek.Messaging.MsgPPL;
+import com.meek.Services.ConnectionService;
 import com.myhexaville.smartimagepicker.ImagePicker;
 
 import android.widget.Button;
@@ -109,7 +112,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     ValueEventListener msg_listener=null;
     ArrayList<MsgPPL> msgPPLS;
-    String server_key;
+    static  public  String server_key;
     int shown_md_num=0;
     int tot_msg_ppl;
     MessageDialogAdapter mg_dg_adapter;
@@ -139,21 +142,25 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         View view = inflater.inflate(R.layout.tabsfragment, container, false);
         final BottomNavigation btm_nav=(BottomNavigation)view.findViewById(R.id.bottom_nav);
         final BottomNavigation check_sel=btm_nav;
+
         btm_nav.setSelectedIndex(2,true);
         btnView=view;
+
         plcs=(TextView)view.findViewById(R.id.placess);
         context=getContext();
         tabcontainer=view.findViewById(R.id.tabscontainer);
         // Construct a GeoDataClient.
-        mGeoDataClient = Places.getGeoDataClient(getActivity(), null);
+        //mGeoDataClient = Places.getGeoDataClient(getActivity(), null);
         connectionAdapter=new ConnectionAdapter();
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
+        setActivtiyTab();
+
         Log.e("UID value","uid="+uid);
-        setConnection();
+      //  setConnection();
 
         // Construct a PlaceDetectionClient.
-        mPlaceDetectionClient = Places.getPlaceDetectionClient(getActivity(), null);
+      //  mPlaceDetectionClient = Places.getPlaceDetectionClient(getActivity(), null);
 
         btm_nav.setOnMenuItemClickListener(new BottomNavigation.OnMenuItemSelectionListener() {
             @Override
@@ -219,7 +226,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         add_activity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(getContext(),CreateActivity.class));
+
+                Intent intent=new Intent(getContext(),CreateActivity.class);
+                intent.putExtra("ServerKey",server_key);
+                startActivity(intent);
             }
         });
         //  setActFeatureButton();
@@ -347,7 +357,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         }
         else if(requestCode==SET_DEST)
         {
-            Log.v("SET DEST","yoyoyo");
+         /*   Log.v("SET DEST","yoyoyo");
             String place_name=data.getStringExtra("Place name");
             final LayoutInflater inflater = LayoutInflater.from(context);
             View inflatedLayout= getView();
@@ -370,6 +380,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             });
             dest_name.setText(place_name);
             dest_set.addView(inflatedLayout);
+            */
         }
     }
     void adaptActFeed(String actFeed,boolean seen)
@@ -423,10 +434,9 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         mg_dg_View=(ListView) inflatedLayout.findViewById(R.id.msg_d_list);
 
         mg_dg_adapter=new MessageDialogAdapter(getContext());
-        Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
-        msgDlgs.moveToFirst();
+        ArrayList<Message> msgDlgs=new MessageDBHelper(getContext(),server_key).getMessageDialogs();
 
-        if(msgDlgs.getCount()==0)
+        if(msgDlgs.size()==0)
         {
             noMsgYet(true,inflatedLayout);
         }
@@ -436,7 +446,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         }
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MessageService.MY_ACTION);
+        IntentFilter intentFilter2 = new IntentFilter();
+        intentFilter2.addAction(ConnectionService.MY_ACTION);
+
         getContext().registerReceiver(updateDlgsBCR, intentFilter);
+        getContext().registerReceiver(updateConnection, intentFilter2);
 
         //// firebase listener to the message list
 
@@ -465,24 +479,19 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     }
 
 
-    void setMsgDialogs(Cursor msgDlgs)
+    void setMsgDialogs(ArrayList<Message> msgDlgs)
     {
 
             msgPPLS=new ArrayList<MsgPPL>();
-            MsgPPL newone=new MsgPPL();
-            newone.sender_id=msgDlgs.getString(1);
-            newone.name=new PeopleDBHelper(getContext(),server_key).getName(newone.sender_id);
-            newone.last_msg=msgDlgs.getString(2);
-            newone.date=msgDlgs.getString(3);
-            msgPPLS.add(newone);
-            while(msgDlgs.moveToNext())
+            MsgPPL nextppl;
+            for(Message newone:msgDlgs)
             {
-             newone=new MsgPPL();
-             newone.sender_id=msgDlgs.getString(1);
-             newone.name=new PeopleDBHelper(getContext(),server_key).getName(newone.sender_id);
-             newone.last_msg=msgDlgs.getString(2);
-             newone.date=msgDlgs.getString(3);
-             msgPPLS.add(newone);
+             nextppl=new MsgPPL();
+             nextppl.sender_id=newone.getSender_id();
+             nextppl.name=new PeopleDBHelper(getContext(),server_key).getName(newone.getSender_id());
+             nextppl.last_msg=newone.getText();
+             nextppl.date=newone.getCreatedAt();
+             msgPPLS.add(nextppl);
             }
             mg_dg_adapter.getData(msgPPLS);
             if(shown_md_num==0)
@@ -784,10 +793,20 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         @Override
         public void onReceive(Context context, Intent intent)
         {
+
+            setConnectionList();
+
+        }
+    };
+
+    BroadcastReceiver updateConnection = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
             Bundle bundle = intent.getExtras();
             String sender_id = bundle.getString("sender_id");
             String uid = bundle.getString("uid");
-            Cursor msgDlgs=new MessageDBHelper(getContext()).getMessageDialogs();
+            ArrayList<Message> msgDlgs=new MessageDBHelper(getContext(),server_key).getMessageDialogs();
             setMsgDialogs(msgDlgs);
         }
     };

@@ -37,6 +37,7 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Fragments.MyProfileFrag;
 import com.meek.Messaging.MessageService;
+import com.meek.Services.ConnectionService;
 //import com.meek.Services.LocationService;
 
 import java.util.List;
@@ -60,10 +61,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final float LOCATION_DISTANCE = 10f;
     public LocationManager mLocationManager = null;
     MapsFragment map_fragment=null;
-    String server_key;
+    public String server_key;
     LatLng cur_location;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.container);
         dp = (CircleImageView) findViewById(R.id.dp);
@@ -80,9 +82,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
       //  CompressAsyncTask task = new CompressAsyncTask(this);
     //    task.execute();
         /////////////////
-        new MessageDBHelper(this);
+       // new MessageDBHelper(this);
 
-        startService(new Intent(this,MessageService.class));
+       // startService(new Intent(this,MessageService.class));
+        intent=new Intent(this,ConnectionService.class);
+        intent.putExtra("ServerKey",server_key);
+        //startService(intent);
 
         FragmentManager tabfm = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();
@@ -154,13 +159,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        mApiClient = new GoogleApiClient.Builder(this)
+/*        mApiClient = new GoogleApiClient.Builder(this)
                 .addApi(ActivityRecognition.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
 
         mApiClient.connect();
+        */
     //    startContactLookService();
         dp.setOnClickListener(new View.OnClickListener() {
             @Override

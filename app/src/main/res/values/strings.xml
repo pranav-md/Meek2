@@ -6,5 +6,6 @@
     <string name="lat"></string>
     <string name="lng"></string>
     <string name="places_api_key">AIzaSyAyJER7pyO3Ibrt4JUrMZk1qrv_JN3k8ww</string>
+    <string name="title_activity_start_screen">StartScreen</string>
 
 </resources>

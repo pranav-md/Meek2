@@ -83,7 +83,12 @@ public class FingerprintHandler extends FingerprintManager.AuthenticationCallbac
         {
             e.printStackTrace();
         }
-  */      Intent intent=new Intent(context, MainActivity.class);
+
+  */
+        while(fingerPrintActivity.keylock==false);
+
+        Intent intent=new Intent(context, MainActivity.class);
+        intent.putExtra("ServerKey",fingerPrintActivity.serverkey);
         intent.putExtra("SECRETKEY",secretkey);
         context.startActivity(intent);
         ((FingerPrintActivity) context).finish();

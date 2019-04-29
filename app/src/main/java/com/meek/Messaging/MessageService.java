@@ -33,8 +33,8 @@ public class MessageService extends Service
     @Override
     public void onCreate()
     {
-        if(!new MessageDBHelper(this).checkTable())
-            new MessageDBHelper(this).createTable();
+        if(!new MessageDBHelper(this,"  ").checkTable())
+            new MessageDBHelper(this,"   ").createTable();
 
         SharedPreferences userPrefs=getSharedPreferences("UserDetails",MODE_PRIVATE);
             String uid=userPrefs.getString("uid","");
@@ -64,7 +64,7 @@ public class MessageService extends Service
 
     void retrieveMsgs(ArrayList<String> uids, final String uid)
     {
-        MessageDBHelper msg_db=new MessageDBHelper(this);
+        MessageDBHelper msg_db=new MessageDBHelper(this,"sdfsdf");
         msg_db.getWritableDatabase();
         for(final String id:uids)
         {
@@ -85,7 +85,7 @@ public class MessageService extends Service
                                 {
                                     String msg_text = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "text");
                                     String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "date");
-                                    new MessageDBHelper(MessageService.this).insertMessage(msgID(uid, id), id, msg_text, msg_date);
+                                    new MessageDBHelper(MessageService.this,"sfljf").insertMessage(msgID(uid, id), id, msg_text, msg_date);
                                     xml_msgs = xml_msgs.replace("<Message>" + parseXML(parseXML(xml_msgs, "AllMessages"), "Message") + "</Message>", "");
                                 }
                                 Intent intent = new Intent();

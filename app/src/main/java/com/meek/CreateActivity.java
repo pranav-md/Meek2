@@ -84,7 +84,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
     String type="3";
     private PlaceDetectionClient mPlaceDetectionClient;
     String uid;
-
+    String serverkey;
     Context context;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)
@@ -92,6 +92,11 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         super.onCreate(savedInstanceState);
         setContentView(R.layout.create_activity);
         context=CreateActivity.this;
+
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        serverkey = extras.getString("ServerKey");
+
         mGeoDataClient = Places.getGeoDataClient(context, null);
         mPlaceDetectionClient = Places.getPlaceDetectionClient(context, null);
         SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
@@ -199,16 +204,18 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
             visiblity=1;
             map_branch="public";
         }
+        SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
 
-        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(lat);
-        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(lng);
+        String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(new AES().encrypt(lat,key));
+        userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(new AES().encrypt(lng,key));
         userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
 
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(type);
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,"pmdrox"));
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"","pmdrox"));
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,"pmdrox"));
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,key));
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"",key));
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,key));
     }
 
     void setActivtiyTab()
@@ -290,9 +297,9 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         int curr_stat=actPrefs.getInt("curr_stat",11);
         final NonSwipeableActivityTabs mviewPager = (NonSwipeableActivityTabs)findViewById(R.id.tab_container);
         ActivityTabAdapter activityTabAdapter = new ActivityTabAdapter(getSupportFragmentManager());
-        act_vid=new ActivityVideo();
-        act_img=new ActivityImage();
-        final ActivityText act_txt=new ActivityText();
+        act_vid=new ActivityVideo(serverkey);
+        act_img=new ActivityImage(serverkey);
+        final ActivityText act_txt=new ActivityText(serverkey);
 
         activityTabAdapter.addFragment(act_vid, "Video");
         activityTabAdapter.addFragment(act_img, "Image");

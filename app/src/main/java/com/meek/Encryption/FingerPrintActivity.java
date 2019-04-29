@@ -1,6 +1,7 @@
 package com.meek.Encryption;
 
 import android.app.KeyguardManager;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.Manifest;
@@ -16,6 +17,11 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.meek.R;
 
 import java.io.IOException;
@@ -47,14 +53,20 @@ public class FingerPrintActivity extends AppCompatActivity {
     private FingerprintManager.CryptoObject cryptoObject;
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
+    String uid;
 
+    boolean keylock=false;
     public SecretKey key;
+    String serverkey;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fingerprint_auth);
+        SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+        uid=mypref.getString("uid","");
+        getServerKey();
         // If you’ve set your app’s minSdkVersion to anything lower than 23, then you’ll need to verify that the device is running Marshmallow
         // or higher before executing any fingerprint-related code
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -223,6 +235,25 @@ public class FingerPrintActivity extends AppCompatActivity {
 
     }
 
+    void getServerKey()
+    {
+        DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
+
+        act_feed_ref.child("Server_Key").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                serverkey=dataSnapshot.getValue().toString();
+                keylock=true;
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+
+    }
 
 }
 

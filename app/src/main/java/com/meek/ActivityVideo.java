@@ -1,4 +1,5 @@
 package com.meek;
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -53,6 +54,7 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by Pranav on 07-Jun-18.
  */
 ///Actvity setting tab in which the video displaying mode is set properly
+@SuppressLint("ValidFragment")
 public class ActivityVideo extends Fragment {
     int VID_REQ = 2, VID_EDT = 3;
     boolean play = true;
@@ -60,6 +62,13 @@ public class ActivityVideo extends Fragment {
     int left, right;
     boolean kb_on;
     String mCurrentPhotoPath;
+    String serverkey;
+
+    @SuppressLint("ValidFragment")
+    public ActivityVideo(String serverkey)
+    {
+        this.serverkey=serverkey;
+    }
 
     @Nullable
     @Override
@@ -217,7 +226,10 @@ public class ActivityVideo extends Fragment {
 
     void setVideo()         ///sets the video appropriately
     {
-        new AES().encryptActivityVideo("pmdrox",getActivity());
+        SharedPreferences getPref=getContext().getSharedPreferences("USERKEY",MODE_PRIVATE);
+        String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+        new AES().encryptActivityVideo(key,getActivity());
+
         SharedPreferences getprefs = getContext().getSharedPreferences("ActsPrefs", MODE_PRIVATE);
         SharedPreferences.Editor edit_prefs = getprefs.edit();
         edit_prefs.putInt("curr_stat", 4);

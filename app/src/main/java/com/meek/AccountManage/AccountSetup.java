@@ -45,7 +45,7 @@ public class AccountSetup extends AppCompatActivity {
     public static String random() {
         Random generator = new Random();
         StringBuilder randomStringBuilder = new StringBuilder();
-        int randomLength = generator.nextInt(15);
+        int randomLength = 20+generator.nextInt(20);
         char tempChar;
         for (int i = 0; i < randomLength; i++){
             tempChar = (char) (generator.nextInt(96) + 32);

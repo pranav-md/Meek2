@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.meek.MainActivity;
 import com.meek.R;
 
 import java.util.ArrayList;
@@ -70,6 +71,8 @@ public class MessageDialogAdapter extends BaseAdapter {
                 Log.v("Message clicked","r_uid= "+r_uid);
                 Intent intent=new Intent(context,MessageListMaker.class);
                 intent.putExtra("r_uid",r_uid);
+                MainActivity mainActivity=(MainActivity)context;
+                intent.putExtra("ServerKey",mainActivity.server_key);
             //    intent.putExtra("name",view.getTag(R.integer.name).toString());
                 context.startActivity(intent);
             }

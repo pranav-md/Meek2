@@ -46,6 +46,7 @@ public class MessageListMaker extends AppCompatActivity
     String uid,r_uid,msg_id;
     int upr_bound=0,lwr_bound=0;
     ListView messagesList;
+    String serverkey;
     MessageListAdapter messageListAdapter=null;
 
 
@@ -55,6 +56,9 @@ public class MessageListMaker extends AppCompatActivity
 
         setContentView(R.layout.message_list);
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        serverkey = extras.getString("ServerKey");
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MessageService.MY_ACTION);
@@ -88,25 +92,8 @@ public class MessageListMaker extends AppCompatActivity
     }
     void getMSGS(String msg_id)
     {
-        msgList=new ArrayList<Message>();
-        Cursor allMsgs=new MessageDBHelper(this).getMessages(msg_id);
-        if(allMsgs.getCount()==0)
-            noMsgYet(true);
-        else {
-            noMsgYet(false);
-            allMsgs.moveToFirst();
-            Message newone = new Message(allMsgs.getString(0),
-                    allMsgs.getString(1),
-                    new AES().decrypt(new PeopleDBHelper(this).getName(allMsgs.getString(0)),"pmdrox"),
-                    new AES().decrypt(allMsgs.getString(2),"pmdrox"));
-            msgList.add(newone);
-            while (allMsgs.moveToNext()) {
-                newone = new Message(allMsgs.getString(0),
-                        allMsgs.getString(1),
-                        new PeopleDBHelper(this).getName(allMsgs.getString(0)),
-                        allMsgs.getString(2));
-                msgList.add(newone);
-            }
+        ArrayList<Message> allMsgs=new MessageDBHelper(this,serverkey).getMessages(msg_id);
+        msgList=allMsgs;
             if (messageListAdapter == null) {
                 messageListAdapter = new MessageListAdapter(this, msgList, uid);
                 messagesList.setAdapter(messageListAdapter);
@@ -114,7 +101,7 @@ public class MessageListMaker extends AppCompatActivity
                 messageListAdapter.getData(msgList);
                 messageListAdapter.notifyDataSetChanged();
             }
-        }
+
     }
 
     String msgID(String uid,String r_uid)
@@ -147,7 +134,7 @@ public class MessageListMaker extends AppCompatActivity
         msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(date,"pmdrox"));
         msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,"pmdrox"));
 
-        new MessageDBHelper(this).insertMessage(msg_id,uid,new AES().encrypt(text,"pmdrox"),new AES().encrypt(date,"pmdrox"));
+        new MessageDBHelper(this,serverkey).insertMessage(msg_id,uid,new AES().encrypt(text,"pmdrox"),new AES().encrypt(date,"pmdrox"));
         getMSGS(msg_id);
     }
 

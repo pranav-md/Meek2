@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.meek">
+
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
          Google Maps Android API v2, but you must specify either coarse or fine
@@ -22,8 +23,11 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
-    <uses-feature android:name="android.hardware.fingerprint"
-        android:required="false"/>
+
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="false"
@@ -34,8 +38,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".AccountManage.AccountSetup"></activity>
-        <activity android:name=".AccountManage.EnterKey"></activity>
+        <activity android:name=".AccountManage.AccountSetup" />
+        <activity android:name=".AccountManage.EnterKey" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -64,9 +68,13 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-        <service android:enabled="true" android:name=".Messaging.MessageService" />
 
-        <service android:enabled="true" android:name=".Services.DpDownloadService" />
+        <service
+            android:name=".Messaging.MessageService"
+            android:enabled="true" />
+        <service
+            android:name=".Services.DpDownloadService"
+            android:enabled="true" />
 
         <activity
             android:name=".MainActivity"
@@ -83,7 +91,6 @@
                 android:name="com.google.android.geo.API_KEY"
                 android:value="AIzaSyCa40B-_C5pg_k-qe2hvE6weteyArQa4mA" />
         </activity>
-
         <activity android:name=".Fragments.MyProfileFrag">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -98,7 +105,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity android:name=".Encryption.FingerPrintActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -106,7 +112,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity android:name=".MyActivities">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -130,15 +135,40 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".Authentication.PermissionAsker">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".Authentication.AuthenticationActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".Notification.MyFirebaseInstanceService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".ActivityService" />
+        <service android:name=".Services.ConnectionService" />
+
+        <activity
+            android:name=".Authentication.StartScreen"
+            android:label="Meek"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service android:name=".ActivityService" />
     </application>
 
 </manifest>

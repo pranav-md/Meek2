@@ -293,21 +293,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         /////
         authwait=new ProgressDialog(this);
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-        String uid=pref.getString("uid", "");
-        if (!pref.getString("uid", "").equals("")) {
 
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-                //    new ContactSync().syncContact(AuthenticationActivity.this,pref.getString("uid",""));
-                }
-            };
-            Thread mythread = new Thread(runnable);
-            mythread.start();
-
-            startActivity(new Intent(AuthenticationActivity.this, FingerPrintActivity.class));
-            finish();
-        }
         /////
 
         Button btn=(Button)findViewById(R.id.auth_btn);
@@ -315,19 +301,19 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
             @Override
             public void onClick(View view) {
                 verifyNumber();
-                /*final Dialog dialog = new Dialog(AuthenticationActivity.this);
+                final Dialog dialog = new Dialog(AuthenticationActivity.this);
                 dialog.setContentView(R.layout.enter_otp_dialog);
                 dialog.show();
-                Button enter_otp=(Button)dialog.findViewById(R.id.enter_otp);
+                Button enter_otp=(Button)dialog.findViewById(R.id.enter);
                 enter_otp.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        OtpView otpView;
-                        otpView = findViewById(R.id.otp_view);
-                        String get_otp= otpView.getOTP();
+                        EditText otpView;
+                        otpView = (EditText) dialog.findViewById(R.id.otpview);
+                        String get_otp= otpView.getText().toString();
                         verifyPhoneNumberWithCode(mVerificationCode,get_otp);
                     }
-                });*/
+                });
             }
         });
 
