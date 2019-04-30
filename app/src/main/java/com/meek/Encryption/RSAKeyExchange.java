@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -34,7 +35,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import static com.meek.ActivityViewSetter.copy;
 
@@ -78,18 +82,47 @@ public class RSAKeyExchange {
         return keyPairGenerator.genKeyPair();
     }
 
-    public static byte [] encrypt(PublicKey publicKey, String message) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-
-        return cipher.doFinal(message.getBytes());
+    public byte [] encrypt(PublicKey publicKey, String message) {
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            return cipher.doFinal(message.getBytes());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        byte[] hah="null".getBytes();
+        return hah;
 
     }
 
-    public static byte [] decrypt(PrivateKey privateKey, byte [] encrypted) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        return cipher.doFinal(encrypted);
+    public byte [] decrypt(PrivateKey privateKey, byte [] encrypted)  {
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(encrypted);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        byte[] hah="null".getBytes();
+        return hah;
     }
 
     public void writeMyKeys() throws IOException
@@ -138,46 +171,52 @@ public class RSAKeyExchange {
         });
     }
 
-    public PublicKey getPublicKey(String id) throws IOException {
+    public PublicKey getPublicKey(String id) {
         final FirebaseStorage storage = FirebaseStorage.getInstance();
-        flg=false;
         StorageReference storageRef = storage.getReference();
         String file_name=id+".pub";
-        final File localFile = File.createTempFile(file_name, "pub");
-        storageRef.child("Public Keys/"+file_name).getFile(localFile).addOnSuccessListener(
-                new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
-            {
-                int size = (int) localFile.length();
-                byte[] bytes = new byte[size];
-                try {
-                    BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
-                    buf.read(bytes, 0, bytes.length);
-                    buf.close();
-                } catch (FileNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+        final File localFile;
+        try {
+            localFile = File.createTempFile(file_name, "pub");
+            storageRef.child("Public Keys/"+file_name).getFile(localFile).addOnSuccessListener(
+                    new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
+                        {
+                            int size = (int) localFile.length();
+                            byte[] bytes = new byte[size];
+                            try {
+                                BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
+                                buf.read(bytes, 0, bytes.length);
+                                buf.close();
+                            } catch (FileNotFoundException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
 
-                X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
-                KeyFactory kf = null;
-                try {
-                    kf = KeyFactory.getInstance("RSA");
-                    id_pubkey = kf.generatePublic(ks);
-                    flg=true;
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                } catch (InvalidKeySpecException e) {
-                    e.printStackTrace();
-                }
+                            X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
+                            KeyFactory kf = null;
+                            try {
+                                kf = KeyFactory.getInstance("RSA");
+                                id_pubkey = kf.generatePublic(ks);
+                                flg=true;
+                            } catch (NoSuchAlgorithmException e) {
+                                e.printStackTrace();
+                            } catch (InvalidKeySpecException e) {
+                                e.printStackTrace();
+                            }
 
 
-            }
-        });
+                        }
+                    });
+        } catch (IOException e) {
+            flg=true;
+            e.printStackTrace();
+        }
+
         while(!flg);
             return id_pubkey;
     }

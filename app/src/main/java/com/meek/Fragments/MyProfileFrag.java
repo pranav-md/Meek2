@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -16,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -33,6 +35,8 @@ import com.meek.MyDetails;
 import com.meek.R;
 import com.myhexaville.smartimagepicker.ImagePicker;
 import com.myhexaville.smartimagepicker.OnImagePickedListener;
+
+import org.w3c.dom.Text;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,6 +66,13 @@ public class MyProfileFrag extends AppCompatActivity {
         CardView my_activities=(CardView)findViewById(R.id.activities);
         SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=mypref.getString("uid","");
+        setNamePlace();
+        dp=(CircleImageView)findViewById(R.id.my_prof_dp);
+        String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
+        String localFilename = sFolder + "/dp.jpg";
+        Bitmap dp_bm= BitmapFactory.decodeFile(localFilename);
+        dp.setImageBitmap(dp_bm);
+
 
         my_activities.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +81,6 @@ public class MyProfileFrag extends AppCompatActivity {
             }
         });
 
-        dp=(CircleImageView)findViewById(R.id.my_prof_dp);
         dp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -81,7 +91,7 @@ public class MyProfileFrag extends AppCompatActivity {
                             Bitmap bitmap = MediaStore.Images.Media.getBitmap(MyProfileFrag.this.getContentResolver(), imageUri);
                             final Bitmap dp_bp=bitmap;
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 35, out);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, out);
                             final byte[] byteArray = out.toByteArray();
                             FirebaseDatabase database = FirebaseDatabase.getInstance();
                             final DatabaseReference userRef = database.getReference("Users");
@@ -90,7 +100,7 @@ public class MyProfileFrag extends AppCompatActivity {
                                 @Override
                                 public void onDataChange(final DataSnapshot dataSnapshot)
                                 {
-                                    StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+                                    final StorageReference storageReference = FirebaseStorage.getInstance().getReference();
                                     storageReference.child("Users DP/"+uid+"_"+(Integer.parseInt(dataSnapshot.getValue().toString())+1)+".jpg").putBytes(byteArray).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>(){
                                         @Override
                                         public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -98,6 +108,19 @@ public class MyProfileFrag extends AppCompatActivity {
                                             dp.setImageBitmap(dp_bp);
                                             userRef.child(uid).child("dpno").setValue(Integer.parseInt(dataSnapshot.getValue().toString())+1);
 
+                                            StorageReference  desertRef = storageReference.child("Users DP/"+uid+"_"+(Integer.parseInt(dataSnapshot.getValue().toString())));
+
+                                            desertRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    // File deleted successfully
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception exception) {
+                                                    // Uh-oh, an error occurred!
+                                                }
+                                            });
 
 
                                         }
@@ -162,23 +185,6 @@ public class MyProfileFrag extends AppCompatActivity {
         File myFile = imagePicker.getImageFile();
         final Uri selectedImage=getImageContentUri(getApplicationContext(),myFile);
         final Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
-    /*    myRealm.executeTransaction(new Realm.Transaction()
-        {
-            @Override
-            public void execute(Realm realm) {
-                MyDetails myDetails;
-                if(myRealm.where(MyDetails.class).findAll().size()==0)
-                {
-                    myDetails=myRealm.createObject(MyDetails.class);
-                }
-                else
-                {
-                    myDetails=myRealm.where(MyDetails.class).findFirst();
-                }
-               // myDetails.my_dp_uri=selectedImage.toString();
-            }
-        });
-        */
     }
 
     public static Uri getImageContentUri(Context context, File imageFile) {
@@ -232,7 +238,18 @@ public class MyProfileFrag extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
 
+        void setNamePlace()
+        {
+
+            SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
+            TextView tvname=(TextView)findViewById(R.id.name);
+            TextView location=(TextView)findViewById(R.id.location);
+
+            tvname.setText(pref.getString("Name",""));
+            location.setText(pref.getString("place",""));
 
         }
+
 }

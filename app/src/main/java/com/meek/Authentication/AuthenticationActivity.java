@@ -47,6 +47,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.meek.AccountManage.AccountSetup;
+import com.meek.ContactSync;
 import com.meek.Encryption.FingerPrintActivity;
 import com.meek.Encryption.FingerprintHandler;
 import com.meek.Encryption.RSAKeyExchange;
@@ -293,7 +294,21 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
         /////
         authwait=new ProgressDialog(this);
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+        String uid=pref.getString("uid", "");
+        if (!pref.getString("uid", "").equals("")) {
 
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                //    new ContactSync().syncContact(AuthenticationActivity.this,pref.getString("uid",""));
+                }
+            };
+            Thread mythread = new Thread(runnable);
+            mythread.start();
+
+            startActivity(new Intent(AuthenticationActivity.this, MainActivity.class));
+            finish();
+        }
         /////
 
         Button btn=(Button)findViewById(R.id.auth_btn);
@@ -308,8 +323,8 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                 enter_otp.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        EditText otpView;
-                        otpView = (EditText) dialog.findViewById(R.id.otpview);
+                        TextView otpView;
+                        otpView = dialog.findViewById(R.id.otpview);
                         String get_otp= otpView.getText().toString();
                         verifyPhoneNumberWithCode(mVerificationCode,get_otp);
                     }
@@ -395,12 +410,12 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                             {
                                 Log.e("AUTH","inside not isnew");
 
-                                usersRef.child("NUM_ID").child(String.valueOf(pnum)).addListenerForSingleValueEvent(new ValueEventListener() {
+                                usersRef.child("NUM_ID").child(new ContactSync().getSHA(String.valueOf(pnum)) ).addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(DataSnapshot dataSnapshot)
                                     {
                                         Log.e("AUTH","inside ondatachange");
-                                        if(dataSnapshot!=null)
+                                        if(dataSnapshot.getValue()!=null)
                                         {
                                             Log.e("AUTH","inside ds!=null");
                                             uid=dataSnapshot.child("uid").getValue().toString();
@@ -413,7 +428,8 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                                             createExchangeKey();
                                             nextActivity();
                                         }
-                                        else{
+                                        else
+                                            {
                                             Log.e("AUTH","inside setnewnode");
                                             setNewNode();
 
@@ -459,14 +475,15 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
 
         rootRef.child("num_users").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
 
                 Log.e("AUTH","inside setnewnode firebase");
                 uid= (Integer.parseInt(dataSnapshot.getValue().toString())+1)+"";
                 String enc_key=random();
-                userRef.child("NUM_ID").child(String.valueOf(pnum)).child("uid").setValue(uid);
-                userRef.child("NUM_ID").child(String.valueOf(pnum)).child("enc_key").setValue(enc_key);
-
+                userRef.child("NUM_ID").child(new ContactSync().getSHA(String.valueOf(pnum))).child("uid").setValue(uid);
+                userRef.child("NUM_ID").child(new ContactSync().getSHA(String.valueOf(pnum))).child("enc_key").setValue(enc_key);
+                rootRef.child("num_users").setValue(uid);
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                 SharedPreferences.Editor uidpref=pref.edit();
 

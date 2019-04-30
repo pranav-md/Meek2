@@ -28,7 +28,7 @@ public class Contact {
 
     {
         this.uid=uid;
-        this.name=uid;
+        this.name=name;
         this.conn_level=con_level;
     }
 

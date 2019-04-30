@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,15 +39,20 @@ import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.labo.kaji.fragmentanimations.FlipAnimation;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Database.PeopleDBHelper;
+import com.meek.Encryption.AES;
 import com.meek.Encryption.RSAKeyExchange;
 import com.meek.Messaging.Message;
 import com.meek.Messaging.MessageDialogAdapter;
@@ -60,10 +66,17 @@ import android.widget.Button;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 
 
@@ -74,8 +87,6 @@ import se.emilsjolander.stickylistheaders.StickyListHeadersListView;
 
 
 import static android.content.Context.MODE_PRIVATE;
-import static com.meek.Encryption.RSAKeyExchange.decrypt;
-import static com.meek.Encryption.RSAKeyExchange.encrypt;
 
 /**
  * Created by User on 25-May-18.
@@ -106,7 +117,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     View current_layout;
     RelativeLayout tabcontainer;
     ExpandableLayout img_exp;
-    int curr_tab;
+    int curr_tab=5;
     boolean tab_act;
     //////////////
 
@@ -128,6 +139,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         super.onAttach(context);
         this.context=context;
         this.server_key=server_key;
+        Log.e("TABFRag",server_key+" is server key");
+
     }
     public TabFragment()
     {    }
@@ -142,11 +155,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         View view = inflater.inflate(R.layout.tabsfragment, container, false);
         final BottomNavigation btm_nav=(BottomNavigation)view.findViewById(R.id.bottom_nav);
         final BottomNavigation check_sel=btm_nav;
+        Log.e("CREATEVIEW",server_key+" is server key");
 
         btm_nav.setSelectedIndex(2,true);
         btnView=view;
 
-        plcs=(TextView)view.findViewById(R.id.placess);
         context=getContext();
         tabcontainer=view.findViewById(R.id.tabscontainer);
         // Construct a GeoDataClient.
@@ -157,8 +170,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         setActivtiyTab();
 
         Log.e("UID value","uid="+uid);
-      //  setConnection();
-
+        retrieveConnections();
         // Construct a PlaceDetectionClient.
       //  mPlaceDetectionClient = Places.getPlaceDetectionClient(getActivity(), null);
 
@@ -167,18 +179,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             public void onMenuItemSelect(int i, int i1, boolean b) {
                 Toast.makeText(context,"Activity",Toast.LENGTH_LONG);
                 if(btm_nav.getSelectedIndex()==2) {
+                    seen_adapted = false;
                     setActivtiyTab();
                     curr_tab=2;
                     Toast.makeText(context, "Activity", Toast.LENGTH_LONG);
                 }
                 else if(btm_nav.getSelectedIndex()==1) {
                     Toast.makeText(context, "Chat", Toast.LENGTH_LONG);
+                   // seen_adapted = false;
                     curr_tab=1;
                     setMsgTab();
                 }
                 else if(btm_nav.getSelectedIndex()==0) {
                     Toast.makeText(getContext(), "Contact", Toast.LENGTH_LONG);
                     curr_tab=0;
+                   // seen_adapted = false;
                     setPplTab();
                 }
             }
@@ -191,6 +206,19 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         return view;
     }
 
+    void retrieveConnections()
+    {
+        Runnable runnable = new Runnable() {
+            public void run() {
+
+                setConnection();
+            }
+
+        };
+        Thread mythread = new Thread(runnable);
+        mythread.start();
+
+    }
 
     void setPlaceList()
     {
@@ -228,6 +256,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             public void onClick(View view) {
 
                 Intent intent=new Intent(getContext(),CreateActivity.class);
+                Log.e("CREATEACT",server_key+" is server key");
                 intent.putExtra("ServerKey",server_key);
                 startActivity(intent);
             }
@@ -237,50 +266,50 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
           setUsersActivity(inflatedLayout);
     }
-    void setActFeatureButton()
-    {
-        View cur_view=getView();
-        LinearLayout functions=(LinearLayout)cur_view.findViewById(R.id.functions);
-        Button actbtn=(Button)functions.findViewById(R.id.activity);
-        Button musicbtn=(Button)functions.findViewById(R.id.music);
+    /*    void setActFeatureButton()
+       {
+           View cur_view=getView();
+           LinearLayout functions=(LinearLayout)cur_view.findViewById(R.id.functions);
+           Button actbtn=(Button)functions.findViewById(R.id.activity);
+           Button musicbtn=(Button)functions.findViewById(R.id.music);
 
-/*        Realm realm = Realm.getDefaultInstance();
-        Realm.init(context);
-        realm.beginTransaction();
-        Drawable icon=null;
-        com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
-        if(result!=null)
-            switch(result.activity)
-            {
-                case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                                                    Log.d("HAH","In Vehicle");
+          Realm realm = Realm.getDefaultInstance();
+           Realm.init(context);
+           realm.beginTransaction();
+           Drawable icon=null;
+           com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
+           if(result!=null)
+               switch(result.activity)
+               {
+                   case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                                                       Log.d("HAH","In Vehicle");
+                                                       break;
+                   case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                                                       Log.d("HAH","ON_BICYCLE");
+                                                       break;
+
+                   case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                    Log.d("HAH","ON_FOOT");
                                                     break;
-                case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                                                    Log.d("HAH","ON_BICYCLE");
-                                                    break;
 
-                case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                 Log.d("HAH","ON_FOOT");
-                                                 break;
+                   case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                   Log.d("HAH","RUNNING");
+                                                   break;
 
-                case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                Log.d("HAH","RUNNING");
-                                                break;
+                   case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
+                                                   Log.d("HAH","STILL");
+                                                   break;
 
-                case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
-                                                Log.d("HAH","STILL");
-                                                break;
+                   case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                                                   Log.d("HAH","WALKING");
+                                                   break;
 
-                case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                Log.d("HAH","WALKING");
-                                                break;
+               }
+               if(icon!=null)
+                   actbtn.setBackground(icon);
+               else
+                   actbtn.setVisibility(View.INVISIBLE);
 
-            }
-            if(icon!=null)
-                actbtn.setBackground(icon);
-            else
-                actbtn.setVisibility(View.INVISIBLE);
-            */
         AudioManager audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
         ;
         if(audioManager.isMusicActive()==true) {
@@ -294,7 +323,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         //audiotext.setText("Not playing");
 
     }
-
+*/
       void setUsersActivity(View inf_layout)
       {
           act_seen_list=(ListView)inf_layout.findViewById(R.id.seen_activities);
@@ -396,30 +425,24 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             else
                 act_non_feed.add(new ActFeed("."+act_content+".",a_uid,seen));
         }
-        actSeenAdapter.getData(act_seen_feed,getContext(),getChildFragmentManager());
-        actUnSeenAdapter.getData(act_non_feed,getContext(),getChildFragmentManager());
-        if(seen)
-        {
-            if(seen_adapted)
-            {
-                actSeenAdapter.notifyDataSetChanged();
-            }
-            else
-            {
-                seen_adapted=true;
-                act_seen_list.setAdapter(actSeenAdapter);
-            }
-        }
-        else
-        {
-            if(unseen_adapted)
-            {
-                actUnSeenAdapter.notifyDataSetChanged();
-            }
-            else
-            {
-                unseen_adapted=true;
-                act_nonseen_list.setAdapter(actUnSeenAdapter);
+        FragmentActivity activity = getActivity();
+        if(activity != null) {
+            actSeenAdapter.getData(act_seen_feed, getContext(), getChildFragmentManager());
+            actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager());
+            if (seen) {
+                if (seen_adapted) {
+                    actSeenAdapter.notifyDataSetChanged();
+                } else {
+                    seen_adapted = true;
+                    act_seen_list.setAdapter(actSeenAdapter);
+                }
+            } else {
+                if (unseen_adapted) {
+                    actUnSeenAdapter.notifyDataSetChanged();
+                } else {
+                    unseen_adapted = true;
+                    act_nonseen_list.setAdapter(actUnSeenAdapter);
+                }
             }
         }
     }
@@ -432,8 +455,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
         mg_dg_View=(ListView) inflatedLayout.findViewById(R.id.msg_d_list);
-
         mg_dg_adapter=new MessageDialogAdapter(getContext());
+
+        if(!new MessageDBHelper(getContext(),server_key).checkTable())
+            new MessageDBHelper(getContext(),server_key).createTable();
         ArrayList<Message> msgDlgs=new MessageDBHelper(getContext(),server_key).getMessageDialogs();
 
         if(msgDlgs.size()==0)
@@ -481,6 +506,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setMsgDialogs(ArrayList<Message> msgDlgs)
     {
+          if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+            new PeopleDBHelper(getContext(),server_key).createTable();
 
             msgPPLS=new ArrayList<MsgPPL>();
             MsgPPL nextppl;
@@ -508,6 +535,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setPplTab()
     {
+        Log.e("PPLTAB","SETPPLTAB");
         LayoutInflater inflater = LayoutInflater.from(context);
         View inflatedLayout= inflater.inflate(R.layout.people_list, null, false);
         current_layout=inflatedLayout;
@@ -554,8 +582,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null)
                                 {
-                                    String name=new PeopleDBHelper(context,server_key).userName(id);
-                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,1);
+                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            String name =dataSnapshot.getValue().toString();
+                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,1);
+                                   //         new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                            Log.e("USERNAME","inside dbref name= "+name);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
                             }
 
@@ -582,8 +623,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context,server_key).userName(id);
-                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,2);
+                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            String name =dataSnapshot.getValue().toString();
+                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,2);
+                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                            Log.e("USERNAME","inside dbref name= "+name);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
 
                             }
@@ -611,12 +665,26 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context,server_key).userName(id);
-                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,3);
+                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            String name =dataSnapshot.getValue().toString();
+                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,3);
+                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                            Log.e("USERNAME","inside dbref name= "+name);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+
                                 }
 
                                 Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
-                              //  setConnectionList();
+                                //  setConnectionList();
                             }
 
                             @Override
@@ -633,7 +701,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
                 for(final String id:sent_req_cons)
                 {
-                Log.e("ACT RQ SNT","id="+id);
+                    Log.e("ACT RQ SNT","id="+id);
                     if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
                     {
                         Log.e("Conn activity setting","current id="+id);
@@ -642,8 +710,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm = dataSnapshot.getValue().toString();
                                 if (phnm != null) {
-                                    String name=new PeopleDBHelper(context,server_key).userName(id);
-                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id, name, phnm, 4);
+                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            String name =dataSnapshot.getValue().toString();
+                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id, name, phnm, 4);
+                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                            Log.e("USERNAME","inside dbref name= "+name);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
                             }
 
@@ -670,8 +751,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 final String phnm=dataSnapshot.getValue().toString();
                                 if(phnm!=null){
-                                    String name=new PeopleDBHelper(context,server_key).userName(id);
-                                    new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,5);
+                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            String name =dataSnapshot.getValue().toString();
+                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,5);
+                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                            Log.e("USERNAME","inside dbref name= "+name);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
 
                             }
@@ -689,7 +783,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 }
 
 
-                setConnectionList();
+                // setConnectionList();
 
 
             }
@@ -700,6 +794,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             }
         });
     }
+
+
 
 
 
@@ -726,6 +822,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         img_exp.toggle();
         ImageView act_img=(ImageView)activity_layout.findViewById(R.id.act_img);
 
+        File imgFile = new  File(mCurrentPhotoPath);
         File imgFile = new  File(mCurrentPhotoPath);
 
         if(imgFile.exists())
@@ -771,8 +868,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setConnectionList()
     {
+        Log.e("PPLTAB","SETCONNECTIONLIST1");
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
+        if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+            new PeopleDBHelper(getContext(),server_key).createTable();
+
         conn_list=new PeopleDBHelper(context,server_key).getAllConnections();
+        Log.e("PPLTAB","SETCONNECTIONLIST2");
 
         connectionAdapter.getData(conn_list,getContext(),uid,server_key);
         if(curr_tab==0)
@@ -889,35 +991,83 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                         @Override
                         public void onClick(final View view) {
                             try {
+                                final FirebaseStorage storage = FirebaseStorage.getInstance();
+                                StorageReference storageRef = storage.getReference();
+                                String file_name=view.getTag().toString()+".pub";
+                                final File localFile;
+                                try {
+                                    localFile = File.createTempFile(file_name, "pub");
+                                    storageRef.child("Public Key/"+file_name).getFile(localFile).addOnSuccessListener(
+                                            new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                                @Override
+                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
+                                                {
+                                                    int size = (int) localFile.length();
+                                                    byte[] bytes = new byte[size];
+                                                    try {
+                                                        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
+                                                        buf.read(bytes, 0, bytes.length);
+                                                        buf.close();
+                                                    } catch (FileNotFoundException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                    } catch (IOException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                    }
 
-                                PublicKey publicKey= new RSAKeyExchange(context,uid).getPublicKey(view.getTag().toString());
-                                byte [] encrypted = encrypt(publicKey, "This is a secret message");     ///set the key in it
+                                                    X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
+                                                    KeyFactory kf = null;
+                                                    try {
+                                                        kf = KeyFactory.getInstance("RSA");
+                                                        PublicKey id_pubkey = kf.generatePublic(ks);
+                                                        SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+                                                        final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
 
-                                DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
-                                key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted.toString());
+                                                        byte [] encrypted = new RSAKeyExchange(context,uid).encrypt(id_pubkey, key);     ///set the key in it
 
-                                key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot) {
-                                        String user_key=dataSnapshot.getValue().toString();
-                                        PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
-                                        try {
-                                            byte[] real_key_bytes=decrypt(myPrivateKey,user_key.getBytes());
-                                            String str_real_key=real_key_bytes.toString();
+                                                        DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                                        key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted.toString());
 
-                                            /////SAVE IN THE DB
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
+                                                        key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                            @Override
+                                                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                                                String user_key=dataSnapshot.getValue().toString();
+                                                                PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
+                                                                try {
+                                                                    byte[] real_key_bytes=new RSAKeyExchange(context,uid).decrypt(myPrivateKey,user_key.getBytes());
+                                                                    String str_real_key=real_key_bytes.toString();
+                                                                    if(new PeopleDBHelper(context,serverkey).checkUID(dataSnapshot.getKey()))
+                                                                        new PeopleDBHelper(context,serverkey).updateEncKeyPerson(dataSnapshot.getKey(),str_real_key);
 
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
 
-                                    }
-                                });
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                                                } catch (Exception e) {
+                                                                    e.printStackTrace();
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public void onCancelled(DatabaseError databaseError) {
+
+                                                            }
+                                                        });
+
+                                                    } catch (NoSuchAlgorithmException e) {
+                                                        e.printStackTrace();
+                                                    } catch (InvalidKeySpecException e) {
+                                                        e.printStackTrace();
+                                                    }
+
+
+                                                }
+                                            });
+                                } catch (IOException e) {
+
+
+                                    e.printStackTrace();
+                                }
+
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -928,8 +1078,6 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                     .child("Connection_Trigger")
                                     .child("act_request_received")
                                     .child("yes").setValue(view.getTag().toString());
-
-
 
                         }
                     });
@@ -964,6 +1112,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                             final String usr_id=view.getTag().toString();
                             if(btn.getTag(R.integer.stat).toString().equals("0"))
                             {
+                                SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+                                final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
                                 final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
                                 trigger_ref.child("Users")
                                         .child(uid)
@@ -971,6 +1121,58 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child("act_request_sent").setValue(view.getTag().toString());
                                 btn.setTag(R.integer.stat,"1");
                                 btn.setImageResource(R.drawable.cancel_cross);
+                                final FirebaseStorage storage = FirebaseStorage.getInstance();
+                                StorageReference storageRef = storage.getReference();
+                                String file_name=view.getTag().toString()+".pub";
+                                final String u_id=view.getTag().toString();
+                                final File localFile;
+                                try {
+                                    localFile = File.createTempFile(file_name, "pub");
+                                    storageRef.child("Public Key/"+file_name).getFile(localFile).addOnSuccessListener(
+                                            new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                                @Override
+                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
+                                                {
+                                                    int size = (int) localFile.length();
+                                                    byte[] bytes = new byte[size];
+                                                    try {
+                                                        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
+                                                        buf.read(bytes, 0, bytes.length);
+                                                        buf.close();
+                                                    } catch (FileNotFoundException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                    } catch (IOException e) {
+                                                        // TODO Auto-generated catch block
+                                                        e.printStackTrace();
+                                                    }
+
+                                                    X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
+                                                    KeyFactory kf = null;
+                                                    try {
+                                                        kf = KeyFactory.getInstance("RSA");
+                                                        PublicKey id_pubkey = kf.generatePublic(ks);
+                                                        byte [] encrypted = new RSAKeyExchange(context,uid).encrypt(id_pubkey, key);     ///set the key in it
+
+                                                        DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                                        key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted.toString());
+
+
+                                                    } catch (NoSuchAlgorithmException e) {
+                                                        e.printStackTrace();
+                                                    } catch (InvalidKeySpecException e) {
+                                                        e.printStackTrace();
+                                                    }
+
+
+                                                }
+                                            });
+                                } catch (IOException e) {
+
+
+                                    e.printStackTrace();
+                                }
+
                             }
                             else
                             {
@@ -1045,10 +1247,14 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         {
             String u_name=new PeopleDBHelper(context,serverkey).getName(conn_ppl.get(i).getUID());
             name.setText(u_name);
+
+            Log.e("LISTNAME","Inside if the name is="+u_name+" uid="+conn_ppl.get(i).getUID());
         }
         else
+        {
             name.setText(conn_ppl.get(i).getName());
-        return view;
+            Log.e("LISTNAME","outside if the name is="+conn_ppl.get(i).getName());
+        } return view;
     }
     ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6
 

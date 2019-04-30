@@ -35,21 +35,25 @@ import java.util.ArrayList;
  * Created by User on 17-Jun-18.
  */
 
-public abstract class DpDownloadService extends IntentService {
+public class DpDownloadService extends Service {
     String dp_dest;
+    String mCurrentPhotoPath;
+    String serverkey;
 
-    public DpDownloadService(String name) {
-        super(name);
-    }
 
     @Override
     public void onCreate()
     {
         super.onCreate();
+
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        serverkey = intent.getStringExtra("username");
         dp_dest = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
-
-
-        //downloadDPs();
+        downloadDPs();
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Nullable
@@ -57,6 +61,7 @@ public abstract class DpDownloadService extends IntentService {
     public IBinder onBind(Intent intent) {
         return null;
     }
+
 
     void downloadDPs()
     {
@@ -125,6 +130,21 @@ public abstract class DpDownloadService extends IntentService {
     }
     boolean checkDpPresent(String dpno,String uid) {
         return new PeopleDBHelper(getBaseContext(),"server key to be set").checkDPNO(dpno, uid);
+    }
+    private File createImageFile(String ext) throws IOException
+    {
+        // Create an image file name
+        String imageFileName = "display pictures";
+        String storageDir = getBaseContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString();
+        File image = new File(storageDir,
+                imageFileName+ /* prefix */
+                        ext /* suffix */
+                /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
     }
 
 }
