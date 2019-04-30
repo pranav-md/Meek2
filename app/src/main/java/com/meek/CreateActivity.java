@@ -162,6 +162,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception exception) {
+                                    Log.e("UPLOAD ERROR",exception+"");
                                 }
                             });
                         else
@@ -205,8 +206,9 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
             map_branch="public";
         }
         SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
-
+        Log.e("SETATTRIBUTES",serverkey+" is the server key");
         String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+        Log.e("SETATTRIBUTES",key+" is the key");
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(new AES().encrypt(lat,key));
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(new AES().encrypt(lng,key));
         userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
@@ -214,8 +216,11 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(type);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,key));
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"",key));
+     //   userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"",key));
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(df.format(new Date())+"",key));
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,key));
+        userRef.child(uid).child("Activity_info").child("Activity_num").setValue(act_num+"");
+
     }
 
     void setActivtiyTab()
@@ -231,52 +236,48 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         setTabsSetActivity();
 
     }
-    void setActFeatureButton()
-    {
-        LinearLayout functions=(LinearLayout)findViewById(R.id.functions);
-        Button actbtn=(Button)functions.findViewById(R.id.activity);
-        Button musicbtn=(Button)functions.findViewById(R.id.music);
 
+    /*     void setActFeatureButton()
+      {
 
-  /*      Realm realm = Realm.getDefaultInstance();
-        realm.beginTransaction();
-        Drawable icon=null;
-        com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
-        if(result!=null)
-            switch(result.activity)
-            {
-                case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                    Log.d("HAH","In Vehicle");
-                    break;
-                case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                    Log.d("HAH","ON_BICYCLE");
-                    break;
+      Realm realm = Realm.getDefaultInstance();
+          realm.beginTransaction();
+          Drawable icon=null;
+          com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
+          if(result!=null)
+              switch(result.activity)
+              {
+                  case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                      Log.d("HAH","In Vehicle");
+                      break;
+                  case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
+                      Log.d("HAH","ON_BICYCLE");
+                      break;
 
-                case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
-                    Log.d("HAH","ON_FOOT");
-                    break;
+                  case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
+                      Log.d("HAH","ON_FOOT");
+                      break;
 
-                case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                    Log.d("HAH","RUNNING");
-                    break;
+                  case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                      Log.d("HAH","RUNNING");
+                      break;
 
-                case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
-                    Log.d("HAH","STILL");
-                    break;
+                  case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
+                      Log.d("HAH","STILL");
+                      break;
 
-                case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                    Log.d("HAH","WALKING");
-                    break;
+                  case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
+                      Log.d("HAH","WALKING");
+                      break;
 
-            }
+              }
 
-        if(icon!=null)
-            actbtn.setBackground(icon);
-        else
-            actbtn.setVisibility(View.INVISIBLE);
-        realm.commitTransaction();
-        realm.close();
-            */
+          if(icon!=null)
+              actbtn.setBackground(icon);
+          else
+              actbtn.setVisibility(View.INVISIBLE);
+          realm.commitTransaction();
+          realm.close();
         AudioManager audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
         ;
         if(audioManager.isMusicActive()==true) {
@@ -289,6 +290,7 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         // else
         //audiotext.setText("Not playing");
     }
+              */
 
     void setTabsSetActivity()
     {

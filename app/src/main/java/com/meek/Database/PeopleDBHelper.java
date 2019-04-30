@@ -286,10 +286,10 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         if(cursor.getCount()!=0)
         {
-            conPPL.add(new Contact(cursor.getString(0),cursor.getString(1),Integer.parseInt(cursor.getString(2)+"")));
+            conPPL.add(new Contact(cursor.getString(0),new AES().decrypt(cursor.getString(1),serverkey),Integer.parseInt(cursor.getString(2)+"")));
             while (cursor.moveToNext()) {
                 Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
-                conPPL.add(new Contact(cursor.getString(0), cursor.getString(1), Integer.parseInt(cursor.getString(2) + "")));
+                conPPL.add(new Contact(cursor.getString(0), new AES().decrypt(cursor.getString(1),serverkey) , Integer.parseInt(cursor.getString(2) + "")));
 
             }
         }
@@ -344,14 +344,14 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     }
 
 
-    void updateEncKeyPerson(int uid,String e_key)
+    public  void updateEncKeyPerson(String uid,String e_key)
     {
         // get writable database as we want to write data
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         if(getNote(uid+"")==null)
             return;
-        PeopleObj pOBj=getNote(uid+"");
+       // PeopleObj pOBj=getNote(uid+"");
         //values.put(UID, uid);
         values.put(E_KY,e_key);
         //values.put(NME,pOBj.getName());

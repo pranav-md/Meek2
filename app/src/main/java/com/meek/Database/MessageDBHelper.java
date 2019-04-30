@@ -81,6 +81,8 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         return tableExists;
     }
 
+
+
     public void createTable()
     {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -98,8 +100,8 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         values.put(MSG_ID, msg_id);
         values.put(MSG_NUM, number+1);
         values.put(SENDER_ID,sender_id);
-        values.put(TEXT,new AES().decrypt(text,serverkey));
-        values.put(DATE,new AES().decrypt(date,serverkey));
+        values.put(TEXT,new AES().encrypt(text,serverkey));
+        values.put(DATE,new AES().encrypt(date,serverkey));
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
         Log.e("INSERT PERSON",msg_id+" written with number of="+number);

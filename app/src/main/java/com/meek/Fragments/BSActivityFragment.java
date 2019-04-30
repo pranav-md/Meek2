@@ -2,6 +2,7 @@ package com.meek.Fragments;
 
 import android.annotation.SuppressLint;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -73,6 +74,7 @@ public class BSActivityFragment extends Fragment
 
         view.findViewById(R.id.progressView).setVisibility(View.VISIBLE);
         DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+        if(uid!=null&&act_id!=null)
         ppl_ref.child("Activities").child(uid).child("All_Activities").child(act_id).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -91,7 +93,7 @@ public class BSActivityFragment extends Fragment
                     else
                         extension = ".png";
                     TextView date_view=(TextView)view.findViewById(R.id.date_view);
-                    date_view.setText(new TimeManage().setTimeString(Long.parseLong(act_date)));
+                   // date_view.setText(new TimeManage().setTimeString(Long.parseLong(act_date)));
 
                     String filename = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString() + "/" + uid + "_" + act_id + "." + extension;
                     if(!new File(filename).exists()) {
@@ -124,7 +126,9 @@ public class BSActivityFragment extends Fragment
         {
             new ActivityViewSetter(getContext()).setVideoView(view);
             VideoView act_vid = (VideoView)view.findViewById(R.id.vid_view);
-            act_vid.setVideoPath(filename+".mp4");
+            Uri u = Uri.parse(filename+".mp4");
+            act_vid.setVideoURI(u);
+            act_vid.start();
             Log.e(" FILE CHECK ","mp4 is found");
             return true;
         }
@@ -139,5 +143,8 @@ public class BSActivityFragment extends Fragment
         Log.e(" FILE CHECK ","file is not found");
         return false;
     }
+
+
+
 
 }

@@ -72,9 +72,7 @@
         <service
             android:name=".Messaging.MessageService"
             android:enabled="true" />
-        <service
-            android:name=".Services.DpDownloadService"
-            android:enabled="true" />
+        <service android:name=".Services.DpDownloadService" />
 
         <activity
             android:name=".MainActivity"
@@ -156,7 +154,6 @@
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service android:name=".ActivityService" />
         <service android:name=".Services.ConnectionService" />
 
         <activity

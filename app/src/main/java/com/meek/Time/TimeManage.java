@@ -13,7 +13,7 @@ public class TimeManage {
     public String setTimeString(Long milli_time)
     {
         long days,hours,min;
-        String returnMsg;
+        String returnMsg=" ";
         DateFormat df = DateFormat.getTimeInstance();
         df.setTimeZone(TimeZone.getTimeZone("GMT"));
         long difference = Long.parseLong(df.format(new Date())) - milli_time;

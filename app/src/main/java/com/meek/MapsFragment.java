@@ -511,6 +511,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                if(!dataSnapshot.exists())
                 for (DataSnapshot ds : dataSnapshot.getChildren())
                 {
                     Activities newone=new Activities();

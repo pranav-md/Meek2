@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Environment;
@@ -38,9 +40,11 @@ import com.meek.Database.MessageDBHelper;
 import com.meek.Fragments.MyProfileFrag;
 import com.meek.Messaging.MessageService;
 import com.meek.Services.ConnectionService;
+import com.meek.Services.DpDownloadService;
 //import com.meek.Services.LocationService;
 
 import java.util.List;
+import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -68,26 +72,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.container);
-        dp = (CircleImageView) findViewById(R.id.dp);
-        tabFragment = new TabFragment(MainActivity.this,server_key);
-        /////////
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         server_key = extras.getString("ServerKey");
+
+        dp = (CircleImageView) findViewById(R.id.dp);
+        tabFragment = new TabFragment(MainActivity.this,server_key);
+        /////////
+
+        Log.e("MAINACT",server_key+" is server key");
+
 
         String sFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Meek/DisplayPic";
         String localFilename = sFolder + "/dp.jpg";
         Bitmap dp_bm= BitmapFactory.decodeFile(localFilename);
         dp.setImageBitmap(dp_bm);
-      //  CompressAsyncTask task = new CompressAsyncTask(this);
-    //    task.execute();
-        /////////////////
-       // new MessageDBHelper(this);
 
-       // startService(new Intent(this,MessageService.class));
-        intent=new Intent(this,ConnectionService.class);
+
+        intent=new Intent(this,MessageService.class);
         intent.putExtra("ServerKey",server_key);
-        //startService(intent);
+        startService(intent);
+
+        intent=new Intent(this, DpDownloadService.class);
+        intent.putExtra("ServerKey",server_key);
+        startService(intent);
 
         FragmentManager tabfm = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();
@@ -331,6 +339,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             edit_pref.putString("lat",location.getLatitude()+"");
             edit_pref.putString("lng",location.getLongitude()+"");
+
+            try {
+                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                edit_pref.putString("place",addresses.get(0).getAddressLine(1).replace("null","")+", "+addresses.get(0).getAddressLine(2).replace("null","")+"");
+
+            }catch(Exception e)
+            {
+
+            }
+
+
             edit_pref.commit();
 
             cur_location = new LatLng(location.getLatitude(), location.getLongitude());

@@ -27,7 +27,12 @@ public class AccountSetup extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 EditText name=(EditText)findViewById(R.id.enter_name);
+
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                SharedPreferences.Editor edit=pref.edit();
+
+                edit.putString("Name",name.getText().toString());
+                edit.commit();
                 DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
                 act_ref.child("NAMES").child(pref.getString("uid","")).setValue(name.getText().toString());
                 String server_key=random();

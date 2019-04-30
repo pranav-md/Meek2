@@ -10,17 +10,24 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.meek.Encryption.FingerPrintActivity;
+import com.meek.MainActivity;
 import com.meek.R;
 
 public class StartScreen extends AppCompatActivity {
-
+String uid,serverkey;
+boolean keylock=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.content_start_screen);
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
-        String uid=pref.getString("uid", "");
+        uid=pref.getString("uid", "");
         if (!pref.getString("uid", "").equals("")) {
 
             Runnable runnable = new Runnable() {
@@ -31,9 +38,8 @@ public class StartScreen extends AppCompatActivity {
             };
             Thread mythread = new Thread(runnable);
             mythread.start();
-
-            startActivity(new Intent(StartScreen.this, FingerPrintActivity.class));
-            finish();
+            findViewById(R.id.get_started).setVisibility(View.INVISIBLE);
+            getServerKey();
         }
 
         Button btn=(Button)findViewById(R.id.get_started);
@@ -44,6 +50,30 @@ public class StartScreen extends AppCompatActivity {
                 finish();
             }
         });
+
+    }
+
+    void getServerKey()
+    {
+        DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
+
+        act_feed_ref.child("Server_Key").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                serverkey=dataSnapshot.getValue().toString();
+                keylock=true;
+                Intent intent=new Intent(StartScreen.this, MainActivity.class);
+                intent.putExtra("ServerKey",serverkey);
+                startActivity(intent);
+                finish();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
 
     }
 

@@ -70,7 +70,7 @@ public class ContactSync {
     }
 
 
-    public static String getSHA(String input)
+    public String getSHA(String input)
     {
 
         try {

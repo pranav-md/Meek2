@@ -46,7 +46,7 @@ public class MessageListMaker extends AppCompatActivity
     String uid,r_uid,msg_id;
     int upr_bound=0,lwr_bound=0;
     ListView messagesList;
-    String serverkey;
+    String serverkey,key;
     MessageListAdapter messageListAdapter=null;
 
 
@@ -73,6 +73,8 @@ public class MessageListMaker extends AppCompatActivity
         msg_id=msgID(uid,r_uid);
         Log.e("MSG_ID is",msg_id+" msg id is here");
         messagesList=findViewById(R.id.messagesList);
+        SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
+        key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
 
         getMSGS(msg_id);
         setTop(name);
@@ -125,16 +127,20 @@ public class MessageListMaker extends AppCompatActivity
         EditText msg=(EditText)findViewById(R.id.input);
         String text=msg.getText().toString();
         msg.setText("");
-
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/M/yyyy kk:mm:ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        String date=simpleDateFormat.format(new Date())+"";
+        try {
+            Date getDate=simpleDateFormat.parse(simpleDateFormat.format(new Date()));
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(getDate);
+            new MessageDBHelper(this,serverkey).insertMessage(msg_id,uid,text,calendar.getTimeInMillis()+"");
+            DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
+            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,key));
+            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
 
-        DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
-        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(date,"pmdrox"));
-        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,"pmdrox"));
-
-        new MessageDBHelper(this,serverkey).insertMessage(msg_id,uid,new AES().encrypt(text,"pmdrox"),new AES().encrypt(date,"pmdrox"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
         getMSGS(msg_id);
     }
 
@@ -164,8 +170,6 @@ public class MessageListMaker extends AppCompatActivity
 
         SimpleDateFormat df2 = new SimpleDateFormat(" HH:mm: a");
         df2.setTimeZone(TimeZone.getDefault());
-
-
         Date date = null;
         try {
             date = df.parse(time);
@@ -173,7 +177,6 @@ public class MessageListMaker extends AppCompatActivity
             e.printStackTrace();
         }
         String formattedDate = df2.format(date);
-
         return formattedDate;
     }
 
