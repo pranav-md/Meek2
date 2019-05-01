@@ -12,6 +12,7 @@ import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -428,8 +429,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         }
         FragmentActivity activity = getActivity();
         if(activity != null) {
-            actSeenAdapter.getData(act_seen_feed, getContext(), getChildFragmentManager());
-            actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager());
+            actSeenAdapter.getData(act_seen_feed, getContext(), getChildFragmentManager(),server_key);
+            actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager(),server_key);
             if (seen) {
                 if (seen_adapted) {
                     actSeenAdapter.notifyDataSetChanged();
@@ -546,6 +547,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         setConnectionList();
     }
 
+
+    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6  act_acc_key=7
     void setConnection()
     {
         if(!new PeopleDBHelper(getContext(),server_key).checkTable())
@@ -560,229 +563,56 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 String location_meek=dataSnapshot.child("location_meek").getValue().toString();
                 String sent_request=dataSnapshot.child("act_request_sent").getValue().toString();
                 String received_request=dataSnapshot.child("act_request_received").getValue().toString();
+                String accept_keys=dataSnapshot.child("act_acc_key").getValue().toString();
+
 
                 ArrayList<String> meek_cons=extractor(con_meek);
                 ArrayList<String> activity_cons=extractor(activity_meek);
                 ArrayList<String> loc_cons=extractor(location_meek);
                 ArrayList<String> sent_req_cons=extractor(sent_request);
                 ArrayList<String> rcv_req_cons=extractor(received_request);
+                ArrayList<String> act_acc_key=extractor(accept_keys);
 
-                ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
+                ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6  act_acc_key=7
+                ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
 
                 new PeopleDBHelper(getContext(),server_key);
                 for(final String id:meek_cons)
                 {
                     Log.e("MEEK CONS","id="+id);
-                    if(!(new PeopleDBHelper(context,server_key).checkUID(id)))
-                    {
-                        Log.e("Conn meek_con setting","current id="+id);
-                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot)
-                            {
-                                final String phnm=dataSnapshot.getValue().toString();
-                                if(phnm!=null)
-                                {
-                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            String name =dataSnapshot.getValue().toString();
-                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,1);
-                                   //         new PeopleDBHelper(getContext(),server_key).updateName(name,id);
-                                            Log.e("USERNAME","inside dbref name= "+name);
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,1)))
-                    {
-                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,1);
-                    }
+                    checkInsertPerson(id,2);
                 }
                 ///////////
                 for(final String id:activity_cons)
                 {
                     Log.e("ACTIVITY CONS","id="+id);
-                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
-                    {
-                        Log.e("Conn activity setting","current id="+id);
-                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm=dataSnapshot.getValue().toString();
-                                if(phnm!=null){
-                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            String name =dataSnapshot.getValue().toString();
-                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,2);
-                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
-                                            Log.e("USERNAME","inside dbref name= "+name);
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,2)))
-                    {
-                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,2);
-                    }
+                    checkInsertPerson(id,3);
                 }
 
                 for(final String id:loc_cons)
                 {
                     Log.e("LOC CONS","id="+id);
-                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
-                    {
-                        Log.e("Checked loc CONS","id="+id);
-                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm=dataSnapshot.getValue().toString();
-                                if(phnm!=null){
-                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            String name =dataSnapshot.getValue().toString();
-                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,3);
-                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
-                                            Log.e("USERNAME","inside dbref name= "+name);
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-
-                                }
-
-                                Log.e("INSIDE datasnapshot",phnm+"_phone num retrieved");
-                                //  setConnectionList();
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,3)))
-                    {
-                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,3);
-                    }
+                    checkInsertPerson(id,4);
                 }
 
                 for(final String id:sent_req_cons)
                 {
                     Log.e("ACT RQ SNT","id="+id);
-                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
-                    {
-                        Log.e("Conn activity setting","current id="+id);
-                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm = dataSnapshot.getValue().toString();
-                                if (phnm != null) {
-                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            String name =dataSnapshot.getValue().toString();
-                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id, name, phnm, 4);
-                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
-                                            Log.e("USERNAME","inside dbref name= "+name);
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,4)))
-                    {
-                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,4);
-                    }
+                    checkInsertPerson(id,1);
                 }
 
                 for(final String id:rcv_req_cons)
                 {
                     Log.e("ACT RQ SNT","id="+id);
-                    if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
-                    {
-                        Log.e("Conn activity setting","current id="+id);
-                        ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                final String phnm=dataSnapshot.getValue().toString();
-                                if(phnm!=null){
-                                    final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                                    ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            String name =dataSnapshot.getValue().toString();
-                                            new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,5);
-                                            new PeopleDBHelper(getContext(),server_key).updateName(name,id);
-                                            Log.e("USERNAME","inside dbref name= "+name);
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                    }
-                    else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,5)))
-                    {
-                        new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,5);
-                    }
+                    checkInsertPerson(id,5);
                 }
 
+                for(final String id:act_acc_key)
+                {
+                    Log.e("ACT KEY RTV","id="+id);
+                    checkInsertPerson(id,2);
+                    getEncKey(id);
+                }
 
                 // setConnectionList();
 
@@ -796,6 +626,80 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         });
     }
 
+    void checkInsertPerson(final String id, final int con_stat)
+    {
+        final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+        if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id)))
+        {
+            Log.e("Conn activity setting","current id="+id);
+            ppl_ref.child("Users").child(id).child("Info").child("phno").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    final String phnm=dataSnapshot.getValue().toString();
+                    if(phnm!=null){
+                        final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                        ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                String name =dataSnapshot.getValue().toString();
+                                new PeopleDBHelper(getContext(),server_key).insertPerson(id,name,phnm,con_stat);
+                                new PeopleDBHelper(getContext(),server_key).updateName(name,id);
+                                Log.e("USERNAME","inside dbref name= "+name);
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+        }
+        else if(!(new PeopleDBHelper(getContext(),server_key).checkUID(id,con_stat)))
+        {
+            new PeopleDBHelper(getContext(),server_key).changePersonStatus(id,con_stat);
+        }
+    }
+
+    void getEncKey(String id)
+    {
+        DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+        key_ref.child("Key_Exchange").child(uid).child(id).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                String user_key=dataSnapshot.getValue().toString();
+                Log.e("Key SHOT","dB Key="+user_key);
+                PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
+                Log.e("PRIVATE KEY","myprivatekey="+Base64.encodeToString(myPrivateKey.getEncoded(),Base64.NO_WRAP)+"  privatekeyformat="+myPrivateKey.getFormat());
+                try {
+                    String str_real_key=new RSAKeyExchange(context,uid).decrypt(myPrivateKey,user_key);
+
+                    if(new PeopleDBHelper(context,server_key).checkUID(dataSnapshot.getKey()))
+                        new PeopleDBHelper(context,server_key).updateEncKeyPerson(dataSnapshot.getKey(),new AES().encrypt(str_real_key,server_key));
+
+                    Log.e("ACT RQ AC","KEY IS="+str_real_key);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.e("ERROR STUCKED","ERROR IS="+e);
+
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+    }
 
 
 
@@ -943,7 +847,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         return 0;
     }
 
-    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6
+    ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         Log.e("CONN ADAPTER","NAME:"+conn_ppl.get(i).getName()+"   UID:"+conn_ppl.get(i).getUID());
@@ -966,6 +870,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 .child("Connection_Trigger")
                                 .child("loc_request_received")
                                 .child("yes").setValue(view.getTag().toString());
+                        new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),4);
 
                     }
                 });
@@ -979,6 +884,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 .child("Connection_Trigger")
                                 .child("loc_request_received")
                                 .child("no").setValue(view.getTag().toString());
+                        new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
+
                     }
                 });
                 break;
@@ -1015,32 +922,10 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                                 DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
                                                 key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted);
 
-                                                key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(DataSnapshot dataSnapshot) {
-                                                        String user_key=dataSnapshot.getValue().toString();
-                                                        Log.e("Key SHOT","dB Key="+user_key);
-                                                        PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
-                                                        Log.e("PRIVATE KEY","myprivatekey="+Base64.encodeToString(myPrivateKey.getEncoded(),Base64.NO_WRAP)+"  privatekeyformat="+myPrivateKey.getFormat());
-                                                        try {
-                                                            String str_real_key=new RSAKeyExchange(context,uid).decrypt(myPrivateKey,user_key);
+                                                MainActivity ma=(MainActivity) context ;
+                                                ma.tabFragment.getEncKey(view.getTag().toString());
+                                                new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
 
-                                                            if(new PeopleDBHelper(context,serverkey).checkUID(dataSnapshot.getKey()))
-                                                                new PeopleDBHelper(context,serverkey).updateEncKeyPerson(dataSnapshot.getKey(),str_real_key);
-                                                            Log.e("ACT RQ AC","KEY IS="+str_real_key);
-
-                                                        } catch (Exception e) {
-                                                            e.printStackTrace();
-                                                            Log.e("ERROR STUCKED","ERROR IS="+e);
-
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onCancelled(DatabaseError databaseError) {
-
-                                                    }
-                                                });
 
                                             } catch (NoSuchAlgorithmException e) {
                                                 e.printStackTrace();
@@ -1085,17 +970,22 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                     .child("act_request_received")
                                     .child("no").setValue(view.getTag().toString());
 
+                            new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),2);
                         }
                     });
                     break;
 
+            case 4:  view = inflater.inflate(R.layout.viewer_list_item, null);
+                    break;
+                    ///Location connected
+
+
             case 3: view = inflater.inflate(R.layout.viewer_list_item, null);
                     break;
 
-            case 2: view = inflater.inflate(R.layout.viewer_list_item, null);
-                    view.setBackgroundResource(R.drawable.bg_conmeek);
-                    break;
-            case 1: view = inflater.inflate(R.layout.meek_con_item, null);
+            case 2: /*view = inflater.inflate(R.layout.viewer_list_item, null);
+                    view.setBackgroundResource(R.drawable.bg_conmeek);*/
+                    view = inflater.inflate(R.layout.meek_con_item, null);
                     final CircleImageView btn=(CircleImageView)view.findViewById(R.id.add);
                     btn.setTag(conn_ppl.get(i).getUID());
                     btn.setTag(R.integer.stat,"0");
@@ -1115,42 +1005,44 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child("act_request_sent").setValue(view.getTag().toString());
                                 btn.setTag(R.integer.stat,"1");
                                 btn.setImageResource(R.drawable.cancel_cross);
-                                 final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                                final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
                                 String file_name=view.getTag().toString()+".pub";
                                 final String u_id=view.getTag().toString();
                                 final File localFile;
                                 ppl_ref.child("PublicKey").child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                   @Override
-                                   public void onDataChange(DataSnapshot dataSnapshot) {
-                                       PublicKey pubkey=null;
-                                       try{
-                                           byte[] byteKey = Base64.decode(dataSnapshot.getValue().toString().getBytes(), Base64.NO_WRAP);
-                                           X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
-                                           KeyFactory kf = KeyFactory.getInstance("RSA");
-                                           pubkey=kf.generatePublic(X509publicKey);
-                                           Log.e("PUBLICKEY","Retrieved pkey="+Base64.encodeToString(pubkey.getEncoded(),Base64.NO_WRAP));
-                                           SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
-                                           final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
-                                           Log.e("AES KEY","The KEY="+key);
-                                           String encrypted = new RSAKeyExchange(context,uid).encrypt(pubkey, key);     ///set the key in it
-                                           Log.e("AES KEY","The KEY after encryption="+key);
-                                           DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
-                                           key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted);
-
-                                       } catch (NoSuchAlgorithmException e) {
-                                           e.printStackTrace();
-                                       } catch (InvalidKeySpecException e) {
-                                           e.printStackTrace();
-                                       }
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                        PublicKey pubkey=null;
+                                        try{
+                                            byte[] byteKey = Base64.decode(dataSnapshot.getValue().toString().getBytes(), Base64.NO_WRAP);
+                                            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+                                            KeyFactory kf = KeyFactory.getInstance("RSA");
+                                            pubkey=kf.generatePublic(X509publicKey);
+                                            Log.e("PUBLICKEY","Retrieved pkey="+Base64.encodeToString(pubkey.getEncoded(),Base64.NO_WRAP));
+                                            SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+                                            final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+                                            Log.e("AES KEY","The KEY="+key);
+                                            String encrypted = new RSAKeyExchange(context,uid).encrypt(pubkey, key);     ///set the key in it
+                                            Log.e("AES KEY","The KEY after encryption="+key);
+                                            DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                            key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted);
+                                            new PeopleDBHelper(context,serverkey).changePersonStatus(u_id,1);
 
 
-                                   }
+                                        } catch (NoSuchAlgorithmException e) {
+                                            e.printStackTrace();
+                                        } catch (InvalidKeySpecException e) {
+                                            e.printStackTrace();
+                                        }
 
-                                   @Override
-                                   public void onCancelled(DatabaseError databaseError) {
 
-                                   }
-                               });
+                                    }
+
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
+
+                                    }
+                                });
 
                             }
                             else
@@ -1161,63 +1053,70 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child("Connection_Trigger")
                                         .child("act_request_reject").setValue(view.getTag().toString());
                                 btn.setTag(R.integer.stat,"0");
+                                new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),1);
+
                                 btn.setImageResource(R.drawable.add_img);
                             }
                         }
                     });
-                    break;
-            case 4: view = inflater.inflate(R.layout.meek_con_item, null);
+                        break;
+            case 1: ///
+                    view = inflater.inflate(R.layout.meek_con_item, null);
                     final CircleImageView btn2=(CircleImageView)view.findViewById(R.id.add);
                     btn2.setImageResource(R.drawable.cancel_cross);
                     btn2.setTag(conn_ppl.get(i).getUID());
                     btn2.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        final String usr_id=view.getTag().toString();
-                        final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                        ppl_ref.child("Users").child(usr_id)
-                                .child("Connections")
-                                .child("act_request_received")
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot)
-                                    {
-                                        String rcv_id=dataSnapshot.getValue().toString();
-                                        ppl_ref.child("Users").child(usr_id)
+                        @Override
+                        public void onClick(View view) {
+                            final String usr_id=view.getTag().toString();
+                            final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+                            ppl_ref.child("Users").child(usr_id)
+                                    .child("Connections")
+                                    .child("act_request_received")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String rcv_id=dataSnapshot.getValue().toString();
+                                            ppl_ref.child("Users").child(usr_id)
                                                     .child("Connections")
                                                     .child("act_request_received").setValue(rcv_id.replace(uid+":",""));
-                                    }
 
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
+                                            new PeopleDBHelper(context,serverkey).changePersonStatus(usr_id,2);
+                                        }
 
-                                    }
-                                });
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
 
 
-                        ppl_ref.child("Users").child(uid)
-                                .child("Connections")
-                                .child("act_request_sent")
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot)
-                                    {
-                                        String sent_id=dataSnapshot.getValue().toString();
-                                        ppl_ref.child("Users").child(uid)
+                            ppl_ref.child("Users").child(uid)
+                                    .child("Connections")
+                                    .child("act_request_sent")
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot)
+                                        {
+                                            String sent_id=dataSnapshot.getValue().toString();
+                                            ppl_ref.child("Users").child(uid)
                                                     .child("Connections")
                                                     .child("act_request_sent").setValue(sent_id.replace(":"+usr_id,""));
-                                    }
+                                        }
 
-                                    @Override
-                                    public void onCancelled(DatabaseError databaseError) {
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
 
-                                    }
-                                });
-                        btn2.setImageResource(R.drawable.cancel_cross);
+                                        }
+                                    });
+                            btn2.setImageResource(R.drawable.cancel_cross);
 
-                    }
-                });
-                break;
+                        }
+                   ////NEED TO FIX THINGS HERE
+                    });
+                    break;
+
         }
         ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5
 
@@ -1235,7 +1134,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
             Log.e("LISTNAME","outside if the name is="+conn_ppl.get(i).getName());
         } return view;
     }
-    ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6
+    ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
 
     @Override
     public View getHeaderView(int position, View convertView, ViewGroup parent)
@@ -1245,24 +1144,19 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
         TextView name=(TextView) view.findViewById(R.id.header);
         switch(conn_ppl.get(position).conn_level)
         {
-            case 6: name.setText("Location Access Requests");
-                view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
-                break;
-
-            case 5: name.setText("Received Activity Requests");
+            case 6:
+            case 5: name.setText("Requests");
                     view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
                     break;
-            case 4: name.setText("Sent Activity Requests");
+            case 4:
+            case 3: name.setText("Connections");
                     view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
                     break;
-            case 3: name.setText("Location access");
-                    view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_loccon) );
-                    break;
-            case 2: name.setText("Activity access");
+            case 2: name.setText("Contacts");
                     view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.meek_actcon) );
                     break;
             case 1: view.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.bg_conmeek) );
-                    name.setText("Connected in meek");
+                    name.setText("Sent Requests");
                     break;
         }
         return view;

@@ -44,15 +44,17 @@ public class BSActivityFragment extends Fragment
 {
     String uid,act_id;
     View view;
+    String serverkey;
    // ShimmerLayout shim_content;
 
     BSActivityFragment()
     {}
     @SuppressLint("ValidFragment")
-    public BSActivityFragment(String uid, String act_id)
+    public BSActivityFragment(String uid, String act_id,String serverkey)
     {
         this.act_id=act_id;
         this.uid=uid;
+        this.serverkey=serverkey;
     }
 
     @Nullable
@@ -98,11 +100,11 @@ public class BSActivityFragment extends Fragment
                     String filename = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString() + "/" + uid + "_" + act_id + "." + extension;
                     if(!new File(filename).exists()) {
                         if (Integer.parseInt(act_type) < 3) {
-                            new ActivityViewSetter(getContext()).fileDownload(uid, act_id, act_type, view);
+                            new ActivityViewSetter(getContext(),uid,serverkey).fileDownload(uid, act_id, act_type, view);
                             TextView caption = (TextView) view.findViewById(R.id.caption);
                             caption.setText(act_text);
                         } else {
-                            new ActivityViewSetter(getContext()).setTextView(view);
+                            new ActivityViewSetter(getContext(),uid,serverkey).setTextView(view);
                             AutofitTextView caption = (AutofitTextView) view.findViewById(R.id.text_view);
                             caption.setText(act_text);
                         }
@@ -124,7 +126,7 @@ public class BSActivityFragment extends Fragment
         Log.e(" FILE CHECK ","filename= "+ filename);
         if((new File(filename+".mp4")).isFile())
         {
-            new ActivityViewSetter(getContext()).setVideoView(view);
+            new ActivityViewSetter(getContext(),uid,serverkey).setVideoView(view);
             VideoView act_vid = (VideoView)view.findViewById(R.id.vid_view);
             Uri u = Uri.parse(filename+".mp4");
             act_vid.setVideoURI(u);
@@ -134,7 +136,7 @@ public class BSActivityFragment extends Fragment
         }
         else if((new File(filename+".png")).isFile())
         {
-            new ActivityViewSetter(getContext()).setImageView(view);
+            new ActivityViewSetter(getContext(),uid,serverkey).setImageView(view);
             ImageView act_img = (ImageView) view.findViewById(R.id.img_view);
             act_img.setImageBitmap(BitmapFactory.decodeFile(filename+".png"));
             Log.e(" FILE CHECK ","png is found");

@@ -16,15 +16,17 @@ class MapActivitiesPageAdapter extends FragmentPagerAdapter
 {
     ArrayList<Activities> activities;
     String u_uid;
+    String serverkey;
 
-    public MapActivitiesPageAdapter(FragmentManager childFragmentManager, String u_uid) {
+    public MapActivitiesPageAdapter(FragmentManager childFragmentManager, String u_uid,String serverkey) {
         super(childFragmentManager);
         this.u_uid=u_uid;
+        this.serverkey=serverkey;
     }
     @Override
     public Fragment getItem(int position)
     {
-        BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,activities.get(position).act_id);
+        BSActivityFragment bsActivitiesFragment=new BSActivityFragment(u_uid,activities.get(position).act_id,serverkey);
         return bsActivitiesFragment;
     }
     void setData(ArrayList<Activities> map_activities)

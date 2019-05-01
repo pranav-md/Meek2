@@ -22,13 +22,15 @@ public class ActFeedAdapter extends BaseAdapter {
     ArrayList<ActFeed> actFeeds;
     FragmentManager fragmentManager;
     Context context;
+    String serverkey;
     boolean exp_chk=false;
 
-    void getData(ArrayList<ActFeed> actFeeds, Context context, FragmentManager fragmentManager)
+    void getData(ArrayList<ActFeed> actFeeds, Context context, FragmentManager fragmentManager,String serverkey)
    {
        this.actFeeds=actFeeds;
        this.context=context;
         this.fragmentManager=fragmentManager;
+        this.serverkey=serverkey;
    }
 
     @Override
@@ -49,7 +51,7 @@ public class ActFeedAdapter extends BaseAdapter {
     @Override
     public View getView(final int i, View view, ViewGroup viewGroup)
     {
-        final MapActivitiesPageAdapter pg_adapter=new MapActivitiesPageAdapter(fragmentManager,actFeeds.get(i).a_uid);
+        final MapActivitiesPageAdapter pg_adapter=new MapActivitiesPageAdapter(fragmentManager,actFeeds.get(i).a_uid,serverkey);
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         view = inflater.inflate(R.layout.act_feed_item, null);
         final ViewPager viewPager=view.findViewById(R.id.act_page);

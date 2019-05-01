@@ -14,6 +14,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.meek.Database.PeopleDBHelper;
 import com.meek.Encryption.AES;
 
 import java.io.File;
@@ -29,9 +30,14 @@ import io.supercharge.shimmerlayout.ShimmerLayout;
 
 public class ActivityViewSetter {
     Context context;
-    public ActivityViewSetter(Context context)
+    String id;
+    String serverkey;
+    public ActivityViewSetter(Context context,String id,String serverkey)
+
     {
+        this.id=id;
         this.context=context;
+        this.serverkey=serverkey;
     }
     public void copyFile(File sourceFile, File destFile) throws IOException {
         if (!destFile.getParentFile().exists())
@@ -122,10 +128,10 @@ public static void copy(File src, File dst) throws IOException {
     {
         AES decrypt=new AES();
         File actFile = new  File(storageDir+"/"+filename.replace(".crypt",extension));
-
+        String enckey=new PeopleDBHelper(context,serverkey).getEncKey(id);
         if(extension.equals(".png"))
         {
-            decrypt.decryptActivityImage("pmdrox",storageDir,filename.replace(".crypt",""));
+            decrypt.decryptActivityImage(enckey,storageDir,filename.replace(".crypt",""));
 
             if(actFile.exists())
             {

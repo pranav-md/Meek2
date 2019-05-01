@@ -243,6 +243,23 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         }
         return new AES().decrypt(name,serverkey);
     }
+    public String getEncKey(String id)
+    {
+        String query = "SELECT " + E_KY + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =?";
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, new String[]{id});
+        Log.e("checkUID","UID="+id+"   the cursor count="+cursor.getCount());
+        String enckey="";
+        try {
+            cursor.moveToFirst();
+            name=cursor.getString(0);
+        }
+        catch (CursorIndexOutOfBoundsException ex){
+            name="";
+        }
+        return new AES().decrypt(name,serverkey);
+    }
+
 
     public void updateName(String name, String uid)
     {
@@ -375,6 +392,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
     }
 
 
+
     public PeopleObj getNote(String id) {
         // get readable database as we are not inserting anything
         SQLiteDatabase db = this.getReadableDatabase();
@@ -404,8 +422,6 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         else {
             return null;
         }
-
-
     }
 
 
