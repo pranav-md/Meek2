@@ -39,6 +39,8 @@ public class AccountSetup extends AppCompatActivity {
 
                 act_ref.child("Server_Key").child(pref.getString("uid","")).setValue(server_key);
 
+                act_ref.child("Users").child(pref.getString("uid","")).child("Details2").child("name").setValue(server_key);
+
                 Intent intent=new Intent(AccountSetup.this,EnterKey.class);
                 intent.putExtra("ServerKey",server_key);
                 startActivity(intent);

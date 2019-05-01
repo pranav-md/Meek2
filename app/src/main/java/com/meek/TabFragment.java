@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -991,79 +992,71 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                         @Override
                         public void onClick(final View view) {
                             try {
-                                final FirebaseStorage storage = FirebaseStorage.getInstance();
-                                StorageReference storageRef = storage.getReference();
+                                DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
                                 String file_name=view.getTag().toString()+".pub";
                                 final File localFile;
                                 try {
                                     localFile = File.createTempFile(file_name, "pub");
-                                    storageRef.child("Public Key/"+file_name).getFile(localFile).addOnSuccessListener(
-                                            new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
-                                                {
-                                                    int size = (int) localFile.length();
-                                                    byte[] bytes = new byte[size];
-                                                    try {
-                                                        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
-                                                        buf.read(bytes, 0, bytes.length);
-                                                        buf.close();
-                                                    } catch (FileNotFoundException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                    } catch (IOException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
+                                    ppl_ref.child("PublicKey").child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            PublicKey pubkey=null;
+                                            try{
+                                                byte[] byteKey = Base64.decode(dataSnapshot.getValue().toString().getBytes(), Base64.NO_WRAP);
+                                                X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+                                                KeyFactory kf = KeyFactory.getInstance("RSA");
+                                                pubkey=kf.generatePublic(X509publicKey);
+
+                                                SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+                                                final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+                                                Log.e("AES KEY","The KEY="+key);
+                                                String encrypted = new RSAKeyExchange(context,uid).encrypt(pubkey, key);     ///set the key in it
+                                                Log.e("AES KEY","The KEY after encryption="+encrypted);
+                                                DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                                key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted);
+
+                                                key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                                        String user_key=dataSnapshot.getValue().toString();
+                                                        Log.e("Key SHOT","dB Key="+user_key);
+                                                        PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
+                                                        Log.e("PRIVATE KEY","myprivatekey="+Base64.encodeToString(myPrivateKey.getEncoded(),Base64.NO_WRAP)+"  privatekeyformat="+myPrivateKey.getFormat());
+                                                        try {
+                                                            String str_real_key=new RSAKeyExchange(context,uid).decrypt(myPrivateKey,user_key);
+
+                                                            if(new PeopleDBHelper(context,serverkey).checkUID(dataSnapshot.getKey()))
+                                                                new PeopleDBHelper(context,serverkey).updateEncKeyPerson(dataSnapshot.getKey(),str_real_key);
+                                                            Log.e("ACT RQ AC","KEY IS="+str_real_key);
+
+                                                        } catch (Exception e) {
+                                                            e.printStackTrace();
+                                                            Log.e("ERROR STUCKED","ERROR IS="+e);
+
+                                                        }
                                                     }
 
-                                                    X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
-                                                    KeyFactory kf = null;
-                                                    try {
-                                                        kf = KeyFactory.getInstance("RSA");
-                                                        PublicKey id_pubkey = kf.generatePublic(ks);
-                                                        SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
-                                                        final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+                                                    @Override
+                                                    public void onCancelled(DatabaseError databaseError) {
 
-                                                        byte [] encrypted = new RSAKeyExchange(context,uid).encrypt(id_pubkey, key);     ///set the key in it
-
-                                                        DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
-                                                        key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted.toString());
-
-                                                        key_ref.child("Key_Exchange").child(uid).child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                                            @Override
-                                                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                                                String user_key=dataSnapshot.getValue().toString();
-                                                                PrivateKey myPrivateKey=new RSAKeyExchange(context,uid).myPrivateKey();
-                                                                try {
-                                                                    byte[] real_key_bytes=new RSAKeyExchange(context,uid).decrypt(myPrivateKey,user_key.getBytes());
-                                                                    String str_real_key=real_key_bytes.toString();
-                                                                    if(new PeopleDBHelper(context,serverkey).checkUID(dataSnapshot.getKey()))
-                                                                        new PeopleDBHelper(context,serverkey).updateEncKeyPerson(dataSnapshot.getKey(),str_real_key);
-
-
-                                                                } catch (Exception e) {
-                                                                    e.printStackTrace();
-                                                                }
-                                                            }
-
-                                                            @Override
-                                                            public void onCancelled(DatabaseError databaseError) {
-
-                                                            }
-                                                        });
-
-                                                    } catch (NoSuchAlgorithmException e) {
-                                                        e.printStackTrace();
-                                                    } catch (InvalidKeySpecException e) {
-                                                        e.printStackTrace();
                                                     }
+                                                });
+
+                                            } catch (NoSuchAlgorithmException e) {
+                                                e.printStackTrace();
+                                            } catch (InvalidKeySpecException e) {
+                                                e.printStackTrace();
+                                            }
 
 
-                                                }
-                                            });
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 } catch (IOException e) {
-
-
                                     e.printStackTrace();
                                 }
 
@@ -1114,6 +1107,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                             {
                                 SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
                                 final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+
                                 final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
                                 trigger_ref.child("Users")
                                         .child(uid)
@@ -1121,57 +1115,42 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child("act_request_sent").setValue(view.getTag().toString());
                                 btn.setTag(R.integer.stat,"1");
                                 btn.setImageResource(R.drawable.cancel_cross);
-                                final FirebaseStorage storage = FirebaseStorage.getInstance();
-                                StorageReference storageRef = storage.getReference();
+                                 final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
                                 String file_name=view.getTag().toString()+".pub";
                                 final String u_id=view.getTag().toString();
                                 final File localFile;
-                                try {
-                                    localFile = File.createTempFile(file_name, "pub");
-                                    storageRef.child("Public Key/"+file_name).getFile(localFile).addOnSuccessListener(
-                                            new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot)
-                                                {
-                                                    int size = (int) localFile.length();
-                                                    byte[] bytes = new byte[size];
-                                                    try {
-                                                        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(localFile));
-                                                        buf.read(bytes, 0, bytes.length);
-                                                        buf.close();
-                                                    } catch (FileNotFoundException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                    } catch (IOException e) {
-                                                        // TODO Auto-generated catch block
-                                                        e.printStackTrace();
-                                                    }
+                                ppl_ref.child("PublicKey").child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                   @Override
+                                   public void onDataChange(DataSnapshot dataSnapshot) {
+                                       PublicKey pubkey=null;
+                                       try{
+                                           byte[] byteKey = Base64.decode(dataSnapshot.getValue().toString().getBytes(), Base64.NO_WRAP);
+                                           X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+                                           KeyFactory kf = KeyFactory.getInstance("RSA");
+                                           pubkey=kf.generatePublic(X509publicKey);
+                                           Log.e("PUBLICKEY","Retrieved pkey="+Base64.encodeToString(pubkey.getEncoded(),Base64.NO_WRAP));
+                                           SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+                                           final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+                                           Log.e("AES KEY","The KEY="+key);
+                                           String encrypted = new RSAKeyExchange(context,uid).encrypt(pubkey, key);     ///set the key in it
+                                           Log.e("AES KEY","The KEY after encryption="+key);
+                                           DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
+                                           key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted);
 
-                                                    X509EncodedKeySpec ks = new X509EncodedKeySpec(bytes);
-                                                    KeyFactory kf = null;
-                                                    try {
-                                                        kf = KeyFactory.getInstance("RSA");
-                                                        PublicKey id_pubkey = kf.generatePublic(ks);
-                                                        byte [] encrypted = new RSAKeyExchange(context,uid).encrypt(id_pubkey, key);     ///set the key in it
-
-                                                        DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
-                                                        key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted.toString());
+                                       } catch (NoSuchAlgorithmException e) {
+                                           e.printStackTrace();
+                                       } catch (InvalidKeySpecException e) {
+                                           e.printStackTrace();
+                                       }
 
 
-                                                    } catch (NoSuchAlgorithmException e) {
-                                                        e.printStackTrace();
-                                                    } catch (InvalidKeySpecException e) {
-                                                        e.printStackTrace();
-                                                    }
+                                   }
 
+                                   @Override
+                                   public void onCancelled(DatabaseError databaseError) {
 
-                                                }
-                                            });
-                                } catch (IOException e) {
-
-
-                                    e.printStackTrace();
-                                }
+                                   }
+                               });
 
                             }
                             else

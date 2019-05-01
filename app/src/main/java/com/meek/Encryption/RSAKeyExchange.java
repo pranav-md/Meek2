@@ -1,15 +1,19 @@
 package com.meek.Encryption;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.util.Base64;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -21,6 +25,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +46,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import static android.content.Context.MODE_PRIVATE;
 import static com.meek.ActivityViewSetter.copy;
 
 public class RSAKeyExchange {
@@ -82,12 +89,12 @@ public class RSAKeyExchange {
         return keyPairGenerator.genKeyPair();
     }
 
-    public byte [] encrypt(PublicKey publicKey, String message) {
+    public String encrypt(PublicKey publicKey, String message) {
         Cipher cipher = null;
         try {
             cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            return cipher.doFinal(message.getBytes());
+            return android.util.Base64.encodeToString(cipher.doFinal(message.getBytes("UTF-8")), android.util.Base64.DEFAULT);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
@@ -98,18 +105,20 @@ public class RSAKeyExchange {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
             e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
-        byte[] hah="null".getBytes();
-        return hah;
+
+        return "null";
 
     }
 
-    public byte [] decrypt(PrivateKey privateKey, byte [] encrypted)  {
+    public String decrypt(PrivateKey privateKey, String encrypted)  {
         Cipher cipher = null;
         try {
             cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return cipher.doFinal(encrypted);
+            return new String(cipher.doFinal(android.util.Base64.decode(encrypted, android.util.Base64.DEFAULT)));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
@@ -121,26 +130,54 @@ public class RSAKeyExchange {
         } catch (InvalidKeyException e) {
             e.printStackTrace();
         }
-        byte[] hah="null".getBytes();
-        return hah;
+
+        return "null";
     }
 
     public void writeMyKeys() throws IOException
     {
+
+        //String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
+        //////////////
+        SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+        SharedPreferences.Editor editKey=getPref.edit();
+        byte[] encodedKey = pubKey.getEncoded();
+        String bpubkey=Base64.encodeToString(encodedKey,Base64.NO_WRAP);
+        editKey.putString("PublicKey",bpubkey);
+        Log.e("WRITE KEYS","PublicKey="+bpubkey);
+        encodedKey = privateKey.getEncoded();
+        bpubkey=Base64.encodeToString(encodedKey,Base64.NO_WRAP);
+        Log.e("WRITE KEYS","PrivateKey="+bpubkey);
+
+        editKey.putString("PrivateKey",bpubkey);
+        editKey.commit();
+        /*
         FileOutputStream out=null;
-        out=context.openFileOutput("private.key", Context.MODE_PRIVATE);
+        out= new FileOutputStream(storageDir+"/KEYS/private.key");
         out.write(privateKey.getEncoded());
 
-        out = context.openFileOutput("public.pub", Context.MODE_PRIVATE);
+        out= new FileOutputStream(storageDir+"/KEYS/public.pub");
         out.write(pubKey.getEncoded());
         out.close();
-    }
+        */
 
+
+    }
     public void uploadPublicKey() throws IOException
     {
+        SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+        String pubKey=getPref.getString("PublicKey","");
+        DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
+        ppl_ref.child("PublicKey").child(uid).setValue(pubKey);
+    }
+
+/*
+    public void uploadPublicKey() throws IOException
+    {
+        String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
         Log.e("PUBLIC KEY UPLOADER","THe key is being uploaded");
 
-        FileInputStream fis = context.openFileInput("public.pub");
+        FileInputStream fis = new FileInputStream(storageDir+"/KEYS/public.pub");
         final byte[] bytes = new byte[(int) fis.getChannel().size()];
         try
         {
@@ -170,8 +207,9 @@ public class RSAKeyExchange {
             }
         });
     }
+*/
 
-    public PublicKey getPublicKey(String id) {
+   /* public PublicKey getPublicKey(String id) {
         final FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
         String file_name=id+".pub";
@@ -219,14 +257,15 @@ public class RSAKeyExchange {
 
         while(!flg);
             return id_pubkey;
-    }
-
+    }*/
+/*
     public PrivateKey myPrivateKey()
     {
         PrivateKey pvt=null;
+        String storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString();
         try
         {
-            FileInputStream out = context.openFileInput("public.pub");
+            FileInputStream out =new FileInputStream(storageDir+"/KEYS/public.pub");
             final byte[] bytes = new byte[(int) out.getChannel().size()];
 
             BufferedInputStream buf = new BufferedInputStream(out);
@@ -249,5 +288,31 @@ public class RSAKeyExchange {
 
         return  pvt;
 
+    }*/
+
+    public PrivateKey myPrivateKey()
+    {
+        SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
+        String pvtKey=getPref.getString("PrivateKey","");
+        PrivateKey pvt=null;
+
+        // Base64 decode the result
+
+        byte [] pkcs8EncodedBytes = Base64.decode(pvtKey, Base64.NO_WRAP);
+
+        // extract the private key
+
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pkcs8EncodedBytes);
+        KeyFactory kf = null;
+        try {
+            kf = KeyFactory.getInstance("RSA");
+            pvt = kf.generatePrivate(keySpec);
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return pvt;
     }
 }
