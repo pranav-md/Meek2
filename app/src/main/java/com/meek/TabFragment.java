@@ -895,14 +895,12 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                                 new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
                                                 MainActivity ma=(MainActivity) context ;
                                                 ma.tabFragment.setConnectionList();
-
+                                                ma.tabFragment.getEncKey(view.getTag().toString());
                                             } catch (NoSuchAlgorithmException e) {
                                                 e.printStackTrace();
                                             } catch (InvalidKeySpecException e) {
                                                 e.printStackTrace();
                                             }
-
-
                                         }
 
                                         @Override
