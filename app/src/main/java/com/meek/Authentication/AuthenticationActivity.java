@@ -483,6 +483,7 @@ AuthenticationActivity extends AppCompatActivity implements AdapterView.OnItemSe
                 String enc_key=random();
                 userRef.child("NUM_ID").child(new ContactSync().getSHA(String.valueOf(pnum))).child("uid").setValue(uid);
                 userRef.child("NUM_ID").child(new ContactSync().getSHA(String.valueOf(pnum))).child("enc_key").setValue(enc_key);
+                userRef.child("Users").child(uid).child("Info").child("phno").setValue(new ContactSync().getSHA(String.valueOf(pnum)));
                 rootRef.child("num_users").setValue(uid);
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
                 SharedPreferences.Editor uidpref=pref.edit();

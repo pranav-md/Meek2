@@ -427,34 +427,42 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
             @Override
             public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                ArrayList<ListPlace> plc_list=new ArrayList<ListPlace>();
-                int i=0;
-                PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                    i++;
-                    Log.i("Google places", String.format("Place '%s' has likelihood: %g",
-                            placeLikelihood.getPlace().getName(),placeLikelihood.getLikelihood()));
-                    plc_list.add(new ListPlace(i,placeLikelihood.getPlace().getName().toString(),placeLikelihood.getPlace().getLatLng()));
-                   // placess=placess+placeLikelihood.getPlace().getName().toString()+"\n";
-                }
-                likelyPlaces.release();
-              //  setPlaceList();
-                ActivityPlacesAdapter pla=new ActivityPlacesAdapter();
-                pla.getData(plc_list,CreateActivity.this);
-                Spinner spinner=findViewById(R.id.spinner);
-                spinner.setAdapter(pla);
-                spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                try
+                {
+                    ArrayList<ListPlace> plc_list=new ArrayList<ListPlace>();
+                    int i=0;
+                    PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
+                    for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                        i++;
+                        Log.i("Google places", String.format("Place '%s' has likelihood: %g",
+                                placeLikelihood.getPlace().getName(),placeLikelihood.getLikelihood()));
+                        plc_list.add(new ListPlace(i,placeLikelihood.getPlace().getName().toString(),placeLikelihood.getPlace().getLatLng()));
+                        // placess=placess+placeLikelihood.getPlace().getName().toString()+"\n";
+                    }
+                    likelyPlaces.release();
+                    //  setPlaceList();
+                    ActivityPlacesAdapter pla=new ActivityPlacesAdapter();
+                    pla.getData(plc_list,CreateActivity.this);
+                    Spinner spinner=findViewById(R.id.spinner);
+                    spinner.setAdapter(pla);
+                    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                             TextView plc_view=(TextView)view.findViewById(R.id.plc_name);
                             place_name=plc_view.getText().toString();
-                    }
+                        }
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> adapterView) {
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
 
-                    }
-                });
+                        }
+                    });
+
+                }
+                catch (Exception e)
+                {
+
+                }
 
 
             }

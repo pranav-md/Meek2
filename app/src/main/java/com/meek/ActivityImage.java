@@ -159,7 +159,7 @@ public class ActivityImage extends Fragment {
             public void run() {
                 boolean lis_on=true;
                 while(true)
-                {
+                {       try {
                     if(activityRootView.getViewTreeObserver().isAlive())
                     activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                   @Override
@@ -180,11 +180,15 @@ public class ActivityImage extends Fragment {
 
                 });
 
-                        try {
+
                             Thread.sleep(250);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        catch (Exception e){
+                            e.printStackTrace();
+                        }
+
 
                 }
             }

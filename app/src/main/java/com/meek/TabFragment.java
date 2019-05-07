@@ -177,7 +177,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         setActivtiyTab();
 
         Log.e("UID value","uid="+uid);
-        retrieveConnections();
+        setConnection();
         // Construct a PlaceDetectionClient.
       //  mPlaceDetectionClient = Places.getPlaceDetectionClient(getActivity(), null);
 
@@ -218,7 +218,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         Runnable runnable = new Runnable() {
             public void run() {
 
-                setConnection();
             }
 
         };
@@ -438,7 +437,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         intentFilter2.addAction(ConnectionService.MY_ACTION);
 
         getContext().registerReceiver(updateDlgsBCR, intentFilter);
-        getContext().registerReceiver(updateConnection, intentFilter2);
+   //     getContext().registerReceiver(updateConnection, intentFilter2);
 
         //// firebase listener to the message list
 
@@ -584,7 +583,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     getEncKey(id);
                 }
 
-                // setConnectionList();
+                 setConnectionList();
 
 
             }
@@ -608,7 +607,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     final String phnm=dataSnapshot.getValue().toString();
                     if(phnm!=null){
                         final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
-                        ppl_ref.child("Users").child(id).child("Details2").child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
+                        ppl_ref.child("NAMES").child(id).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 String name =dataSnapshot.getValue().toString();

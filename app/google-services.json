@@ -1,60 +1,37 @@
 {
   "project_info": {
-    "project_number": "1074002721565",
-    "firebase_url": "https://meek-466b3.firebaseio.com",
-    "project_id": "meek-466b3",
-    "storage_bucket": "meek-466b3.appspot.com"
+    "project_number": "512186939024",
+    "firebase_url": "https://meek-on.firebaseio.com",
+    "project_id": "meek-on",
+    "storage_bucket": "meek-on.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1074002721565:android:5de29f893abbca5f",
+        "mobilesdk_app_id": "1:512186939024:android:5de29f893abbca5f",
         "android_client_info": {
           "package_name": "com.meek"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1074002721565-c162ver504oj6pdud0633ildut6ubi76.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.meek",
-            "certificate_hash": "aed38ef588fb60453238cebefb94aba0c56594b9"
-          }
-        },
-        {
-          "client_id": "1074002721565-9an8m3funls1uk6v7024fgtp06res11s.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.meek",
-            "certificate_hash": "107a01c1c9072e2a7eb6617b7d8abd05906adeaa"
-          }
-        },
-        {
-          "client_id": "1074002721565-tn5u2loo610il5gjdkc64ej7gm9fbc2c.apps.googleusercontent.com",
+          "client_id": "512186939024-3st62ckdc73b14nimdq4tonv1eocqhf9.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC67DEkR2LFSRt3JBZC14hruYBrz5KUyJw"
+          "current_key": "AIzaSyCb54xgMIHLg748HjF6pHlGchBxqPtE8jc"
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 1
-        },
         "appinvite_service": {
-          "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "1074002721565-tn5u2loo610il5gjdkc64ej7gm9fbc2c.apps.googleusercontent.com",
+              "client_id": "512186939024-3st62ckdc73b14nimdq4tonv1eocqhf9.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
-        },
-        "ads_service": {
-          "status": 2
         }
       }
     }
