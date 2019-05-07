@@ -57,12 +57,15 @@ public class MyProfileFrag extends AppCompatActivity {
     CircleImageView dp;
     String uid;
     ImagePicker imagePicker;
-
+    String serverkey;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.myprofile);
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        serverkey = extras.getString("ServerKey");
         CardView my_activities=(CardView)findViewById(R.id.activities);
         SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=mypref.getString("uid","");
@@ -77,7 +80,9 @@ public class MyProfileFrag extends AppCompatActivity {
         my_activities.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(MyProfileFrag.this,MyActivities.class));
+                Intent intent=new Intent(MyProfileFrag.this,MyActivities.class);
+                intent.putExtra("ServerKey",serverkey);
+                startActivity(intent);
             }
         });
 
@@ -97,6 +102,7 @@ public class MyProfileFrag extends AppCompatActivity {
                             final DatabaseReference userRef = database.getReference("Users");
                             /////
                             userRef.child(uid).child("dpno").addListenerForSingleValueEvent(new ValueEventListener() {
+
                                 @Override
                                 public void onDataChange(final DataSnapshot dataSnapshot)
                                 {

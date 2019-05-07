@@ -238,6 +238,7 @@ public class ActivityImage extends Fragment {
             });
         }
     }
+
     void setTakePhoto()
     {
         RelativeLayout tap_open=(RelativeLayout)img_view.findViewById(R.id.tap_open);
@@ -353,6 +354,7 @@ public class ActivityImage extends Fragment {
 
         return mut_otBitmap;
     }
+
     @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
     class ImageCompressAsyncTask extends AsyncTask<String, String, String> {
 
@@ -371,7 +373,6 @@ public class ActivityImage extends Fragment {
             p_dialog.setMessage("Its loading....");
             p_dialog.show();
             p_dialog.setCancelable(false);
-
         }
 
         @Override

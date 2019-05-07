@@ -294,8 +294,10 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
 
     }
 
+    ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
     public ArrayList<Contact> getAllConnections()
     {
+
         String query = "SELECT " + UID+" , " + NME+" , " + CON_LEVEL+ " FROM "+ TABLE_NAME ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);

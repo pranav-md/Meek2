@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
@@ -54,10 +55,12 @@ public class ActFeedAdapter extends BaseAdapter {
         final MapActivitiesPageAdapter pg_adapter=new MapActivitiesPageAdapter(fragmentManager,actFeeds.get(i).a_uid,serverkey);
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         view = inflater.inflate(R.layout.act_feed_item, null);
-        final ViewPager viewPager=view.findViewById(R.id.act_page);
-        View lin_lyt=(LinearLayout)view.findViewById(R.id.lin_lyt);
         final ExpandableLayout act_views=view.findViewById(R.id.act_expand_layout);
         act_views.setExpanded(false);
+        final ViewPager viewPager=view.findViewById(R.id.act_page);
+        TextView name=view.findViewById(R.id.act_name);
+        name.setText(actFeeds.get(i).name);
+        View lin_lyt=(LinearLayout)view.findViewById(R.id.lin_lyt);
         lin_lyt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

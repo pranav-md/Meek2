@@ -14,6 +14,7 @@ import com.google.i18n.phonenumbers.Phonenumber;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -42,9 +43,8 @@ public class ContactSync {
 
                 con_ref.child("Contacts_DB").child(uid).child(getSHA(real_phnum)).setValue("0");
                 Log.v("Contact syncing","sha=" + getSHA(real_phnum) +"  name="+contct.getDisplayName()+"  phno="+real_phnum);
-
             }
-
+            con_ref.child("Contacts_DB").child(uid).child("contact_trigger").setValue(new Date()+"");
         }
 
     }
@@ -57,14 +57,19 @@ public class ContactSync {
         PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
         try {
             phoneNumber = phoneUtil.parse(phno,"IN");
-        }
-        catch (NumberParseException e) {
-            e.printStackTrace();
-        }
+
         if(phoneUtil.isValidNumber(phoneNumber))
         {
             phone_num=phoneUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.E164);
         }
+        }
+        catch (NumberParseException e) {
+            e.printStackTrace();
+        }
+        catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+
         Log.v("Contact syncing","original phone num="+phno+" E164 phone num="+phone_num);
         return phone_num;
     }

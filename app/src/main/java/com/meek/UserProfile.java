@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -38,18 +39,25 @@ public class UserProfile extends AppCompatActivity {
     ArrayList<Activities> activities;
     MapActivitiesPageAdapter activitiesPageAdapter;
     ViewPager actvity_pgs;
+    String serverkey,loc_stat;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_profile);
 
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        serverkey = extras.getString("ServerKey");
+        loc_stat = extras.getString("Stat");
+
+
         r_uid="";
         activities=new ArrayList<Activities>();
         LinearLayout date_setter=(LinearLayout)findViewById(R.id.date_setter);
         no_act=(LinearLayout)findViewById(R.id.no_act);
         cal = Calendar.getInstance();
-        activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid);
+        activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid,serverkey);
         actvity_pgs=(ViewPager)findViewById(R.id.act_pgs);
         no_act.setVisibility(View.INVISIBLE);
         fetchDateData();
@@ -60,7 +68,7 @@ public class UserProfile extends AppCompatActivity {
         comp_up = comp_lw = false;
         activities=new ArrayList<Activities>();
         DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
-
+        Log.e("ACT FTC DTA","r_uid="+r_uid+"   lwr_dt="+lwr_dt+"   upr_dt"+upr_dt);
         act_ref.child("Activities").child(r_uid).child("pg_view").child(lwr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -150,7 +158,7 @@ public class UserProfile extends AppCompatActivity {
             actvity_pgs.setVisibility(View.VISIBLE);
             if(activitiesPageAdapter==null)
             {
-                activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid);
+                activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid,serverkey);
                 activitiesPageAdapter.setData(act_ids);
                 actvity_pgs.setAdapter(activitiesPageAdapter);
             }

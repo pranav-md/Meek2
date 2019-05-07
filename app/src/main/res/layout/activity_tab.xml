@@ -13,10 +13,6 @@
         android:layout_height="wrap_content" />
 comment -->
 
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -28,34 +24,26 @@ comment -->
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:text="Unseen Activites"
+                    android:text="Activities"
                     android:textAlignment="center"
                     android:textSize="20sp" />
+
+                <LinearLayout
+                    android:id="@+id/act_lin_lyt"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"></LinearLayout>
 
                 <ListView
                     android:id="@+id/unseen_activity_feed"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:visibility="invisible">
 
                 </ListView>
 
-                <TextView
-                    android:id="@+id/textView23"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:text="Seen Activites"
-                    android:textAlignment="center"
-                    android:textSize="20sp" />
-
-                <ListView
-                    android:id="@+id/seen_activities"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
             </LinearLayout>
 
-        </ScrollView>
 
     <Button
         android:id="@+id/add_act"

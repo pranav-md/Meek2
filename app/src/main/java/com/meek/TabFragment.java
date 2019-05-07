@@ -10,14 +10,18 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -118,6 +122,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     TextView plcs;
     View current_layout;
     RelativeLayout tabcontainer;
+    LinearLayout act_feed=null;
     ExpandableLayout img_exp;
     int curr_tab=5;
     boolean tab_act;
@@ -181,7 +186,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             public void onMenuItemSelect(int i, int i1, boolean b) {
                 Toast.makeText(context,"Activity",Toast.LENGTH_LONG);
                 if(btm_nav.getSelectedIndex()==2) {
-                    seen_adapted = false;
+                    unseen_adapted = false;
                     setActivtiyTab();
                     curr_tab=2;
                     Toast.makeText(context, "Activity", Toast.LENGTH_LONG);
@@ -268,75 +273,20 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
           setUsersActivity(inflatedLayout);
     }
-    /*    void setActFeatureButton()
-       {
-           View cur_view=getView();
-           LinearLayout functions=(LinearLayout)cur_view.findViewById(R.id.functions);
-           Button actbtn=(Button)functions.findViewById(R.id.activity);
-           Button musicbtn=(Button)functions.findViewById(R.id.music);
 
-          Realm realm = Realm.getDefaultInstance();
-           Realm.init(context);
-           realm.beginTransaction();
-           Drawable icon=null;
-           com.meek.Activity result = realm.where(com.meek.Activity.class).findFirst();
-           if(result!=null)
-               switch(result.activity)
-               {
-                   case DetectedActivity.IN_VEHICLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                                                       Log.d("HAH","In Vehicle");
-                                                       break;
-                   case DetectedActivity.ON_BICYCLE:   icon=context.getResources().getDrawable(R.drawable.moving);
-                                                       Log.d("HAH","ON_BICYCLE");
-                                                       break;
-
-                   case DetectedActivity.ON_FOOT:   icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                    Log.d("HAH","ON_FOOT");
-                                                    break;
-
-                   case DetectedActivity.RUNNING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                   Log.d("HAH","RUNNING");
-                                                   break;
-
-                   case DetectedActivity.STILL:    icon=context.getResources().getDrawable(R.drawable.still);
-                                                   Log.d("HAH","STILL");
-                                                   break;
-
-                   case DetectedActivity.WALKING:  icon=context.getResources().getDrawable(R.drawable.footwalk);
-                                                   Log.d("HAH","WALKING");
-                                                   break;
-
-               }
-               if(icon!=null)
-                   actbtn.setBackground(icon);
-               else
-                   actbtn.setVisibility(View.INVISIBLE);
-
-        AudioManager audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
-        ;
-        if(audioManager.isMusicActive()==true) {
-            actbtn.setVisibility(View.VISIBLE);
-            //   audiotext.setText("Playing  "+ audioManager.getParameters(""));
-        }
-        else
-            actbtn.setVisibility(View.INVISIBLE);
-
-        // else
-        //audiotext.setText("Not playing");
-
-    }
-*/
       void setUsersActivity(View inf_layout)
       {
-          act_seen_list=(ListView)inf_layout.findViewById(R.id.seen_activities);
           act_nonseen_list=(ListView)inf_layout.findViewById(R.id.unseen_activity_feed);
+          if(act_feed==null)
+            act_feed=(LinearLayout)inf_layout.findViewById(R.id.act_lin_lyt);
+          else
+            act_feed.removeAllViews();
           feedListen();
       }
 
     void feedListen()
     {
-        actSeenAdapter=new ActFeedAdapter();
-        actUnSeenAdapter=new ActFeedAdapter();
+         actUnSeenAdapter=new ActFeedAdapter();
         DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
 
         act_feed_ref.child("Users").child(uid).child("activity_feed").addValueEventListener(new ValueEventListener() {
@@ -344,13 +294,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             public void onDataChange(DataSnapshot dataSnapshot)
             {
                 String act_yet_to_seen=dataSnapshot.child("activity_yet_to_seen").getValue().toString();
-                String act_seen=dataSnapshot.child("activity_seen").getValue().toString();
                 int num_act=0;
                 act_non_feed=new ArrayList<ActFeed>();
-                act_seen_feed=new ArrayList<ActFeed>();
-                adaptActFeed(act_yet_to_seen,false);
-                adaptActFeed(act_seen,true);
-            }
+                adaptActFeed(act_yet_to_seen);
+             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
@@ -414,38 +361,52 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             */
         }
     }
-    void adaptActFeed(String actFeed,boolean seen)
+
+    void adaptActFeed(String actFeed)
     {
         while(!actFeed.equals(":"))
         {
             String a_uid=actFeed.substring(1,actFeed.indexOf('.'));
-            String act_content=actFeed.substring(1,actFeed.substring(1).indexOf(':')+1);
+            String act_content=actFeed.substring(3,actFeed.substring(1).indexOf(':')+1);
             actFeed=actFeed.substring(actFeed.substring(1).indexOf(':')+1);
             Log.v("Adapt Act","act_uid="+a_uid+"  act_content="+act_content);
-            if(seen)
-                act_seen_feed.add(new ActFeed("."+act_content+".",a_uid,seen));
-            else
-                act_non_feed.add(new ActFeed("."+act_content+".",a_uid,seen));
+            act_non_feed.add(new ActFeed("."+act_content+".",a_uid,context,server_key));
         }
+
         FragmentActivity activity = getActivity();
-        if(activity != null) {
-            actSeenAdapter.getData(act_seen_feed, getContext(), getChildFragmentManager(),server_key);
-            actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager(),server_key);
-            if (seen) {
-                if (seen_adapted) {
-                    actSeenAdapter.notifyDataSetChanged();
-                } else {
-                    seen_adapted = true;
-                    act_seen_list.setAdapter(actSeenAdapter);
-                }
-            } else {
-                if (unseen_adapted) {
-                    actUnSeenAdapter.notifyDataSetChanged();
-                } else {
-                    unseen_adapted = true;
-                    act_nonseen_list.setAdapter(actUnSeenAdapter);
-                }
+        if(activity != null)
+        {
+          //  actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager(),server_key);
+           /* if (unseen_adapted)
+            {
+                  actUnSeenAdapter.notifyDataSetChanged();
             }
+            else
+            {
+                  unseen_adapted = true;
+                  act_nonseen_list.setAdapter(actUnSeenAdapter);
+            }*/
+           for(final ActFeed act:act_non_feed) {
+               final MapActivitiesPageAdapter pg_adapter=new MapActivitiesPageAdapter(getChildFragmentManager(),act.a_uid,server_key);
+               View view = getLayoutInflater().inflate(R.layout.act_feed_item, null);
+               final ExpandableLayout act_views = view.findViewById(R.id.act_expand_layout);
+               act_views.setExpanded(false);
+               final ViewPager viewPager = view.findViewById(R.id.act_page);
+               TextView name = view.findViewById(R.id.act_name);
+               name.setText(act.name);
+               View lin_lyt = (LinearLayout) view.findViewById(R.id.lin_lyt);
+               lin_lyt.setOnClickListener(new View.OnClickListener() {
+                   @Override
+                   public void onClick(View view) {
+                       if (!act_views.isExpanded()) {
+                           act_views.expand();
+                               pg_adapter.setData(act.activities);
+                               viewPager.setAdapter(pg_adapter);
+                       } else
+                           act_views.collapse();
+                   }
+               });
+           }
         }
     }
 
@@ -540,6 +501,15 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         Log.e("PPLTAB","SETPPLTAB");
         LayoutInflater inflater = LayoutInflater.from(context);
         View inflatedLayout= inflater.inflate(R.layout.people_list, null, false);
+        final SwipeRefreshLayout pullToRefresh = (SwipeRefreshLayout) inflatedLayout.findViewById(R.id.pullToRefresh);
+        pullToRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                new ContactSync().syncContact(context,uid);
+                setConnectionList();
+
+            }
+        });
         current_layout=inflatedLayout;
         tabcontainer.removeAllViews();
         tabcontainer.addView(inflatedLayout);
@@ -701,10 +671,6 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     }
 
-
-
-
-
     private File createImageFile(String ext) throws IOException
     {
         // Create an image file name
@@ -848,6 +814,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
     }
 
     ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
+    @RequiresApi(api = Build.VERSION_CODES.DONUT)
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
         Log.e("CONN ADAPTER","NAME:"+conn_ppl.get(i).getName()+"   UID:"+conn_ppl.get(i).getUID());
@@ -871,6 +838,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 .child("loc_request_received")
                                 .child("yes").setValue(view.getTag().toString());
                         new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),4);
+                        MainActivity ma=(MainActivity) context ;
+                        ma.tabFragment.setConnectionList();
 
                     }
                 });
@@ -885,7 +854,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 .child("loc_request_received")
                                 .child("no").setValue(view.getTag().toString());
                         new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
-
+                        MainActivity ma=(MainActivity) context ;
+                        ma.tabFragment.setConnectionList();
                     }
                 });
                 break;
@@ -901,6 +871,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                             try {
                                 DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
                                 String file_name=view.getTag().toString()+".pub";
+                                final String u_id=view.getTag().toString();
                                 final File localFile;
                                 try {
                                     localFile = File.createTempFile(file_name, "pub");
@@ -921,11 +892,10 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                                 Log.e("AES KEY","The KEY after encryption="+encrypted);
                                                 DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
                                                 key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted);
-
-                                                MainActivity ma=(MainActivity) context ;
-                                                ma.tabFragment.getEncKey(view.getTag().toString());
+                                                key_ref.child("Users").child(uid).child("Connection_Trigger").child("act_acc_key").setValue(u_id);
                                                 new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
-
+                                                MainActivity ma=(MainActivity) context ;
+                                                ma.tabFragment.setConnectionList();
 
                                             } catch (NoSuchAlgorithmException e) {
                                                 e.printStackTrace();
@@ -971,16 +941,38 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                     .child("no").setValue(view.getTag().toString());
 
                             new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),2);
+                            MainActivity ma=(MainActivity) context ;
+                            ma.tabFragment.setConnectionList();
                         }
                     });
                     break;
 
             case 4:  view = inflater.inflate(R.layout.viewer_list_item, null);
+                     view.setOnClickListener(new View.OnClickListener() {
+                         @Override
+                         public void onClick(View view)
+                         {
+                                Intent intent=new Intent(context,UserProfile.class);
+                                intent.putExtra("ServerKey",serverkey);
+                                intent.putExtra("Stat","LOC");
+                                context.startActivity(intent);
+                         }
+                     });
                     break;
                     ///Location connected
 
 
             case 3: view = inflater.inflate(R.layout.viewer_list_item, null);
+                    view.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view)
+                        {
+                            Intent intent=new Intent(context,UserProfile.class);
+                            intent.putExtra("ServerKey",serverkey);
+                            intent.putExtra("Stat","ACT");
+                            context.startActivity(intent);
+                        }
+                    });
                     break;
 
             case 2: /*view = inflater.inflate(R.layout.viewer_list_item, null);
@@ -990,10 +982,11 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                     btn.setTag(conn_ppl.get(i).getUID());
                     btn.setTag(R.integer.stat,"0");
                     btn.setOnClickListener(new View.OnClickListener() {
+                        @RequiresApi(api = Build.VERSION_CODES.DONUT)
                         @Override
-                        public void onClick(View view) {
+                        public void onClick(final View view) {
                             final String usr_id=view.getTag().toString();
-                            if(btn.getTag(R.integer.stat).toString().equals("0"))
+                            if(view.getTag(R.integer.stat).toString().equals("0"))
                             {
                                 SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
                                 final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
@@ -1010,6 +1003,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 final String u_id=view.getTag().toString();
                                 final File localFile;
                                 ppl_ref.child("PublicKey").child(view.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @RequiresApi(api = Build.VERSION_CODES.DONUT)
                                     @Override
                                     public void onDataChange(DataSnapshot dataSnapshot) {
                                         PublicKey pubkey=null;
@@ -1027,7 +1021,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                             DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
                                             key_ref.child("Key_Exchange").child(u_id).child(uid).setValue(encrypted);
                                             new PeopleDBHelper(context,serverkey).changePersonStatus(u_id,1);
-
+                                            view.setTag(R.integer.stat,"1");
 
                                         } catch (NoSuchAlgorithmException e) {
                                             e.printStackTrace();
@@ -1054,7 +1048,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child("act_request_reject").setValue(view.getTag().toString());
                                 btn.setTag(R.integer.stat,"0");
                                 new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),1);
-
+                                view.setTag(R.integer.stat,"0");
                                 btn.setImageResource(R.drawable.add_img);
                             }
                         }
@@ -1172,20 +1166,25 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 class ActFeed
 {
     String a_uid;
+    String name;
     ArrayList<Activities> activities;
 
 
-    ActFeed(String act_content,String a_uid,boolean seen)
+    ActFeed(String act_content,String a_uid,Context context,String serverkey)
     {
         activities=new ArrayList<Activities>();
         this.a_uid=a_uid;
+        name=new PeopleDBHelper(context,serverkey).getName(a_uid);
         int num=0;
         while(!act_content.equals("."))
         {
+            Log.v("IN ACTFEED","uid="+a_uid+"  act_id=");
             Activities newone= new Activities();
             newone.act_id=act_content.substring(1,act_content.substring(1).indexOf('.')+1);
+            Log.v("IN ACTFEED","uid="+a_uid+"  act_id="+newone.act_id);
             act_content=act_content.substring(act_content.substring(1).indexOf('.')+1);
-            activities.add(newone);
+            if(!newone.act_id.equals(""))
+                activities.add(newone);
         }
     }
 

@@ -52,6 +52,7 @@ public class DatePickerFragment extends DialogFragment implements DatePickerDial
             dateset.setDate(d_frmt.parse(datePicker.getDayOfMonth()+"/"+(datePicker.getMonth()+1)+"/"+datePicker.getYear()));
         } catch (ParseException e) {
             e.printStackTrace();
+            Log.e("DATE EXCEPTION","DATE="+datePicker.getDayOfMonth()+"/"+(datePicker.getMonth()+1)+"/"+datePicker.getYear());
         }
     }
 }

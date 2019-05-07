@@ -180,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MyProfileFrag.class);
+                intent.putExtra("ServerKey",server_key);
                 startActivity(intent);
             }
 

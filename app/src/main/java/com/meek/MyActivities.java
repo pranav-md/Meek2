@@ -1,5 +1,6 @@
 package com.meek;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -42,6 +43,7 @@ public class MyActivities extends AppCompatActivity {
     ViewPager actvity_pgs;
     ArrayList<Activities> activities=null;
     boolean changed;
+    String serverkey;
 
     DialogFragment picker;
 
@@ -49,6 +51,9 @@ public class MyActivities extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.myactivities);
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        serverkey = extras.getString("ServerKey");
 
         SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid = mypref.getString("uid", "");
@@ -115,12 +120,13 @@ public class MyActivities extends AppCompatActivity {
         comp_up = comp_lw = false;
         activities=new ArrayList<Activities>();
         DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
-
+        Log.e("ACT FTC DTA","r_uid="+uid+"   lwr_dt="+lwr_dt+"   upr_dt"+upr_dt);
             act_ref.child("Activities").child(uid).child("pg_view").child(lwr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (dataSnapshot != null) {
-                        SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+                    Log.v("Inside act_ref", "lwr dt called");
+                    if (dataSnapshot.exists()) {
+                        SimpleDateFormat d_format = new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
                             try {
 
@@ -154,13 +160,13 @@ public class MyActivities extends AppCompatActivity {
             if(!lwr_dt.equals(upr_dt))
             act_ref.child("Activities").child(uid).child("pg_view").child(upr_dt).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-
-
-                    if (dataSnapshot != null)
+                public void onDataChange(DataSnapshot dataSnapshot)
+                {
+                    Log.v("Inside act_ref", "upr dt called");
+                    if (dataSnapshot.exists())
                     {
                         while(comp_lw==false);
-                        SimpleDateFormat d_format = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+                        SimpleDateFormat d_format = new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
                             try {
                                 Date act_date = d_format.parse(ds.getValue().toString());
@@ -205,7 +211,7 @@ public class MyActivities extends AppCompatActivity {
             actvity_pgs.setVisibility(View.VISIBLE);
             if(activitiesPageAdapter==null)
             {
-                activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),uid);
+                activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),uid,serverkey);
                 activitiesPageAdapter.setData(act_ids);
                 actvity_pgs.setAdapter(activitiesPageAdapter);
             }
@@ -226,13 +232,13 @@ public class MyActivities extends AppCompatActivity {
 
     void setGMTdates()
     {
-        SimpleDateFormat d_format=new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-        SimpleDateFormat default_tz=new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+        SimpleDateFormat d_format=new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
+        SimpleDateFormat default_tz=new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
         default_tz.setTimeZone(TimeZone.getDefault());
         d_format.setTimeZone(TimeZone.getTimeZone("GMT"));
         try {
             lwr_gmt=default_tz.parse(DateFormat.format("dd",   curr_date).toString()+"-"
-                    +(Integer.parseInt(DateFormat.format("M",   curr_date).toString()))
+                    +(Integer.parseInt(DateFormat.format("MM",   curr_date).toString()))
                     +"-"+DateFormat.format("yyyy",   curr_date)+" 00:00:01");
 
             lwr_dt=d_format.format(lwr_gmt).substring(0,d_format.format(lwr_gmt).indexOf(" ")).trim();
@@ -241,7 +247,7 @@ public class MyActivities extends AppCompatActivity {
 
 
             upr_gmt=default_tz.parse(DateFormat.format("dd",   curr_date).toString()+"-"
-                    +(Integer.parseInt(DateFormat.format("M",   curr_date).toString()))
+                    +(Integer.parseInt(DateFormat.format("MM",   curr_date).toString()))
                     +"-"+DateFormat.format("yyyy",   curr_date)+" 23:59:59");
 
             upr_dt=d_format.format(upr_gmt).substring(0,d_format.format(upr_gmt).indexOf(" ")).trim();

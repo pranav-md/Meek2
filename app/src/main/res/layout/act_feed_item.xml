@@ -59,12 +59,12 @@
 
     <net.cachapa.expandablelayout.ExpandableLayout
         android:id="@+id/act_expand_layout"
-        app:el_duration="400"
-        app:el_expanded="true"
-        app:el_parallax="0.5"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp">
+        android:layout_marginTop="50dp"
+        app:el_duration="400"
+        app:el_expanded="false"
+        app:el_parallax="0.5">
 
         <android.support.v4.view.ViewPager
             android:id="@+id/act_page"
