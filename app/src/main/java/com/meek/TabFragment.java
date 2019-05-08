@@ -285,7 +285,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void feedListen()
     {
-         actUnSeenAdapter=new ActFeedAdapter();
+
         DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
 
         act_feed_ref.child("Users").child(uid).child("activity_feed").addValueEventListener(new ValueEventListener() {
@@ -413,6 +413,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     @SuppressLint("WrongViewCast")
     void setMsgTab()
     {
+        shown_md_num=0;
         LayoutInflater inflater = LayoutInflater.from(context);
         View inflatedLayout= inflater.inflate(R.layout.msg_dialog_list, null, false);
         tabcontainer.removeAllViews();
@@ -476,12 +477,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             MsgPPL nextppl;
             for(Message newone:msgDlgs)
             {
-             nextppl=new MsgPPL();
-             nextppl.sender_id=newone.getSender_id();
-             nextppl.name=new PeopleDBHelper(getContext(),server_key).getName(newone.getSender_id());
-             nextppl.last_msg=newone.getText();
-             nextppl.date=newone.getCreatedAt();
-             msgPPLS.add(nextppl);
+                 nextppl=new MsgPPL();
+                 nextppl.sender_id=newone.getSender_id();
+                 nextppl.name=new PeopleDBHelper(getContext(),server_key).getName(newone.getSender_id());
+                 nextppl.last_msg=newone.getText();
+                 nextppl.date=newone.getCreatedAt();
+                 msgPPLS.add(nextppl);
+                 Log.e("INSIDE MSGDLGS LOOP","senderid="+nextppl.sender_id+"name="+nextppl.name+"lastmsg="+nextppl.last_msg);
             }
             mg_dg_adapter.getData(msgPPLS);
             if(shown_md_num==0)
@@ -540,40 +542,46 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
 
                 new PeopleDBHelper(getContext(),server_key);
+                //if(meek_cons!=null)
                 for(final String id:meek_cons)
                 {
                     Log.e("MEEK CONS","id="+id);
                     checkInsertPerson(id,2);
                 }
                 ///////////
+               // if(activity_cons!=null)
                 for(final String id:activity_cons)
                 {
                     Log.e("ACTIVITY CONS","id="+id);
                     checkInsertPerson(id,3);
                 }
 
+             //   if(loc_cons!=null)
                 for(final String id:loc_cons)
                 {
                     Log.e("LOC CONS","id="+id);
                     checkInsertPerson(id,4);
                 }
 
+              //  if(sent_req_cons!=null)
                 for(final String id:sent_req_cons)
                 {
                     Log.e("ACT RQ SNT","id="+id);
                     checkInsertPerson(id,1);
                 }
 
+            //    if(rcv_req_cons!=null)
                 for(final String id:rcv_req_cons)
                 {
                     Log.e("ACT RQ SNT","id="+id);
                     checkInsertPerson(id,5);
                 }
 
+            //    if(act_acc_key!=null)
                 for(final String id:act_acc_key)
                 {
                     Log.e("ACT KEY RTV","id="+id);
-                    checkInsertPerson(id,2);
+                    checkInsertPerson(id,3);
                     getEncKey(id);
                 }
 
@@ -712,7 +720,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     {
         ArrayList<String> uids=new ArrayList<String>() ;
 
-        if(all_uid!=null)
+        if(all_uid.exists())
         for(DataSnapshot ds:all_uid.getChildren())
         {
             uids.add(ds.getKey());
@@ -841,13 +849,13 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 .child(uid)
                                 .child("Connections")
                                 .child("location_meek")
-                                .child(view.getTag().toString()).setValue(view.getTag().toString());
+                                .child(view.getTag().toString()).setValue("key");
 
                         data_ref.child("Users")
                                 .child(view.getTag().toString())
                                 .child("Connections")
                                 .child("location_meek")
-                                .child(uid).setValue(uid);
+                                .child(uid).setValue("key");
 
                         data_ref.child("Users")
                                 .child(view.getTag().toString())
@@ -934,18 +942,18 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                                         .child(uid)
                                                         .child("Connections")
                                                         .child("activity_meek")
-                                                        .child(view.getTag().toString()).setValue(view.getTag().toString());
+                                                        .child(view.getTag().toString()).setValue("key");
 
                                                 data_ref.child("Users")
                                                         .child(view.getTag().toString())
                                                         .child("Connections")
                                                         .child("activity_meek")
-                                                        .child(uid).setValue(uid);
+                                                        .child(uid).setValue("key");
                                                 data_ref.child("Users")
                                                         .child(view.getTag().toString())
                                                         .child("Connections")
                                                         .child("act_acc_key")
-                                                        .child(uid).setValue(uid);
+                                                        .child(uid).setValue("key");
 
 
                                                 data_ref.child("Users")
@@ -1018,6 +1026,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                     break;
 
             case 4:  view = inflater.inflate(R.layout.viewer_list_item, null);
+                     view.setTag(conn_ppl.get(i).getUID());
                      view.setOnClickListener(new View.OnClickListener() {
                          @Override
                          public void onClick(View view)
@@ -1025,6 +1034,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 Intent intent=new Intent(context,UserProfile.class);
                                 intent.putExtra("ServerKey",serverkey);
                                 intent.putExtra("Stat","LOC");
+                                intent.putExtra("r_uid",view.getTag().toString());
                                 context.startActivity(intent);
                          }
                      });
@@ -1033,6 +1043,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 
 
             case 3: view = inflater.inflate(R.layout.viewer_list_item, null);
+                    view.setTag(conn_ppl.get(i).getUID());
+
                     view.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view)
@@ -1040,6 +1052,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                             Intent intent=new Intent(context,UserProfile.class);
                             intent.putExtra("ServerKey",serverkey);
                             intent.putExtra("Stat","ACT");
+                            intent.putExtra("r_uid",view.getTag().toString());
                             context.startActivity(intent);
                         }
                     });
@@ -1066,13 +1079,13 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                         .child(uid)
                                         .child("Connections")
                                         .child("act_request_sent")
-                                        .child(view.getTag().toString()).setValue(view.getTag().toString());
+                                        .child(view.getTag().toString()).setValue("key");
 
                                 data_ref.child("Users")
                                         .child(view.getTag().toString())
                                         .child("Connections")
                                         .child("act_request_received")
-                                        .child(uid).setValue(uid);
+                                        .child(uid).setValue("key");
 
                                 btn.setTag(R.integer.stat,"1");
                                 btn.setImageResource(R.drawable.cancel_cross);
@@ -1197,6 +1210,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                    ////NEED TO FIX THINGS HERE
                     });
                     break;
+                    default:return null;
 
         }
         ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5

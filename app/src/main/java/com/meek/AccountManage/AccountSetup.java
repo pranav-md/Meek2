@@ -11,6 +11,7 @@ import android.widget.EditText;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.googlecode.mp4parser.authoring.Edit;
+import com.meek.Database.PeopleDBHelper;
 import com.meek.MainActivity;
 import com.meek.R;
 
@@ -40,7 +41,9 @@ public class AccountSetup extends AppCompatActivity {
                 act_ref.child("Server_Key").child(pref.getString("uid","")).setValue(server_key);
 
                 act_ref.child("Users").child(pref.getString("uid","")).child("Details2").child("name").setValue(server_key);
-
+                if(!new PeopleDBHelper(AccountSetup.this,server_key).checkTable())
+                    new PeopleDBHelper(AccountSetup.this,server_key).createTable();
+                new PeopleDBHelper(AccountSetup.this,server_key).insertPerson(pref.getString("uid",""),name.getText().toString()," ",0);
                 Intent intent=new Intent(AccountSetup.this,EnterKey.class);
                 intent.putExtra("ServerKey",server_key);
                 startActivity(intent);

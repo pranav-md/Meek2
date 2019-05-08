@@ -29,45 +29,24 @@
                 app:civ_border_color="#FF000000"
                 app:civ_border_width="2dp" />
 
-            <TextView
-                android:id="@+id/textView5"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.7"
-                android:text="Tap to change"
-                android:textAlignment="center" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:layout_marginLeft="20dp"
             android:layout_marginTop="20dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textView20"
+                android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Name"
                 android:textAlignment="textStart"
                 android:textSize="20sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/textView22"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="TextView" />
-
-            <TextView
-                android:id="@+id/textView21"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="TextView" />
 
         </LinearLayout>
     </LinearLayout>
@@ -94,7 +73,7 @@
             app:srcCompat="@drawable/create_group" />
 
         <ImageView
-            android:id="@+id/imageView14"
+            android:id="@+id/msg_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -121,7 +100,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.5"
-                    android:text="Activities"
+                    android:text="Current activity"
                     android:textAlignment="center"
                     android:textSize="30sp" />
 

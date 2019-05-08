@@ -121,13 +121,13 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         if(cursor.getCount()!=0)
         {
             msgPPL.add(new Message(cursor.getString(0)
-                    ,new AES().decrypt(cursor.getString(1),serverkey)
-                    ,cursor.getString(2)));
+                    ,cursor.getString(1)
+                    ,new AES().decrypt(cursor.getString(2),serverkey)));
             while (cursor.moveToNext())
             {
                 Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
                 msgPPL.add(new Message(cursor.getString(0)
-                        ,new AES().decrypt(cursor.getString(1),serverkey)
+                        ,cursor.getString(1)
                         ,new AES().decrypt(cursor.getString(2),serverkey)));
             }
         }
@@ -147,6 +147,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " +TEXT+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID+" HAVING MAX("+MSG_NUM+")" ;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor =  db.query(TABLE_NAME, new String[] {MSG_ID,SENDER_ID,TEXT,DATE },null,null,MSG_ID, "MAX("+MSG_NUM+")", null);
+        Log.e("getMessageDialogs", "Cursor count="+cursor.getCount());
 
         ArrayList<Message> msgPPL=new ArrayList<Message>();
         cursor.moveToFirst();

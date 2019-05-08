@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         intent=new Intent(this, DpDownloadService.class);
         intent.putExtra("ServerKey",server_key);
-       // startService(intent);
+        //startService(intent);
 
         FragmentManager tabfm = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = tabfm.beginTransaction();

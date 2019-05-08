@@ -137,6 +137,7 @@ public class MessageListMaker extends AppCompatActivity
             DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
             msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,key));
             msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
+            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("msg_trigger").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
 
         } catch (ParseException e) {
             e.printStackTrace();

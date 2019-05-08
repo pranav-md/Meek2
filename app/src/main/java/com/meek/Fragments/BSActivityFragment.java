@@ -84,7 +84,7 @@ public class BSActivityFragment extends Fragment
                     String act_type = dataSnapshot.child("act_type").getValue().toString();
                     String act_date = dataSnapshot.child("act_date").getValue().toString();
                     String act_visibility = dataSnapshot.child("act_visibility").getValue().toString();
-                    String act_current_place = dataSnapshot.child("act_current_place").getValue().toString();
+                 //   String act_current_place = dataSnapshot.child("act_current_place").getValue().toString();
                     String act_text = dataSnapshot.child("act_text").getValue().toString();
                     act_text = new AES().decrypt(act_text, "pmdrox");
                     act_date = new AES().decrypt(act_date, "pmdrox");

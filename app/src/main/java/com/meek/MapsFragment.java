@@ -335,8 +335,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 while(loc_db_mkr_lock==false);
-                String locPpl=dataSnapshot.getValue().toString();
-                ArrayList<String> locPPLS= extractor(locPpl);
+                ArrayList<String> locPPLS= dSnapshotExtractor(dataSnapshot);
                 DatabaseReference usr_loc_ref = FirebaseDatabase.getInstance().getReference();
                 for(String loc_uid:locPPLS)
                 {
@@ -396,6 +395,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         while (user_marker_lock==false);
             for(MapPeople newppl:loc_cur)
             {
+                    if(newppl.latLng!=new LatLng(200.0,200.0))
                     mapPeople.add(newppl);
                     setMarker(newppl.latLng, mapPeople.size() - 1, newppl.uid, "hahahah", false);
                     //     ppl_page_adapter.setData(mapPeople);
@@ -596,96 +596,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         });
     }*/
 
-    void crossChecker(String all_ppl)
-    {
-        final ArrayList<String> al_pl=extractor(all_ppl);
-        ArrayList<String> cr_pl=extractor(current_ppl);
 
-        DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
 
-        for(int i=0;i<al_pl.size();++i)
-        {
-            if(!current_ppl.contains(al_pl.get(i)))
-            {
-                final MapPeople newone=new MapPeople();
-                newone.uid=al_pl.get(i);
-                newone.loc_listener=ppl_ref.child("Users").
-                        child(newone.uid).
-                        child("Details1").addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot)
-                    {
-                        newone.latLng=new LatLng(Double.parseDouble(dataSnapshot.child("lat").getValue().toString()),Double.parseDouble(dataSnapshot.child("lng").getValue().toString()));
-             //           newone.color= Integer.parseInt(dataSnapshot.child("clr").getValue().toString());
-                        if(!current_ppl.contains(newone.uid))
-                        {
-                            mapPeople.add(newone);
-                            current_ppl += newone.uid + ";";
-                            setMarker(newone.latLng,mapPeople.size()-1,newone.uid,"dp tobe set",false);
-                        }
-                        else
-                        {
-                            for(int i=0;i<mapPeople.size();++i)
-                            {
-                                if(mapPeople.get(i).uid.equals(newone.uid))
-                                {
-                                    mapPeople.get(i).latLng=newone.latLng;
-                                    mapPeople.get(i).color=newone.color;
-                                    setMarker(newone.latLng,i,newone.uid,"dp tobe set",true);
-                                }
-                            }
-                        }
-                  //      ppl_page_adapter.setData(mapPeople);
-                  //      ppl_page_adapter.notifyDataSetChanged();
-                    }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-            }
-        }
-        ///
-        if(cr_pl.size()!=0)
-            for(int i=0;i<cr_pl.size();++i)
-            {
-                if(!all_ppl.contains(cr_pl.get(i)))
-                {
-                    for(int j=0;j<mapPeople.size();++j)
-                    {
-                        if(mapPeople.get(j).equals(cr_pl.get(i)))
-                        {
-                            mapPeople.remove(j);
-                            ppl_marker.get(j).remove();
-                            ppl_marker.remove(j);
-                            current_ppl.replace(":"+cr_pl.get(i),"");
-                    //        ppl_page_adapter.setData(mapPeople);
-                    //        ppl_page_adapter.notifyDataSetChanged();
-                        }
-                    }
-                }
-            }
-    }
-
-    ArrayList<String> extractor(String all_uid)
+    public static ArrayList<String> dSnapshotExtractor(DataSnapshot all_uid)
     {
         ArrayList<String> uids=new ArrayList<String>() ;
-        int numMeek = 0,i;
-        for( i=0; i<all_uid.length(); i++ ) {
-            if( all_uid.charAt(i) == ':' ) {
-                numMeek++;
+
+        if(all_uid.exists())
+            for(DataSnapshot ds:all_uid.getChildren())
+            {
+                uids.add(ds.getKey());
             }
-        }
-        numMeek--;
-        for (i=0;i<numMeek;++i)
-        {
-            all_uid=all_uid.substring(1);
-            int pos=all_uid.indexOf(':');
-            String m_uid=all_uid.substring(0,pos);
-            uids.add(m_uid);
-            all_uid=all_uid.substring(pos);
-        }
+
         return uids;
     }
 

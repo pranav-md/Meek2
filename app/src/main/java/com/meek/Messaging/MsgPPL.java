@@ -24,23 +24,8 @@ public class MsgPPL
     {
 
     }
-    void getName()
-    {
-        DatabaseReference name_ref = FirebaseDatabase.getInstance().getReference();
-        name_ref.child("Users").child(sender_id).child("Name").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                name=dataSnapshot.getValue().toString();
 
 
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
     String msgID(String uid,String r_uid)
     {
         if(Integer.parseInt(uid)<Integer.parseInt(r_uid))

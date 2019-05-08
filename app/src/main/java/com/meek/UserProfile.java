@@ -8,13 +8,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.meek.Database.PeopleDBHelper;
+import com.meek.Messaging.MessageListMaker;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -50,9 +54,7 @@ public class UserProfile extends AppCompatActivity {
         Bundle extras = intent.getExtras();
         serverkey = extras.getString("ServerKey");
         loc_stat = extras.getString("Stat");
-
-
-        r_uid="";
+        r_uid=extras.getString("r_uid");
         activities=new ArrayList<Activities>();
         LinearLayout date_setter=(LinearLayout)findViewById(R.id.date_setter);
         no_act=(LinearLayout)findViewById(R.id.no_act);
@@ -60,8 +62,59 @@ public class UserProfile extends AppCompatActivity {
         activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid,serverkey);
         actvity_pgs=(ViewPager)findViewById(R.id.act_pgs);
         no_act.setVisibility(View.INVISIBLE);
-        fetchDateData();
+        getFetchActivities();
+        setProfile();
+        // fetchDateData();
     }
+
+    void setProfile()
+    {
+        TextView name=(TextView)findViewById(R.id.name);
+        name.setText(new PeopleDBHelper(this,serverkey).getName(r_uid));
+        ImageView msg_btn=(ImageView)findViewById(R.id.msg_button);
+        msg_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent=new Intent(UserProfile.this, MessageListMaker.class);
+                intent.putExtra("r_uid",r_uid);
+                intent.putExtra("ServerKey",serverkey);
+                startActivity(intent);
+            }
+        });
+    }
+    void getFetchActivities()
+    {
+        final DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
+        act_ref.child("Activities").child(r_uid).child("Activity_info").child("Activity_num").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                String act_id=dataSnapshot.getValue().toString();
+                if(!act_id.equals("0"))
+                {
+                    ArrayList<Activities> act_ids=new ArrayList<Activities>();
+                    Activities newact=new Activities();
+                    newact.act_id=act_id;
+                    act_ids.add(newact);
+                    activitiesPageAdapter=new MapActivitiesPageAdapter(getSupportFragmentManager(),r_uid,serverkey);
+                    activitiesPageAdapter.setData(act_ids);
+                    actvity_pgs.setAdapter(activitiesPageAdapter);
+                }
+                else
+                {
+                    setNoActivityFound();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+
     void fetchDateData() {
         //  setShimmer();
         setGMTdates();

@@ -125,6 +125,9 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         values.put(NME, new AES().encrypt(name,serverkey));
         values.put(HSHED_PNM,h_num);
         values.put(CON_LEVEL,con_level);
+        values.put(LT,200);
+        values.put(LG,200);
+
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
         Log.e("INSERT PERSON",uid+"_value is written with id="+id);
@@ -141,19 +144,19 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         if(cursor.getCount()!=0)
         {
-            mapPPL.add(new MapPeople(cursor.getString(0)
-                    ,new AES().decrypt(cursor.getString(1),serverkey)
-                    ,new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2),serverkey)),
-                                Double.parseDouble(new AES().decrypt(cursor.getString(3),serverkey)))));
-            while (cursor.moveToNext())
-            {
-                Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
                 mapPPL.add(new MapPeople(cursor.getString(0)
-                        ,new AES().decrypt(cursor.getString(1),serverkey)
-                        ,new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2),serverkey)),
-                        Double.parseDouble(new AES().decrypt(cursor.getString(3),serverkey)))));
+                        , new AES().decrypt(cursor.getString(1), serverkey)
+                        , new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2), serverkey)),
+                        Double.parseDouble(new AES().decrypt(cursor.getString(3), serverkey)))));
+                while (cursor.moveToNext()) {
+                    Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
+                    mapPPL.add(new MapPeople(cursor.getString(0)
+                            , new AES().decrypt(cursor.getString(1), serverkey)
+                            , new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2), serverkey)),
+                            Double.parseDouble(new AES().decrypt(cursor.getString(3), serverkey)))));
+                }
             }
-        }
+
         return mapPPL;
     }
 
@@ -172,31 +175,39 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
 
     public boolean checkUID(String uid,int status)
     {
-        String query = "SELECT " + UID + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =? AND "+CON_LEVEL+"=?";
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{uid,status+""});
-        Log.e("checkUID","UID="+uid+"   the cursor count="+cursor.getCount());
+        try {
+            String query = "SELECT " + UID + " FROM " + TABLE_NAME + " WHERE " + UID + " =? AND " + CON_LEVEL + "=?";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, new String[]{uid, status + ""});
+            Log.e("checkUID", "UID=" + uid + "   the cursor count=" + cursor.getCount());
 
-        if (cursor.getCount() > 0)
+            if (cursor.getCount() > 0) {
+                return true;
+            } else
+                return false;
+        }
+        catch (NullPointerException e)
         {
             return true;
         }
-        else
-            return false;
     }
+
     public boolean checkUID(String uid)
     {
-
-        String query = "SELECT " + UID + " FROM "+ TABLE_NAME +" WHERE "+ UID+ " =?";
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{uid});
-        Log.e("checkUID","UID="+uid+"   the cursor count="+cursor.getCount());
-        if (cursor.getCount() > 0)
+        try {
+            String query = "SELECT " + UID + " FROM " + TABLE_NAME + " WHERE " + UID + " =?";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, new String[]{uid});
+            Log.e("checkUID", "UID=" + uid + "   the cursor count=" + cursor.getCount());
+            if (cursor.getCount() > 0) {
+                return true;
+            } else
+                return false;
+        }
+        catch (NullPointerException e)
         {
             return true;
         }
-        else
-            return false;
     }
 
     public boolean checkDPNO(String dpno,String uid)
@@ -239,7 +250,7 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
             name=cursor.getString(0);
         }
         catch (CursorIndexOutOfBoundsException ex){
-            name="";
+            return  "";
         }
         return new AES().decrypt(name,serverkey);
     }
@@ -305,8 +316,12 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         if(cursor.getCount()!=0)
         {
+            if(Integer.parseInt(cursor.getString(2)+"")==0)
+                cursor.moveToNext();
             conPPL.add(new Contact(cursor.getString(0),new AES().decrypt(cursor.getString(1),serverkey),Integer.parseInt(cursor.getString(2)+"")));
             while (cursor.moveToNext()) {
+                if(Integer.parseInt(cursor.getString(2)+"")==0)
+                    cursor.moveToNext();
                 Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
                 conPPL.add(new Contact(cursor.getString(0), new AES().decrypt(cursor.getString(1),serverkey) , Integer.parseInt(cursor.getString(2) + "")));
 
