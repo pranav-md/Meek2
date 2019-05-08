@@ -405,6 +405,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                            act_views.collapse();
                    }
                });
+               act_feed.addView(view);
            }
         }
     }
@@ -527,20 +528,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
-                final String con_meek=dataSnapshot.child("con_meek").getValue().toString();
-                String activity_meek=dataSnapshot.child("activity_meek").getValue().toString();
-                String location_meek=dataSnapshot.child("location_meek").getValue().toString();
-                String sent_request=dataSnapshot.child("act_request_sent").getValue().toString();
-                String received_request=dataSnapshot.child("act_request_received").getValue().toString();
-                String accept_keys=dataSnapshot.child("act_acc_key").getValue().toString();
 
-
-                ArrayList<String> meek_cons=extractor(con_meek);
-                ArrayList<String> activity_cons=extractor(activity_meek);
-                ArrayList<String> loc_cons=extractor(location_meek);
-                ArrayList<String> sent_req_cons=extractor(sent_request);
-                ArrayList<String> rcv_req_cons=extractor(received_request);
-                ArrayList<String> act_acc_key=extractor(accept_keys);
+                ArrayList<String> meek_cons=dSnapshotExtractor(dataSnapshot.child("con_meek"));
+                ArrayList<String> activity_cons=dSnapshotExtractor(dataSnapshot.child("activity_meek"));
+                ArrayList<String> loc_cons=dSnapshotExtractor(dataSnapshot.child("location_meek"));
+                ArrayList<String> sent_req_cons=dSnapshotExtractor(dataSnapshot.child("act_request_sent"));
+                ArrayList<String> rcv_req_cons=dSnapshotExtractor(dataSnapshot.child("act_request_received"));
+                ArrayList<String> act_acc_key=dSnapshotExtractor(dataSnapshot.child("act_acc_key"));
 
                 ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6  act_acc_key=7
                 ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
@@ -714,6 +708,18 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         //Button play=(Button)activity_layout.findViewById(R.id.play)
 
     }*/
+    public static ArrayList<String> dSnapshotExtractor(DataSnapshot all_uid)
+    {
+        ArrayList<String> uids=new ArrayList<String>() ;
+
+        if(all_uid!=null)
+        for(DataSnapshot ds:all_uid.getChildren())
+        {
+            uids.add(ds.getKey());
+        }
+
+        return uids;
+    }
 
     public static ArrayList<String> extractor(String all_uid)
     {
@@ -830,12 +836,31 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                     @Override
                     public void onClick(final View view) {
 
-                        final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                        trigger_ref.child("Users")
+                        DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+                        data_ref.child("Users")
                                 .child(uid)
-                                .child("Connection_Trigger")
+                                .child("Connections")
+                                .child("location_meek")
+                                .child(view.getTag().toString()).setValue(view.getTag().toString());
+
+                        data_ref.child("Users")
+                                .child(view.getTag().toString())
+                                .child("Connections")
+                                .child("location_meek")
+                                .child(uid).setValue(uid);
+
+                        data_ref.child("Users")
+                                .child(view.getTag().toString())
+                                .child("Connections")
+                                .child("loc_request_sent")
+                                .child(uid).removeValue();
+
+                        data_ref.child("Users")
+                                .child(uid)
+                                .child("Connections")
                                 .child("loc_request_received")
-                                .child("yes").setValue(view.getTag().toString());
+                                .child(view.getTag().toString()).removeValue();
+
                         new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),4);
                         MainActivity ma=(MainActivity) context ;
                         ma.tabFragment.setConnectionList();
@@ -847,11 +872,23 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                     @Override
                     public void onClick(View view) {
                         final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                        trigger_ref.child("Users")
+
+                        final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+
+                        data_ref.child("Users")
+                                .child(view.getTag().toString())
+                                .child("Connections")
+                                .child("loc_request_sent")
+                                .child(uid).removeValue();
+
+                        data_ref.child("Users")
                                 .child(uid)
-                                .child("Connection_Trigger")
+                                .child("Connections")
                                 .child("loc_request_received")
-                                .child("no").setValue(view.getTag().toString());
+                                .child(view.getTag().toString()).removeValue();
+
+
+
                         new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
                         MainActivity ma=(MainActivity) context ;
                         ma.tabFragment.setConnectionList();
@@ -891,7 +928,39 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                                 Log.e("AES KEY","The KEY after encryption="+encrypted);
                                                 DatabaseReference key_ref = FirebaseDatabase.getInstance().getReference();
                                                 key_ref.child("Key_Exchange").child(view.getTag().toString()).child(uid).setValue(encrypted);
-                                                key_ref.child("Users").child(uid).child("Connection_Trigger").child("act_acc_key").setValue(u_id);
+
+                                                final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+                                                data_ref.child("Users")
+                                                        .child(uid)
+                                                        .child("Connections")
+                                                        .child("activity_meek")
+                                                        .child(view.getTag().toString()).setValue(view.getTag().toString());
+
+                                                data_ref.child("Users")
+                                                        .child(view.getTag().toString())
+                                                        .child("Connections")
+                                                        .child("activity_meek")
+                                                        .child(uid).setValue(uid);
+                                                data_ref.child("Users")
+                                                        .child(view.getTag().toString())
+                                                        .child("Connections")
+                                                        .child("act_acc_key")
+                                                        .child(uid).setValue(uid);
+
+
+                                                data_ref.child("Users")
+                                                        .child(view.getTag().toString())
+                                                        .child("Connections")
+                                                        .child("act_request_sent")
+                                                        .child(uid).removeValue();
+
+                                                data_ref.child("Users")
+                                                        .child(uid)
+                                                        .child("Connections")
+                                                        .child("act_request_received")
+                                                        .child(view.getTag().toString()).removeValue();
+
+
                                                 new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),3);
                                                 MainActivity ma=(MainActivity) context ;
                                                 ma.tabFragment.setConnectionList();
@@ -917,13 +986,6 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 e.printStackTrace();
                             }
 
-                            final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                            trigger_ref.child("Users")
-                                    .child(uid)
-                                    .child("Connection_Trigger")
-                                    .child("act_request_received")
-                                    .child("yes").setValue(view.getTag().toString());
-
                         }
                     });
 
@@ -931,11 +993,22 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                         @Override
                         public void onClick(View view) {
                             final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                            trigger_ref.child("Users")
+
+                            final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+
+
+                            data_ref.child("Users")
+                                    .child(view.getTag().toString())
+                                    .child("Connections")
+                                    .child("act_request_sent")
+                                    .child(uid).removeValue();
+
+                            data_ref.child("Users")
                                     .child(uid)
-                                    .child("Connection_Trigger")
+                                    .child("Connections")
                                     .child("act_request_received")
-                                    .child("no").setValue(view.getTag().toString());
+                                    .child(view.getTag().toString()).removeValue();
+
 
                             new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),2);
                             MainActivity ma=(MainActivity) context ;
@@ -988,11 +1061,19 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                                 SharedPreferences getPref=context.getSharedPreferences("USERKEY",MODE_PRIVATE);
                                 final String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
 
-                                final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                                trigger_ref.child("Users")
+                                final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+                                data_ref.child("Users")
                                         .child(uid)
-                                        .child("Connection_Trigger")
-                                        .child("act_request_sent").setValue(view.getTag().toString());
+                                        .child("Connections")
+                                        .child("act_request_sent")
+                                        .child(view.getTag().toString()).setValue(view.getTag().toString());
+
+                                data_ref.child("Users")
+                                        .child(view.getTag().toString())
+                                        .child("Connections")
+                                        .child("act_request_received")
+                                        .child(uid).setValue(uid);
+
                                 btn.setTag(R.integer.stat,"1");
                                 btn.setImageResource(R.drawable.cancel_cross);
                                 final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
@@ -1038,11 +1119,20 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                             }
                             else
                             {
-                                final DatabaseReference trigger_ref = FirebaseDatabase.getInstance().getReference();
-                                trigger_ref.child("Users")
+                                final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+                                data_ref.child("Users")
                                         .child(uid)
-                                        .child("Connection_Trigger")
-                                        .child("act_request_reject").setValue(view.getTag().toString());
+                                        .child("Connections")
+                                        .child("act_request_sent")
+                                        .child(view.getTag().toString()).removeValue();
+
+                                data_ref.child("Users")
+                                        .child(view.getTag().toString())
+                                        .child("Connections")
+                                        .child("act_request_received")
+                                        .child(uid).removeValue();
+
+
                                 btn.setTag(R.integer.stat,"0");
                                 new PeopleDBHelper(context,serverkey).changePersonStatus(view.getTag().toString(),1);
                                 view.setTag(R.integer.stat,"0");
