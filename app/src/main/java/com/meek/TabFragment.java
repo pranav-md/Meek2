@@ -836,7 +836,7 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
                     @Override
                     public void onClick(final View view) {
 
-                        final DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
+                        DatabaseReference data_ref = FirebaseDatabase.getInstance().getReference();
                         data_ref.child("Users")
                                 .child(uid)
                                 .child("Connections")
