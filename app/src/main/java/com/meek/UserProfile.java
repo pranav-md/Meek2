@@ -1,7 +1,9 @@
 package com.meek;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -11,6 +13,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -34,7 +37,7 @@ import me.relex.circleindicator.CircleIndicator;
  */
 
 public class UserProfile extends AppCompatActivity {
-    String r_uid;
+    String r_uid,uid;
     Date curr_date, lwr_gmt, upr_gmt;
     String lwr_dt, upr_dt;
     boolean comp_up,comp_lw;
@@ -55,6 +58,8 @@ public class UserProfile extends AppCompatActivity {
         serverkey = extras.getString("ServerKey");
         loc_stat = extras.getString("Stat");
         r_uid=extras.getString("r_uid");
+        SharedPreferences pref =  getSharedPreferences("UserDetails", MODE_PRIVATE);
+        uid=pref.getString("uid", "");
         activities=new ArrayList<Activities>();
         LinearLayout date_setter=(LinearLayout)findViewById(R.id.date_setter);
         no_act=(LinearLayout)findViewById(R.id.no_act);
@@ -81,12 +86,161 @@ public class UserProfile extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        final DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
+        act_ref.child("Users").child(uid).child("Connections")
+                .child("location_meek")
+                .child(r_uid).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                final ImageView loc_img=(ImageView)findViewById(R.id.loc_img);
+                if(dataSnapshot.exists())
+                {
+                    loc_img.setImageResource(R.drawable.delete_location);
+                    loc_img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("loc_request_received")
+                                    .child(uid).removeValue();
+
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("location_meek")
+                                    .child(uid).removeValue();
+
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("loc_request_sent")
+                                    .child(r_uid).removeValue();
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("location_meek")
+                                    .child(r_uid).removeValue();
+                            loc_img.setImageResource(R.drawable.add_location);
+                            Toast.makeText(UserProfile.this,"Location access removed",Toast.LENGTH_LONG).show();
+                            new PeopleDBHelper(UserProfile.this,serverkey).changePersonStatus(r_uid,3);
+                            ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
+
+                        }
+                    });
+                }
+                else
+                {
+                    loc_img.setImageResource(R.drawable.add_location);
+                    loc_img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("loc_request_received")
+                                    .child(uid).setValue("key");
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("loc_request_sent")
+                                    .child(r_uid).setValue("key");
+                            loc_img.setImageResource(R.drawable.delete_location);
+                            Toast.makeText(UserProfile.this,"Location access sent",Toast.LENGTH_LONG).show();
+                            new PeopleDBHelper(UserProfile.this,serverkey).changePersonStatus(r_uid,3);
+                            ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
+
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        act_ref.child("Users").child(uid).child("Connections")
+                .child("activity_meek")
+                .child(r_uid).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                final ImageView act_img=(ImageView)findViewById(R.id.act_img);
+                if(dataSnapshot.exists())
+                {
+                    act_img.setImageResource(R.drawable.remove_person);
+                    act_img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("act_request_received")
+                                    .child(uid).removeValue();
+
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("activity_meek")
+                                    .child(uid).removeValue();
+
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("act_request_sent")
+                                    .child(r_uid).removeValue();
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("activity_meek")
+                                    .child(r_uid).removeValue();
+                            act_img.setImageResource(R.drawable.add_person);
+                            Toast.makeText(UserProfile.this,"Activity connection removed",Toast.LENGTH_LONG).show();
+                            new PeopleDBHelper(UserProfile.this,serverkey).changePersonStatus(r_uid,2);
+                            ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
+
+                        }
+                    });
+                }
+                else
+                {
+                    act_img.setImageResource(R.drawable.add_person);
+                    act_img.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            act_ref.child("Users")
+                                    .child(r_uid)
+                                    .child("Connections")
+                                    .child("act_request_received")
+                                    .child(uid).setValue("key");
+                            act_ref.child("Users")
+                                    .child(uid)
+                                    .child("Connections")
+                                    .child("act_request_sent")
+                                    .child(r_uid).setValue("key");
+                            act_img.setImageResource(R.drawable.remove_person);
+                            new PeopleDBHelper(UserProfile.this,serverkey).changePersonStatus(r_uid,1);
+                            Toast.makeText(UserProfile.this,"Activity request Sent",Toast.LENGTH_LONG).show();
+                            ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
+
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
     void getFetchActivities()
     {
-        final DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference act_ref = FirebaseDatabase.getInstance().getReference();
         act_ref.child("Activities").child(r_uid).child("Activity_info").child("Activity_num").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
+
             public void onDataChange(DataSnapshot dataSnapshot)
             {
                 String act_id=dataSnapshot.getValue().toString();

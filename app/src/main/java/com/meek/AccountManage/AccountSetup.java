@@ -49,8 +49,8 @@ public class AccountSetup extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
     }
+
 
     public static String random() {
         Random generator = new Random();

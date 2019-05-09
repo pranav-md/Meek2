@@ -59,18 +59,18 @@
 
 
         <ImageView
-            android:id="@+id/imageView15"
+            android:id="@+id/loc_img"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            app:srcCompat="@drawable/add_location" />
+
+        <ImageView
+            android:id="@+id/act_img"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:srcCompat="@drawable/add_person" />
-
-        <ImageView
-            android:id="@+id/imageView16"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            app:srcCompat="@drawable/create_group" />
 
         <ImageView
             android:id="@+id/msg_button"

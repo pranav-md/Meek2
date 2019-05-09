@@ -101,7 +101,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         values.put(MSG_NUM, number+1);
         values.put(SENDER_ID,sender_id);
         values.put(TEXT,new AES().encrypt(text,serverkey));
-        values.put(DATE,new AES().encrypt(date,serverkey));
+        values.put(DATE,date);
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
         Log.e("INSERT PERSON",msg_id+" written with number of="+number);
@@ -121,13 +121,13 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         if(cursor.getCount()!=0)
         {
             msgPPL.add(new Message(cursor.getString(0)
-                    ,cursor.getString(1)
+                    ,new AES().decrypt(cursor.getString(1),serverkey)
                     ,new AES().decrypt(cursor.getString(2),serverkey)));
             while (cursor.moveToNext())
             {
                 Log.e("GET ALL CONNS", cursor.getString(0) + ", " + cursor.getString(1) + ", " + cursor.getString(2));
                 msgPPL.add(new Message(cursor.getString(0)
-                        ,cursor.getString(1)
+                        ,new AES().decrypt(cursor.getString(1),serverkey)
                         ,new AES().decrypt(cursor.getString(2),serverkey)));
             }
         }
@@ -144,9 +144,10 @@ public class MessageDBHelper extends SQLiteOpenHelper {
 
     public ArrayList<Message> getMessageDialogs()
     {
-        String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " +TEXT+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID+" HAVING MAX("+MSG_NUM+")" ;
+        String query = "SELECT "+MSG_ID+" , " +SENDER_ID+" , " +TEXT+ " FROM "+ TABLE_NAME  +" GROUP BY "+ MSG_ID ;
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor =  db.query(TABLE_NAME, new String[] {MSG_ID,SENDER_ID,TEXT,DATE },null,null,MSG_ID, "MAX("+MSG_NUM+")", null);
+      //  Cursor cursor =  db.query(TABLE_NAME, new String[] {MSG_ID,SENDER_ID,TEXT,DATE },null,null,MSG_ID, null, null);
+        Cursor cursor= db.rawQuery(query,null);
         Log.e("getMessageDialogs", "Cursor count="+cursor.getCount());
 
         ArrayList<Message> msgPPL=new ArrayList<Message>();

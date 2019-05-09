@@ -479,7 +479,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             {
                  nextppl=new MsgPPL();
                  nextppl.sender_id=newone.getSender_id();
-                 nextppl.name=new PeopleDBHelper(getContext(),server_key).getName(newone.getSender_id());
+                 nextppl.name=getOtherUsername(newone.getMsg_id());
                  nextppl.last_msg=newone.getText();
                  nextppl.date=newone.getCreatedAt();
                  msgPPLS.add(nextppl);
@@ -496,7 +496,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     }
 
-
+    String getOtherUsername(String msg_id)
+    {
+        String name;
+        if(msg_id.substring(4,msg_id.indexOf(":")).equals(uid))
+        {
+            name= new PeopleDBHelper(getContext(),server_key)
+                    .getName(msg_id.substring(msg_id.indexOf(":")+5));
+        }
+        else
+        {
+            name= new PeopleDBHelper(getContext(),server_key)
+                    .getName(msg_id.substring(4,msg_id.indexOf(":")));
+        }
+        return name;
+    }
 
     void setPplTab()
     {
