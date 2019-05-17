@@ -104,20 +104,12 @@
                     android:textAlignment="center"
                     android:textSize="30sp" />
 
-                <me.relex.circleindicator.CircleIndicator
-                    android:id="@+id/indicator"
-                    android:layout_width="match_parent"
-                    android:layout_height="20dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_weight="0.5">
-
-                </me.relex.circleindicator.CircleIndicator>
             </LinearLayout>
 
             <android.support.v4.view.ViewPager
                 android:id="@+id/act_pgs"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="match_parent" />
 
         </LinearLayout>
 
@@ -127,7 +119,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/white"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="invisible">
 
             <ImageView
                 android:layout_width="match_parent"

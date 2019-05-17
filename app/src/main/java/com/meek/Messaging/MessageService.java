@@ -15,6 +15,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meek.Database.MessageDBHelper;
 import com.meek.Database.PeopleDBHelper;
+import com.meek.Encryption.AES;
 
 import static com.meek.TabFragment.extractor;
 
@@ -26,26 +27,26 @@ import java.util.ArrayList;
 
 public class MessageService extends Service
 {
-
+    String serverkey;
     public static String MY_ACTION="UPDATE_MSGS";
 
 
     @Override
-    public void onCreate()
-    {
-        if(!new MessageDBHelper(this,"  ").checkTable())
-            new MessageDBHelper(this,"   ").createTable();
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        serverkey = intent.getStringExtra("ServerKey");
+        Log.e("oncreate","MessageService");
+        if(!new MessageDBHelper(this,serverkey).checkTable())
+            new MessageDBHelper(this,serverkey).createTable();
 
         SharedPreferences userPrefs=getSharedPreferences("UserDetails",MODE_PRIVATE);
-            String uid=userPrefs.getString("uid","");
-            listenMsgs(uid);
+        String uid=userPrefs.getString("uid","");
+        listenMsgs(uid);
+        return super.onStartCommand(intent, flags, startId);
     }
-
-
-
 
     void listenMsgs(final String uid)
     {
+        Log.e("oncreate","ListenMsgs");
         DatabaseReference msgctr_ref = FirebaseDatabase.getInstance().getReference();
         msgctr_ref.child("Users").child(uid).child("Message_counter").addValueEventListener(new ValueEventListener() {
             @Override
@@ -64,10 +65,11 @@ public class MessageService extends Service
 
     void retrieveMsgs(ArrayList<String> uids, final String uid)
     {
-        MessageDBHelper msg_db=new MessageDBHelper(this,"sdfsdf");
+        MessageDBHelper msg_db=new MessageDBHelper(this,serverkey);
         msg_db.getWritableDatabase();
         for(final String id:uids)
         {
+            Log.e("retrieveMsgs","messgages of"+id);
             final DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
             msg_ref.child("Messages_DB")
                     .child(msgID(uid,id))
@@ -78,14 +80,17 @@ public class MessageService extends Service
                             if(dataSnapshot.getValue()!=null)
                             {
                                 String xml_msgs = dataSnapshot.getValue().toString();
+                                Log.e("Retrieve msg","msg texts="+xml_msgs);
                                 msg_ref.child("Messages_DB")
                                         .child(msgID(uid, id))
                                         .child("sent_msgs:" + id + ":").setValue("<AllMessages><Message></Message></AllMessages>");
                                 while (xml_msgs.contains("<Message>") && (!xml_msgs.contains("<Message></Message>")))
                                 {
                                     String msg_text = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "text");
-                                    String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "date");
-                                    new MessageDBHelper(MessageService.this,"sfljf").insertMessage(msgID(uid, id), id, msg_text, msg_date);
+                                    String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "timestamp");
+                                    Log.e("MESGSS DPLAY","MSG_TEXT="+msg_text+"  MSG_DATE="+msg_date);
+                                    Log.e("MESGSS DPLAY","MSG_TE KEY IS="+new PeopleDBHelper(MessageService.this,serverkey).getEncKey(id));
+                                    new MessageDBHelper(MessageService.this,serverkey).insertMessage(msgID(uid, id), id,new AES().decrypt( msg_text,new PeopleDBHelper(MessageService.this,serverkey).getEncKey(id)), msg_date);
                                     xml_msgs = xml_msgs.replace("<Message>" + parseXML(parseXML(xml_msgs, "AllMessages"), "Message") + "</Message>", "");
                                 }
                                 Intent intent = new Intent();
@@ -133,7 +138,8 @@ public class MessageService extends Service
 
     public void onDestroy()
     {
-        Log.d("service started","destroy");
+        startService(new Intent(this,MessageService.class));
+        Log.e("service started","destroy msgservice");
     }
 
 
@@ -141,5 +147,6 @@ public class MessageService extends Service
     public void onTaskRemoved(Intent rootIntent)
     {
         startService(new Intent(this,MessageService.class));
+        Log.e("service started","destroy msgservice");
     }
 }

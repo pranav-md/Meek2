@@ -61,8 +61,9 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         this.serverkey=serverkey;
     }
 
-    public boolean checkTable()
+    public boolean checkTable()throws Exception
     {
+
         SQLiteDatabase mDatabase = this.getWritableDatabase();
 
         Log.d("CHECK TABLE", TABLE_NAME+" Exist or not check");
@@ -125,15 +126,27 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         values.put(NME, new AES().encrypt(name,serverkey));
         values.put(HSHED_PNM,h_num);
         values.put(CON_LEVEL,con_level);
-        values.put(LT,200);
-        values.put(LG,200);
-
+        values.put(LT,new AES().encrypt("200", serverkey));
+        values.put(LG,new AES().encrypt("200", serverkey));
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
         Log.e("INSERT PERSON",uid+"_value is written with id="+id);
         // close db connection
         db.close();
     }
+
+    public boolean checkEncKey(String id)
+    {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM "+TABLE_NAME+" WHERE "+E_KY+" IS NULL AND "+UID+" = "+id, null);
+         Log.e("checkUID", "UID=" + id + "   the cursor count=" + cursor.getCount());
+
+        if (cursor.getCount() > 0) {
+            return true;
+        } else
+            return false;
+     }
+
 
     public ArrayList<MapPeople> getLocationPplData()
     {
@@ -318,7 +331,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         {
             if(Integer.parseInt(cursor.getString(2)+"")==0)
                 cursor.moveToNext();
-            conPPL.add(new Contact(cursor.getString(0),new AES().decrypt(cursor.getString(1),serverkey),Integer.parseInt(cursor.getString(2)+"")));
+            if(cursor.getCount()!=1)
+                conPPL.add(new Contact(cursor.getString(0),new AES().decrypt(cursor.getString(1),serverkey),Integer.parseInt(cursor.getString(2)+"")));
             while (cursor.moveToNext()) {
                 if(Integer.parseInt(cursor.getString(2)+"")==0)
                     cursor.moveToNext();

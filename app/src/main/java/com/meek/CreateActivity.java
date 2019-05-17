@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -192,6 +193,8 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         SimpleDateFormat dateFormatGmt = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
         String getTime= dateFormatGmt.format(new Date())+"";
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
 
         String map_branch;
         int visiblity;
@@ -211,13 +214,13 @@ public class CreateActivity extends AppCompatActivity implements GoogleApiClient
         Log.e("SETATTRIBUTES",key+" is the key");
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lat").setValue(new AES().encrypt(lat,key));
         userRef.child(uid).child("mapview").child(map_branch).child(act_num+"").child("lng").setValue(new AES().encrypt(lng,key));
-        userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(getTime);
+        userRef.child(uid).child("pgview").child(getTime.substring(0,getTime.indexOf(" "))).child(act_num+"").setValue(calendar.getTimeInMillis());
 
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_visibility").setValue(visiblity);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_type").setValue(type);
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_current_place").setValue(new AES().encrypt(place_name,key));
      //   userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(Long.parseLong(df.format(new Date()))+"",key));
-        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(df.format(new Date())+"",key));
+        userRef.child(uid).child("All_Activities").child(act_num+"").child("act_date").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
         userRef.child(uid).child("All_Activities").child(act_num+"").child("act_text").setValue(new AES().encrypt(caption,key));
         userRef.child(uid).child("Activity_info").child("Activity_num").setValue(act_num+"");
 

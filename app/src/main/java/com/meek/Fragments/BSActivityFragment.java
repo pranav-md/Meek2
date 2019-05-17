@@ -26,6 +26,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meek.ActivityViewSetter;
+import com.meek.Database.PeopleDBHelper;
 import com.meek.Encryption.AES;
 import com.meek.R;
 import com.meek.Time.TimeManage;
@@ -86,8 +87,8 @@ public class BSActivityFragment extends Fragment
                     String act_visibility = dataSnapshot.child("act_visibility").getValue().toString();
                  //   String act_current_place = dataSnapshot.child("act_current_place").getValue().toString();
                     String act_text = dataSnapshot.child("act_text").getValue().toString();
-                    act_text = new AES().decrypt(act_text, "pmdrox");
-                    act_date = new AES().decrypt(act_date, "pmdrox");
+                    act_text = new AES().decrypt(act_text, new PeopleDBHelper(getContext(),serverkey).getEncKey(uid));
+                    act_date = new AES().decrypt(act_date, new PeopleDBHelper(getContext(),serverkey).getEncKey(uid));
 
                     String extension;
                     if (act_type.equals("1"))

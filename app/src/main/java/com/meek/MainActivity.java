@@ -36,7 +36,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.meek.Database.MessageDBHelper;
+import com.meek.Encryption.AES;
 import com.meek.Fragments.MyProfileFrag;
 import com.meek.Messaging.MessageService;
 import com.meek.Services.ConnectionService;
@@ -67,11 +70,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     MapsFragment map_fragment=null;
     public String server_key;
     LatLng cur_location;
+    String uid;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.container);
+        SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
+        uid=mypref.getString("uid","");
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         server_key = extras.getString("ServerKey");
@@ -152,8 +158,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
 
-                SharedPreferences mypref = getSharedPreferences("UserDetails", MODE_PRIVATE);
-                String uid=mypref.getString("uid","");
                 setColor(1);
                 //         new ContactSync().syncContact("update",MainActivity.this,uid);
                 /*try {
@@ -337,7 +341,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         {
             SharedPreferences pref=getApplicationContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
             SharedPreferences.Editor edit_pref=pref.edit();
-
+            SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
+            String key=new AES().decrypt(getPref.getString("KEY",""),server_key);
             edit_pref.putString("lat",location.getLatitude()+"");
             edit_pref.putString("lng",location.getLongitude()+"");
 
@@ -345,19 +350,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
                 List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                 edit_pref.putString("place",addresses.get(0).getAddressLine(1).replace("null","")+", "+addresses.get(0).getAddressLine(2).replace("null","")+"");
-
             }catch(Exception e)
             {
 
             }
-
-
             edit_pref.commit();
 
-            cur_location = new LatLng(location.getLatitude(), location.getLongitude());
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference userRef = database.getReference("Users");
+            userRef.child(uid).child("Details1").child("lat").setValue(new AES().encrypt(location.getLatitude()+"",key));
+            userRef.child(uid).child("Details1").child("lng").setValue(new AES().encrypt(location.getLongitude()+"",key));
+
             if (map_tab_flg ==true&&map_fragment!=null)
             {
-            //    map_fragment.setUserMarker();
+                cur_location = new LatLng(location.getLatitude(), location.getLongitude());
+                map_fragment.cur_location = new LatLng(location.getLatitude(), location.getLongitude());
+                map_fragment.setUserMarker();
             }
         }
 
@@ -375,8 +383,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onStatusChanged(String provider, int status, Bundle extras) {
             Log.e(TAG, "onStatusChanged: " + provider);
         }
-
-
     }
 
 }

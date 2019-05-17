@@ -75,7 +75,7 @@ public class MessageListMaker extends AppCompatActivity
         messagesList=findViewById(R.id.messagesList);
         SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
         key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
-
+        Log.e("ENC KEY IS","KEY IS EQL="+key);
         getMSGS(msg_id);
         setTop(name);
 
@@ -127,21 +127,17 @@ public class MessageListMaker extends AppCompatActivity
         EditText msg=(EditText)findViewById(R.id.input);
         String text=msg.getText().toString();
         msg.setText("");
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/M/yyyy kk:mm:ss");
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        try {
-            Date getDate=simpleDateFormat.parse(simpleDateFormat.format(new Date()));
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(getDate);
-            new MessageDBHelper(this,serverkey).insertMessage(msg_id,uid,text,calendar.getTimeInMillis()+"");
-            DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
-            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,key));
-            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
-            msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("msg_trigger").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
 
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        new MessageDBHelper(this,serverkey).insertMessage(msg_id,uid,text,calendar.getTimeInMillis()+"");
+        Log.e("ENC KEY IS","KEY IS EQL="+key);
+        DatabaseReference msg_set_ref = FirebaseDatabase.getInstance().getReference();
+        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_text").setValue(new AES().encrypt(text,key));
+        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("received_msg").child("msg_date").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
+        msg_set_ref.child("Messages_DB").child(msg_id).child(uid).child("msg_trigger").setValue(new AES().encrypt(calendar.getTimeInMillis()+"",key));
+
         getMSGS(msg_id);
     }
 

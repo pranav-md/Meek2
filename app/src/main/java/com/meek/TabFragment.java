@@ -177,6 +177,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         setActivtiyTab();
 
         Log.e("UID value","uid="+uid);
+
         setConnection();
         // Construct a PlaceDetectionClient.
       //  mPlaceDetectionClient = Places.getPlaceDetectionClient(getActivity(), null);
@@ -276,14 +277,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
       void setUsersActivity(View inf_layout)
       {
           act_nonseen_list=(ListView)inf_layout.findViewById(R.id.unseen_activity_feed);
-          if(act_feed==null)
-            act_feed=(LinearLayout)inf_layout.findViewById(R.id.act_lin_lyt);
-          else
-            act_feed.removeAllViews();
-          feedListen();
+
+          feedListen(inf_layout);
       }
 
-    void feedListen()
+    void feedListen(final View inf_layout)
     {
 
         DatabaseReference act_feed_ref = FirebaseDatabase.getInstance().getReference();
@@ -292,6 +290,10 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
+                if(act_feed==null)
+                    act_feed=(LinearLayout)inf_layout.findViewById(R.id.act_lin_lyt);
+                else
+                    act_feed.removeAllViews();
                 String act_yet_to_seen=dataSnapshot.child("activity_yet_to_seen").getValue().toString();
                 int num_act=0;
                 act_non_feed=new ArrayList<ActFeed>();
@@ -366,15 +368,13 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
         while(!actFeed.equals(":"))
         {
             String a_uid=actFeed.substring(1,actFeed.indexOf('.'));
-            String act_content=actFeed.substring(3,actFeed.substring(1).indexOf(':')+1);
+            String act_content=actFeed.substring(actFeed.indexOf('.')+1,actFeed.substring(1).indexOf(':')+1);
             actFeed=actFeed.substring(actFeed.substring(1).indexOf(':')+1);
             Log.v("Adapt Act","act_uid="+a_uid+"  act_content="+act_content);
             act_non_feed.add(new ActFeed("."+act_content+".",a_uid,context,server_key));
         }
 
-        FragmentActivity activity = getActivity();
-        if(activity != null)
-        {
+
           //  actUnSeenAdapter.getData(act_non_feed, getContext(), getChildFragmentManager(),server_key);
            /* if (unseen_adapted)
             {
@@ -407,7 +407,7 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                });
                act_feed.addView(view);
            }
-        }
+
     }
 
     @SuppressLint("WrongViewCast")
@@ -470,16 +470,21 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     void setMsgDialogs(ArrayList<Message> msgDlgs)
     {
-          if(!new PeopleDBHelper(getContext(),server_key).checkTable())
-            new PeopleDBHelper(getContext(),server_key).createTable();
+        try {
+            if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+              new PeopleDBHelper(getContext(),server_key).createTable();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-            msgPPLS=new ArrayList<MsgPPL>();
+        msgPPLS=new ArrayList<MsgPPL>();
             MsgPPL nextppl;
             for(Message newone:msgDlgs)
             {
                  nextppl=new MsgPPL();
-                 nextppl.sender_id=newone.getSender_id();
-                 nextppl.name=getOtherUsername(newone.getMsg_id());
+                 nextppl.sender_id=getOtherUserId(newone.getMsg_id());
+                 nextppl.name=new PeopleDBHelper(getContext(),server_key)
+                                .getName((nextppl.sender_id));
                  nextppl.last_msg=newone.getText();
                  nextppl.date=newone.getCreatedAt();
                  msgPPLS.add(nextppl);
@@ -496,20 +501,16 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
 
     }
 
-    String getOtherUsername(String msg_id)
+    String getOtherUserId(String msg_id)
     {
-        String name;
         if(msg_id.substring(4,msg_id.indexOf(":")).equals(uid))
         {
-            name= new PeopleDBHelper(getContext(),server_key)
-                    .getName(msg_id.substring(msg_id.indexOf(":")+5));
+            return msg_id.substring(msg_id.indexOf(":")+5);
         }
         else
         {
-            name= new PeopleDBHelper(getContext(),server_key)
-                    .getName(msg_id.substring(4,msg_id.indexOf(":")));
+           return msg_id.substring(4,msg_id.indexOf(":"));
         }
-        return name;
     }
 
     void setPplTab()
@@ -537,8 +538,12 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6  act_acc_key=7
     void setConnection()
     {
-        if(!new PeopleDBHelper(getContext(),server_key).checkTable())
-            new PeopleDBHelper(getContext(),server_key).createTable();
+        try {
+            if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+                new PeopleDBHelper(getContext(),server_key).createTable();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Users").child(uid).child("Connections").addValueEventListener(new ValueEventListener() {
             @Override
@@ -551,12 +556,22 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                 ArrayList<String> sent_req_cons=dSnapshotExtractor(dataSnapshot.child("act_request_sent"));
                 ArrayList<String> rcv_req_cons=dSnapshotExtractor(dataSnapshot.child("act_request_received"));
                 ArrayList<String> act_acc_key=dSnapshotExtractor(dataSnapshot.child("act_acc_key"));
+                ArrayList<String> loc_req_rcv=dSnapshotExtractor(dataSnapshot.child("loc_request_received"));
+
 
                 ////meekcons=1  activitycon=2   loc_con=3   act_sent_rqst=4    act_rcv_rqst=5      loc_rcv_rqst=6  act_acc_key=7
                 ////meekcons=2,1  activitycon=3,2   loc_con=4,3   act_sent_rqst=1,4    act_rcv_rqst=5      loc_rcv_rqst=6
 
                 new PeopleDBHelper(getContext(),server_key);
                 //if(meek_cons!=null)
+
+                //  if(sent_req_cons!=null)
+                for(final String id:sent_req_cons)
+                {
+                    Log.e("ACT RQ SNT","id="+id);
+                    checkInsertPerson(id,1);
+                }
+
                 for(final String id:meek_cons)
                 {
                     Log.e("MEEK CONS","id="+id);
@@ -569,19 +584,24 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     Log.e("ACTIVITY CONS","id="+id);
                     checkInsertPerson(id,3);
                 }
-
+                //    if(act_acc_key!=null)
+                for(final String id:act_acc_key)
+                {
+                    Log.e("ACT KEY RTV","id="+id);
+                    ppl_ref.child("Users").child(uid)
+                            .child("Connections")
+                            .child("act_acc_key")
+                            .child(id).removeValue();
+                    checkInsertPerson(id,3);
+                    getEncKey(id);
+                }
              //   if(loc_cons!=null)
                 for(final String id:loc_cons)
                 {
                     Log.e("LOC CONS","id="+id);
                     checkInsertPerson(id,4);
-                }
-
-              //  if(sent_req_cons!=null)
-                for(final String id:sent_req_cons)
-                {
-                    Log.e("ACT RQ SNT","id="+id);
-                    checkInsertPerson(id,1);
+                    if(!new PeopleDBHelper(getContext(),server_key).checkEncKey(id))
+                        getEncKey(id);
                 }
 
             //    if(rcv_req_cons!=null)
@@ -591,12 +611,11 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     checkInsertPerson(id,5);
                 }
 
-            //    if(act_acc_key!=null)
-                for(final String id:act_acc_key)
+                //    if(rcv_req_cons!=null)
+                for(final String id:loc_req_rcv)
                 {
-                    Log.e("ACT KEY RTV","id="+id);
-                    checkInsertPerson(id,3);
-                    getEncKey(id);
+                    Log.e("LOC RQ RCV","id="+id);
+                    checkInsertPerson(id,6);
                 }
 
                  setConnectionList();
@@ -768,8 +787,12 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
     {
         Log.e("PPLTAB","SETCONNECTIONLIST1");
         ArrayList<Contact> conn_list=new ArrayList<Contact>();
-        if(!new PeopleDBHelper(getContext(),server_key).checkTable())
-            new PeopleDBHelper(getContext(),server_key).createTable();
+        try {
+            if(!new PeopleDBHelper(getContext(),server_key).checkTable())
+                new PeopleDBHelper(getContext(),server_key).createTable();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         conn_list=new PeopleDBHelper(context,server_key).getAllConnections();
         Log.e("PPLTAB","SETCONNECTIONLIST2");
@@ -849,11 +872,12 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
 
         switch(conn_ppl.get(i).conn_level)
         {
+
             case 6: view = inflater.inflate(R.layout.request_list_item, null);
-                final CircleImageView ok=(CircleImageView)view.findViewById(R.id.rq_okay);
-                final CircleImageView cancl=(CircleImageView)view.findViewById(R.id.rq_cancel);
-                ok.setTag(conn_ppl.get(i).getUID());
-                cancl.setTag(conn_ppl.get(i).getUID());
+                    final CircleImageView ok=(CircleImageView)view.findViewById(R.id.rq_okay);
+                    final CircleImageView cancl=(CircleImageView)view.findViewById(R.id.rq_cancel);
+                    ok.setTag(conn_ppl.get(i).getUID());
+                    cancl.setTag(conn_ppl.get(i).getUID());
                 ok.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(final View view) {
@@ -921,6 +945,8 @@ class ConnectionAdapter extends BaseAdapter implements StickyListHeadersAdapter
             case 5: view = inflater.inflate(R.layout.request_list_item, null);
                     final CircleImageView okay=(CircleImageView)view.findViewById(R.id.rq_okay);
                     final CircleImageView cancel=(CircleImageView)view.findViewById(R.id.rq_cancel);
+                    View view1=view.findViewById(R.id.loc_icon);
+                    view1.setVisibility(View.INVISIBLE);
                     okay.setTag(conn_ppl.get(i).getUID());
                     cancel.setTag(conn_ppl.get(i).getUID());
                     okay.setOnClickListener(new View.OnClickListener() {

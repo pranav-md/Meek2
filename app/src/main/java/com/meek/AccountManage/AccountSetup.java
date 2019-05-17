@@ -41,8 +41,12 @@ public class AccountSetup extends AppCompatActivity {
                 act_ref.child("Server_Key").child(pref.getString("uid","")).setValue(server_key);
 
                 act_ref.child("Users").child(pref.getString("uid","")).child("Details2").child("name").setValue(server_key);
-                if(!new PeopleDBHelper(AccountSetup.this,server_key).checkTable())
-                    new PeopleDBHelper(AccountSetup.this,server_key).createTable();
+                try {
+                    if(!new PeopleDBHelper(AccountSetup.this,server_key).checkTable())
+                        new PeopleDBHelper(AccountSetup.this,server_key).createTable();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 new PeopleDBHelper(AccountSetup.this,server_key).insertPerson(pref.getString("uid",""),name.getText().toString()," ",0);
                 Intent intent=new Intent(AccountSetup.this,EnterKey.class);
                 intent.putExtra("ServerKey",server_key);

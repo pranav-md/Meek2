@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -39,6 +40,7 @@ public class MyActivities extends AppCompatActivity {
     boolean comp_lw, comp_up;
     LinearLayout no_act;
     Calendar cal;
+    long lwr_milli,upr_milli;
     MapActivitiesPageAdapter activitiesPageAdapter=null;
     ViewPager actvity_pgs;
     ArrayList<Activities> activities=null;
@@ -128,21 +130,16 @@ public class MyActivities extends AppCompatActivity {
                     if (dataSnapshot.exists()) {
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            try {
 
-                                Date act_date = d_format.parse(ds.getValue().toString());
-                                Log.v("My act_pg set", "upr date = " + act_date);
-                                if (act_date.after(lwr_gmt))
-                                {
-                                    Activities newone=new Activities();
-                                    newone.act_id=ds.getKey().toString();
-                                    Log.v("My act_pg set", "Inside date before");
-                                    activities.add(newone);
-                                }
-                            } catch (ParseException e) {
-                                e.printStackTrace();
+                            long act_date =(long)ds.getValue();
+                            Log.v("My act_pg set", "upr date = " + act_date);
+                            if (act_date>lwr_milli)
+                            {
+                                Activities newone=new Activities();
+                                newone.act_id=ds.getKey().toString();
+                                Log.v("My act_pg set", "Inside date before");
+                                activities.add(newone);
                             }
-
                         }
                     }
                     comp_lw = true;
@@ -165,21 +162,16 @@ public class MyActivities extends AppCompatActivity {
                     Log.v("Inside act_ref", "upr dt called");
                     if (dataSnapshot.exists())
                     {
-                        while(comp_lw==false);
                         SimpleDateFormat d_format = new SimpleDateFormat("dd-MM-yyyy kk:mm:ss");
                         for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                            try {
-                                Date act_date = d_format.parse(ds.getValue().toString());
-                                Log.v("My act_pg set", "lwr date = " + act_date);
-                                if (act_date.before(upr_gmt))
-                                {
-                                    Activities newone=new Activities();
-                                    newone.act_id=ds.getKey().toString();
-                                    Log.v("My act_pg set", "Inside date after");
-                                    activities.add(newone);
-                                }
-                            } catch (ParseException e) {
-                                e.printStackTrace();
+                            long act_date =(long)ds.getValue();
+                            Log.v("My act_pg set", "upr date = " + act_date);
+                            if (act_date<upr_milli)
+                            {
+                                Activities newone=new Activities();
+                                newone.act_id=ds.getKey().toString();
+                                Log.v("My act_pg set", "Inside date after");
+                                activities.add(newone);
                             }
                         }
                     }
@@ -205,6 +197,7 @@ public class MyActivities extends AppCompatActivity {
 
     void fetchActivityData(ArrayList<Activities> act_ids)
     {
+        Collections.sort(act_ids);
 
         if(act_ids!=null)
         {
@@ -245,6 +238,8 @@ public class MyActivities extends AppCompatActivity {
 
             lwr_gmt=d_format.parse(d_format.format(lwr_gmt));
 
+            lwr_milli=lwr_gmt.getTime();
+
 
             upr_gmt=default_tz.parse(DateFormat.format("dd",   curr_date).toString()+"-"
                     +(Integer.parseInt(DateFormat.format("MM",   curr_date).toString()))
@@ -253,6 +248,9 @@ public class MyActivities extends AppCompatActivity {
             upr_dt=d_format.format(upr_gmt).substring(0,d_format.format(upr_gmt).indexOf(" ")).trim();
 
             upr_gmt=d_format.parse(d_format.format(upr_gmt));
+
+            upr_milli=upr_gmt.getTime();
+
 
         }
         catch (ParseException e) {

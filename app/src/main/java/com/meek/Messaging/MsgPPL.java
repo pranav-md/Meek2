@@ -25,14 +25,4 @@ public class MsgPPL
 
     }
 
-
-    String msgID(String uid,String r_uid)
-    {
-        if(Integer.parseInt(uid)<Integer.parseInt(r_uid))
-            return  "user"+uid+":user"+r_uid;
-        else
-            return "user"+r_uid+":user"+uid;
-
-    }
-
 }

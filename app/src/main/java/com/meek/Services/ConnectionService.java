@@ -70,8 +70,12 @@ public class ConnectionService extends Service {
 
     void setConnection()
     {
-        if(!new PeopleDBHelper(this,server_key).checkTable())
-            new PeopleDBHelper(this,server_key).createTable();
+        try {
+            if(!new PeopleDBHelper(this,server_key).checkTable())
+                new PeopleDBHelper(this,server_key).createTable();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         final DatabaseReference ppl_ref = FirebaseDatabase.getInstance().getReference();
         ppl_ref.child("Users").child(uid).child("Connections").addValueEventListener(new ValueEventListener() {
             @Override

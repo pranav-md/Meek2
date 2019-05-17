@@ -104,7 +104,7 @@ public class MessageDBHelper extends SQLiteOpenHelper {
         values.put(DATE,date);
         // insert row
         long id = db.insert(TABLE_NAME, null, values);
-        Log.e("INSERT PERSON",msg_id+" written with number of="+number);
+        Log.e("INSERT PERSON",msg_id+" written with"+text+" number of="+number);
         // close db connection
         db.close();
     }

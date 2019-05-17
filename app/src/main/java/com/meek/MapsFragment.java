@@ -188,6 +188,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     ///all the activity markers should get dissapperared
                     //all the hidden markers of other users gets un hidden
+                    mBottomSheetBehavior1.setPeekHeight(0);
                     bs_prof = false;
                     bs=false;
                     bs_act=false;
@@ -629,6 +630,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     void showProfileBottomSheet(String uid,int pos)
     {
         mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+
     }
     void setActivityCardData(final int a_pos)
     {
