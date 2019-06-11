@@ -361,12 +361,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             userRef.child(uid).child("Details1").child("lat").setValue(new AES().encrypt(location.getLatitude()+"",key));
             userRef.child(uid).child("Details1").child("lng").setValue(new AES().encrypt(location.getLongitude()+"",key));
 
-            if (map_tab_flg ==true&&map_fragment!=null)
-            {
-                cur_location = new LatLng(location.getLatitude(), location.getLongitude());
-                map_fragment.cur_location = new LatLng(location.getLatitude(), location.getLongitude());
-                map_fragment.setUserMarker();
-            }
+
+
         }
 
         @Override

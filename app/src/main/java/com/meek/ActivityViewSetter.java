@@ -143,7 +143,7 @@ public static void copy(File src, File dst) throws IOException {
         }
         else
         {
-            decrypt.decryptActivityVideo("pmdrox",storageDir,filename.replace(".crypt",""));
+            decrypt.decryptActivityVideo(enckey,storageDir,filename.replace(".crypt",""));
             VideoView act_vid = (VideoView)set_view.findViewById(R.id.vid_view);
             act_vid.setVideoPath(actFile.getPath());
         }

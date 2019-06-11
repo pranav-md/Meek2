@@ -131,9 +131,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         this.serverkey=serverkey;
     }
     @Override
-    public Animation onCreateAnimation(int transit, boolean enter, int nextAnim) {
+    public Animation onCreateAnimation(int transit, boolean enter, int nextAnim)
+    {
         return FlipAnimation.create(FlipAnimation.RIGHT, enter, 500);
-
     }
 
     @Nullable
@@ -141,7 +141,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState)
     {
         view = inflater.inflate(R.layout.mapfrag, container, false);
-        bottomSheetSetup();
+         bottomSheetSetup();
         // profile_pg=(ViewPager)view.findViewById(R.id.profile_fp_view).findViewById(R.id.bs_viewpgr);
         //  Activities_pg=(ViewPager)view.findViewById(R.id.activity_fp_view).findViewById(R.id.bs_viewpgr);
         flip_bs=(EasyFlipView)view.findViewById(R.id.prof_act_flipper);
@@ -150,12 +150,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         SharedPreferences pref = getContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         uid=pref.getString("uid", "");
         ppl_marker=new ArrayList<Marker>();
-        //  locationListenSet();
+        locationListenSet();
         mapPeople=new ArrayList<MapPeople>();
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         bs_prof=false;
         bs=false;
         bs_act=false;
+
+        Log.e("SHOW Maps","This is the map");
+
         mapFragment.getMapAsync( this);
         return view;
 
@@ -173,17 +176,17 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             public void onStateChanged(View bottomSheet, int newState) {
                 if (newState == BottomSheetBehavior.STATE_EXPANDED)
                 {
-                    // mBottomSheetBehavior1.setPeekHeight(bottomSheet.getHeight());
+                   //  mBottomSheetBehavior1.setPeekHeight(bottomSheet.getHeight());
                     bs_prof=true;
-                    mBottomSheetBehavior1.setPeekHeight(0);
-                    mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
-                    TextView name=(TextView)view.findViewById(R.id.bs_name);
-                    TextView place=(TextView)view.findViewById(R.id.bs_place);
-                    TextView time=(TextView)view.findViewById(R.id.bs_time);
+                 //   mBottomSheetBehavior1.setPeekHeight(0);
+                //    mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+              //      TextView name=(TextView)view.findViewById(R.id.bs_name);
+              //      TextView place=(TextView)view.findViewById(R.id.bs_place);
+             //       TextView time=(TextView)view.findViewById(R.id.bs_time);
 
-                    name.setText(mapPeople.get(cur_p_pos).name);
+            //        name.setText(mapPeople.get(cur_p_pos).name);
 //                    place.setText(mapPeople.get(cur_p_pos).color);
-                    place.setText(mapPeople.get(cur_p_pos).latLng+"");;
+           //         place.setText(mapPeople.get(cur_p_pos).latLng+"");;
                 }
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     ///all the activity markers should get dissapperared
@@ -238,7 +241,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
-                Toast.makeText(getContext(),"Camera postn= "+cameraPosition,Toast.LENGTH_LONG).show();
+               // Toast.makeText(getContext(),"Camera postn= "+cameraPosition,Toast.LENGTH_LONG).show();
                 if(bs_prof||bs_act) {
                     Log.e("ON CAM CHANGe","BS-prof or bs act were true");
                     if (cameraPosition.zoom > 12) {
@@ -335,7 +338,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         loc_data_ref.child("Users").child(uid).child("Connections").child("location_meek").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                while(loc_db_mkr_lock==false);
+               // while(loc_db_mkr_lock==false);
                 ArrayList<String> locPPLS= dSnapshotExtractor(dataSnapshot);
                 DatabaseReference usr_loc_ref = FirebaseDatabase.getInstance().getReference();
                 for(String loc_uid:locPPLS)
@@ -393,7 +396,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     void setDbPplMarker(ArrayList<MapPeople> loc_cur)       //To set the markers of people in DB locally
     {
        // mapPeople=loc_cur;
-        while (user_marker_lock==false);
+      //  while (user_marker_lock==false);
             for(MapPeople newppl:loc_cur)
             {
                     if(newppl.latLng!=new LatLng(200.0,200.0))
@@ -408,15 +411,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
     void setUserMarker()
     {
-        Log.e("HAHAH", "setusermarker ");
+        Log.e("HAHAH", "setusermarker "+" curlocation"+cur_location);
         MainActivity mainActivity=(MainActivity)getContext();
-        LatLng cur_location=mainActivity.cur_location;
+       // LatLng cur_location=mainActivity.cur_location;
         MapPeople newme=new MapPeople();
 
         newme.latLng=cur_location;
         if(!current_ppl.contains(":"+uid+":")&&cur_location!=null)
         {
-            Log.e("NEW USER MARKER","PLOTTING THE NEW USER"+uid);
+            Log.e("NEW USER MARKER","PLOTTING THE NEW USER"+uid+" curlocation"+cur_location);
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(cur_location, 10));
             current_ppl+=uid+":";
             newme.uid=uid;
@@ -424,32 +427,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             if(cur_location!=null)
                 setMarker(cur_location,0,uid,".Displaypic/pic",false);
             user_marker_lock=true;
-      //      ppl_page_adapter=new ProfilePageAdapter(getChildFragmentManager());
-    //        ppl_page_adapter.setData(mapPeople);
-//            profile_pg.setAdapter(ppl_page_adapter);
- /*           profile_pg.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-                @Override
-                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-                }
-
-                @Override
-                public void onPageSelected(int position) {
-                    profile_pg.setCurrentItem(position);
-                    CameraUpdate location = CameraUpdateFactory.newLatLngZoom(mapPeople.get(position).latLng, 20);
-                    mMap.animateCamera(location);
-                }
-
-                @Override
-                public void onPageScrollStateChanged(int state) {
-
-                }
-            });*/
 
         }
         else
         {
-            Log.e("NEW USER MARKER","UPDATING THE OLD USER"+uid);
+            Log.e("NEW USER MARKER","UPDATING THE OLD USER"+uid+" curlocation"+cur_location);
             if (cur_location != null)
                 setMarker(cur_location, 0, uid, ".Displaypic/pic", true);
         }
@@ -472,7 +455,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
                     {
                         Activities newone=new Activities();
                         newone.act_id=ds.getKey().toString();
-                        newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
+                        SharedPreferences getPref=getContext().getSharedPreferences("USERKEY",MODE_PRIVATE);
+                        String key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
+                        newone.latLng=new LatLng(Double.parseDouble(new AES().decrypt(ds.child("lat").getValue().toString(),key)),Double.parseDouble(new AES().decrypt(ds.child("lng").getValue().toString(),key)));
                         list.add(new WeightedLatLng(newone.latLng,2));
 //                        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
                         mapPeople.get(pos).activities.add(newone);
@@ -627,11 +612,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
         return bitmap;
     }
-    void showProfileBottomSheet(String uid,int pos)
+    void showProfileBottomSheet(String bs_id,int pos)
     {
         mBottomSheetBehavior1.setState(BottomSheetBehavior.STATE_EXPANDED);
+        SharedPreferences pref=getContext().getSharedPreferences("UserDetails",MODE_PRIVATE);
+        TextView tvname=(TextView)view.findViewById(R.id.bs_name);
+        TextView location=(TextView)view.findViewById(R.id.bs_place);
 
-
+        tvname.setText(pref.getString("Name",""));
+        location.setText(pref.getString("place",""));
     }
     void setActivityCardData(final int a_pos)
     {
@@ -744,6 +733,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
 
     ///////////////location marker
     void locationListenSet() {
+        Log.e("SHOW Maps","locationlistenset");
         initializeLocationManager();
         MapsFragment.LocationListener[] mLocationListeners = new MapsFragment.LocationListener[]{
                 new MapsFragment.LocationListener(LocationManager.GPS_PROVIDER),
@@ -792,8 +782,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
             cur_location = new LatLng(location.getLatitude(), location.getLongitude());
             if (mMap != null)
             {
-//                mapPeople.get(0).latLng=new LatLng(location.getLatitude(),location.getLongitude());
-//                setMarker(cur_location,0,uid,".Displaypic/pic");
+                mapPeople.get(0).latLng=new LatLng(location.getLatitude(),location.getLongitude());
+                cur_location=new LatLng(location.getLatitude(),location.getLongitude());
+                setUserMarker();
             }
         }
 

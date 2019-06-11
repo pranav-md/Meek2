@@ -54,11 +54,12 @@ public class MessageListMaker extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.message_list);
+
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         serverkey = extras.getString("ServerKey");
+        setContentView(R.layout.message_list);
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MessageService.MY_ACTION);
