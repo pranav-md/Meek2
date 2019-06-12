@@ -294,6 +294,8 @@ public class TabFragment extends Fragment implements GoogleApiClient.OnConnectio
                     act_feed=(LinearLayout)inf_layout.findViewById(R.id.act_lin_lyt);
                 else
                     act_feed.removeAllViews();
+                if(dataSnapshot.child("activity_yet_to_seen").getValue()==null)
+                    return;
                 String act_yet_to_seen=dataSnapshot.child("activity_yet_to_seen").getValue().toString();
                 int num_act=0;
                 act_non_feed=new ArrayList<ActFeed>();

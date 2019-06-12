@@ -234,7 +234,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         setUserMarker();
         setMapMarkerListen();
         ArrayList<MapPeople> locCurData=new PeopleDBHelper(getContext(),serverkey).getLocationPplData();
-        setDbPplMarker(locCurData);
+        if(locCurData!=null)
+            setDbPplMarker(locCurData);
 
 
         //  getMeekLocPpl();
@@ -497,28 +498,30 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
         db_ref.child("Activities").child(a_uid).child("mapview").child("loc_friends").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if(!dataSnapshot.exists())
-                for (DataSnapshot ds : dataSnapshot.getChildren())
-                {
-                    Activities newone=new Activities();
-                    newone.act_id=ds.getKey().toString();
-                    newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
-                    list.add(new WeightedLatLng(newone.latLng,2));
-            //        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
-                    mapPeople.get(pos).activities.add(newone);
-                    setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
-                    if(adapt_bit[0] ==false)
+                if(dataSnapshot.exists())
+                    for (DataSnapshot ds : dataSnapshot.getChildren())
                     {
-                        adapt_bit[0] =true;
-          //              activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-         //               Activities_pg.setAdapter(activitiesPageAdapter);
+                        Activities newone=new Activities();
+                        newone.act_id=ds.getKey().toString();
+                        newone.latLng=new LatLng(Double.parseDouble(ds.child("lat").getValue().toString()),Double.parseDouble(ds.child("lng").getValue().toString()));
+                        list.add(new WeightedLatLng(newone.latLng,2));
+                //        newone.color=Integer.parseInt(ds.child("clr").getValue().toString());
+                        mapPeople.get(pos).activities.add(newone);
+                        setActivitiesMarker(pos,mapPeople.get(pos).activities.size()-1);
+                        if(adapt_bit[0] ==false)
+                        {
+                            adapt_bit[0] =true;
+              //              activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+             //               Activities_pg.setAdapter(activitiesPageAdapter);
+                        }
+                        else
+                        {
+                   //         activitiesPageAdapter.setData(mapPeople.get(pos).activities);
+                   //         activitiesPageAdapter.notifyDataSetChanged();
+                        }
                     }
-                    else
-                    {
-               //         activitiesPageAdapter.setData(mapPeople.get(pos).activities);
-               //         activitiesPageAdapter.notifyDataSetChanged();
-                    }
-                }
+                else
+                    return;
                 addHeatMap(list);
             }
 
@@ -686,7 +689,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,Adapter
     void actMkrVisble(boolean show)
     {
         Log.e("ACT MKR VISIBLE","NOW GOT INSIDE THE ACTMKRVISIBLE FUNCTION");
-        if(act_marker!=null)
+        if(act_marker.size()!=0)
             if(!act_marker.get(act_marker.size()-1).isVisible()&&show)
             {
                 mOverlay.setVisible(false);

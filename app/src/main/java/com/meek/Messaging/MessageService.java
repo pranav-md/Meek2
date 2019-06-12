@@ -51,6 +51,8 @@ public class MessageService extends Service
         msgctr_ref.child("Users").child(uid).child("Message_counter").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.getValue()==null)
+                    return;
                 String msg_ctr=dataSnapshot.getValue().toString();
                 ArrayList<String> msg_uid=extractor(msg_ctr);
                 retrieveMsgs(msg_uid,uid);

@@ -243,6 +243,8 @@ public class UserProfile extends AppCompatActivity {
 
             public void onDataChange(DataSnapshot dataSnapshot)
             {
+                if(dataSnapshot.getValue()==null)
+                    return;
                 String act_id=dataSnapshot.getValue().toString();
                 if(!act_id.equals("0"))
                 {

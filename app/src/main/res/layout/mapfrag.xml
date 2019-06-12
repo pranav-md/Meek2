@@ -34,14 +34,15 @@
 
             Back Layout Goes Here -->
 
-            <include
-                android:id="@+id/activity_view"
-                layout="@layout/activity_card" />
+
 
             <include
                 android:id="@+id/profile_view"
                 layout="@layout/bs_profile" />
 
+            <include
+                android:id="@+id/activity_view"
+                layout="@layout/activity_card" />
 
         </com.wajahatkarim3.easyflipview.EasyFlipView>
 

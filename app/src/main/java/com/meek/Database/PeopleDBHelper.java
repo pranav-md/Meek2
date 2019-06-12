@@ -157,6 +157,8 @@ public class PeopleDBHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         if(cursor.getCount()!=0)
         {
+            if(new AES().decrypt(cursor.getString(2), serverkey)==null)
+                return null;
                 mapPPL.add(new MapPeople(cursor.getString(0)
                         , new AES().decrypt(cursor.getString(1), serverkey)
                         , new LatLng(Double.parseDouble(new AES().decrypt(cursor.getString(2), serverkey)),

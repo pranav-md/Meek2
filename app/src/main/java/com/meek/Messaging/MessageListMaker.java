@@ -36,6 +36,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import static com.meek.TabFragment.extractor;
+
 /**
  * Created by User on 09-Jun-18.
  */
@@ -53,7 +55,6 @@ public class MessageListMaker extends AppCompatActivity
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
         Intent intent = getIntent();
@@ -77,6 +78,7 @@ public class MessageListMaker extends AppCompatActivity
         SharedPreferences getPref=getSharedPreferences("USERKEY",MODE_PRIVATE);
         key=new AES().decrypt(getPref.getString("KEY",""),serverkey);
         Log.e("ENC KEY IS","KEY IS EQL="+key);
+        listenMsgs(uid);
         getMSGS(msg_id);
         setTop(name);
 
@@ -149,7 +151,7 @@ public class MessageListMaker extends AppCompatActivity
             Bundle bundle = intent.getExtras();
             String sender_id = bundle.getString("sender_id");
             String uid = bundle.getString("uid");
-            getMSGS(msgID(uid,sender_id));
+
         }
     };
 
@@ -159,7 +161,82 @@ public class MessageListMaker extends AppCompatActivity
 //        updateMsgsBCR.abortBroadcast();
         unregisterReceiver(updateMsgsBCR);
     }
+    void listenMsgs(final String uid)
+    {
+        Log.e("oncreate","ListenMsgs");
+        DatabaseReference msgctr_ref = FirebaseDatabase.getInstance().getReference();
+        msgctr_ref.child("Users").child(uid).child("Message_counter").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.getValue()==null)
+                    return;
+                String msg_ctr=dataSnapshot.getValue().toString();
+                ArrayList<String> msg_uid=extractor(msg_ctr);
+                retrieveMsgs(msg_uid,uid);
+            }
 
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    void retrieveMsgs(ArrayList<String> uids, final String uid)
+    {
+        MessageDBHelper msg_db=new MessageDBHelper(this,serverkey);
+        msg_db.getWritableDatabase();
+        for(final String id:uids)
+        {
+            Log.e("retrieveMsgs","messgages of"+id);
+            final DatabaseReference msg_ref = FirebaseDatabase.getInstance().getReference();
+            msg_ref.child("Messages_DB")
+                    .child(msgID(uid,id))
+                    .child("sent_msgs:"+id+":")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if(dataSnapshot.getValue()!=null)
+                            {
+                                String xml_msgs = dataSnapshot.getValue().toString();
+                                Log.e("Retrieve msg","msg texts="+xml_msgs);
+                                msg_ref.child("Messages_DB")
+                                        .child(msgID(uid, id))
+                                        .child("sent_msgs:" + id + ":").setValue("<AllMessages><Message></Message></AllMessages>");
+                                while (xml_msgs.contains("<Message>") && (!xml_msgs.contains("<Message></Message>")))
+                                {
+                                    String msg_text = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "text");
+                                    String msg_date = parseXML(parseXML(parseXML(xml_msgs, "AllMessages"), "Message"), "timestamp");
+                                    Log.e("MESGSS DPLAY","MSG_TEXT="+msg_text+"  MSG_DATE="+msg_date);
+                                    Log.e("MESGSS DPLAY","MSG_TE KEY IS="+new PeopleDBHelper(MessageListMaker.this,serverkey).getEncKey(id));
+                                    new MessageDBHelper(MessageListMaker.this,serverkey).insertMessage(msgID(uid, id), id,new AES().decrypt( msg_text,new PeopleDBHelper(MessageListMaker.this,serverkey).getEncKey(id)), msg_date);
+                                    xml_msgs = xml_msgs.replace("<Message>" + parseXML(parseXML(xml_msgs, "AllMessages"), "Message") + "</Message>", "");
+                                }
+                                getMSGS(msgID(uid,r_uid));
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
+
+        }
+
+    }
+
+
+    public String parseXML(String source, String tag){
+        int flag=0;
+        int startIndex = source.indexOf("<"+tag+">") + ("<"+tag+">").length();
+        int endIndex = source.indexOf("</"+tag+">");
+        if(startIndex ==-1 || endIndex==-1)
+            return null;
+        String out = source.substring(startIndex,endIndex);
+        return out;
+    }
     String msgTime(String time)
     {
 
